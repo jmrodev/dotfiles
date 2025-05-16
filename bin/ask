@@ -1,0 +1,166 @@
+#!/bin/bash
+
+# Script para interactuar con la API de Gemini 2.0 Flash desde la terminal
+# Nombre: ask
+# Uso: ask <tu pregunta> [--file <ruta_archivo>]
+#   <tu pregunta>: La pregunta que quieres hacer a Gemini.
+#                  Si usas la opción --file, esta pregunta es sobre el archivo.
+#   --file <ruta_archivo>: Opcional. Proporciona la ruta a un archivo cuyo contenido
+#                          quieres que Gemini lea antes de responder a tu pregunta.
+#
+# Requiere curl, jq y glow.
+# La clave API debe estar en la variable de entorno GEMINI_API_KEY.
+
+# URL de la API para generar contenido con Gemini 2.0 Flash
+API_URL="https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}"
+
+# --- Variables ---
+file_path=""
+PROMPT=""
+file_content=""
+args=("$@") # Almacena los argumentos en un array para facilitar el manejo
+
+# --- Verifica si la clave API está configurada ---
+if [ -z "$GEMINI_API_KEY" ]; then
+  echo "Error: La variable de entorno GEMINI_API_KEY no está configurada." >&2
+  echo "Por favor, configúrala con tu clave API (ej: export GEMINI_API_KEY='tu_clave')." >&2
+  exit 1
+fi
+
+# --- Procesamiento de argumentos ---
+# Buscamos el flag --file. Si existe, el siguiente argumento es la ruta del archivo.
+# Todos los demás argumentos forman la pregunta.
+file_flag_idx=-1
+for i in "${!args[@]}"; do
+    if [ "${args[$i]}" = "--file" ]; then
+        file_flag_idx=$i
+        break
+    fi
+done
+
+if [ "$file_flag_idx" -ne -1 ]; then
+    # Se encontró el flag --file
+
+    # Verificamos si hay un argumento después de --file para la ruta del archivo
+    if [ "$((file_flag_idx + 1))" -ge "${#args[@]}" ]; then
+        echo "Error: El flag --file debe ir seguido de la ruta del archivo." >&2
+        echo "Uso: $(basename "$0") <tu pregunta> [--file <ruta_archivo>]" >&2
+        exit 1
+    fi
+
+    # El argumento después de --file es la ruta del archivo
+    file_path="${args[$((file_flag_idx + 1))]}"
+
+    # Verificamos si el archivo existe y es legible
+    if [ ! -f "$file_path" ]; then
+        echo "Error: Archivo no encontrado o no es un archivo regular: '$file_path'" >&2
+        exit 1
+    fi
+    if [ ! -r "$file_path" ]; then
+         echo "Error: Archivo no legible: '$file_path'" >&2
+         exit 1
+    fi
+
+    # La pregunta son todos los argumentos *excepto* el flag --file y la ruta del archivo
+    question_parts=()
+    for i in "${!args[@]}"; do
+        if [ "$i" -ne "$file_flag_idx" ] && [ "$i" -ne "$((file_flag_idx + 1))" ]; then
+            question_parts+=("${args[$i]}")
+        fi
+    done
+    PROMPT=$(IFS=' '; echo "${question_parts[*]}")
+
+    # Verificamos si se proporcionó una pregunta junto con --file
+    if [ -z "$PROMPT" ]; then
+        echo "Error: Debes proporcionar una pregunta cuando usas el flag --file." >&2
+        echo "Uso: $(basename "$0") <tu pregunta> [--file <ruta_archivo>]" >&2
+        exit 1
+    fi
+
+else
+    # No se encontró el flag --file. Todos los argumentos forman la pregunta.
+    file_path="" # Aseguramos que la ruta del archivo esté vacía
+    PROMPT="$*"
+
+    # Verificamos si se proporcionó alguna pregunta en este caso
+    if [ "$#" -eq 0 ]; then
+         echo "Uso: $(basename "$0") <tu pregunta> [--file <ruta_archivo>]" >&2
+         echo "Ejemplo: $(basename "$0") \"¿Qué es un agujero negro?\"" >&2
+         echo "Ejemplo: $(basename "$0") \"Resume este código\" --file my_script.sh" >&2
+         exit 1
+    fi
+fi
+
+# --- Lee el contenido del archivo si se proporcionó una ruta ---
+if [ -n "$file_path" ]; then
+    # Usamos cat con -u para asegurar que no haya buffering raro
+    file_content=$(cat -u "$file_path")
+    if [ $? -ne 0 ]; then
+        echo "Error: No se pudo leer el archivo '$file_path'" >&2
+        exit 1
+    fi
+fi
+
+# --- Construye el payload JSON usando jq ---
+# El payload incluirá el contenido del archivo y la pregunta si se proporcionó un archivo.
+if [ -n "$file_content" ]; then
+    # Incluir contenido del archivo y la pregunta en una sola parte
+    # Usamos la interpolación de jq \(...) con las variables pasadas por --arg ($...)
+    PAYLOAD=$(jq -n \
+              --arg file_cont "$file_content" \
+              --arg prompt_arg "$PROMPT" \
+              '{contents: [{parts: [{text: "Content of file:\n```\n\($file_cont)\n```\n\nQuestion: \($prompt_arg)"}]}]}')
+else
+    # Solo incluir la pregunta (comportamiento original)
+    # Aquí $prompt_arg se usa directamente como el valor, no dentro de otra cadena.
+    PAYLOAD=$(jq -n \
+              --arg prompt_arg "$PROMPT" \
+              '{contents: [{parts: [{text: $prompt_arg}]}]}')
+fi
+
+# Verifica si jq falló al construir el payload
+if [ $? -ne 0 ]; then
+    echo "Error: Falló la construcción del payload JSON con jq." >&2
+    echo "Esto podría deberse a caracteres inusuales en el contenido del archivo o la pregunta." >&2
+    # No imprimimos el payload aquí porque jq falló al crearlo.
+    exit 1
+fi
+
+# --- Realiza la llamada a la API usando curl ---
+API_RESPONSE=$(curl -s -H 'Content-Type: application/json' -X POST -d "$PAYLOAD" "$API_URL")
+
+# Verifica si curl falló
+if [ $? -ne 0 ]; then
+    echo "Error: El comando curl falló." >&2
+    echo "Respuesta de la API (posible error de red o servidor):" >&2
+    # Intentamos imprimir la respuesta cruda, formateada por jq, incluso si curl tuvo un error
+    # porque la API podría haber devuelto un JSON de error.
+    echo "$API_RESPONSE" | jq .
+    exit 1
+fi
+
+# --- Extrae el texto de la respuesta usando jq ---
+RESPONSE_TEXT=$(echo "$API_RESPONSE" | jq -r '.candidates[0].content.parts[0].text')
+
+# Verifica si jq pudo extraer el texto o si la respuesta fue nula/vacía (posible error de API)
+if [ $? -ne 0 ] || [ "$RESPONSE_TEXT" = "null" ] || [ -z "$RESPONSE_TEXT" ]; then
+    echo "Error: No se pudo extraer el texto de la respuesta de la API." >&2
+
+    # Intentar extraer un mensaje de error si existe
+    ERROR_MESSAGE=$(echo "$API_RESPONSE" | jq -r '.error.message')
+    if [ "$ERROR_MESSAGE" != "null" ] && [ -n "$ERROR_MESSAGE" ]; then
+         echo "Mensaje de error de la API: $ERROR_MESSAGE" >&2
+         echo "Posibles causas: clave API incorrecta, límite de tokens excedido (especialmente con archivos grandes), contenido bloqueado por políticas, etc." >&2
+    else
+         echo "Respuesta completa de la API (para depuración):" >&2
+         echo "$API_RESPONSE" | jq . # Imprime la respuesta completa, formateada por jq
+         echo "Podría ser un problema con el formato de respuesta inesperado o un error interno de la API." >&2
+    fi
+    exit 1
+fi
+
+# --- Envía la respuesta extraída a glow ---
+# echo "$RESPONSE_TEXT": Imprime el contenido de la variable RESPONSE_TEXT
+# |: La tubería redirige la salida de echo a la entrada estándar de glow
+# glow: Procesa la entrada (que es texto que puede contener Markdown) y lo renderiza en la terminal
+echo "$RESPONSE_TEXT" | glow # Puedes añadir '| less -R' si la respuesta es muy larga
