@@ -1,0 +1,96 @@
+#!/bin/bash
+# Wrapper 'ask' para la instalación en $HOME/bin/ask_gemini
+
+# Directorio donde reside ESTE script lanzador (ej. $HOME/bin)
+LAUNCHER_SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
+
+# Directorio de la aplicación donde están python_script, api_key, etc.
+# Asumimos que es un subdirectorio llamado 'ask_gemini' al mismo nivel que 'bin'
+# o dentro de 'bin'.
+# Si ask está en $HOME/bin, entonces APP_DIR será $HOME/bin/ask_gemini
+APP_DIR="${LAUNCHER_SCRIPT_DIR}/ask_gemini" 
+
+PYTHON_SCRIPT_PATH="${APP_DIR}/ask_gemini.py"
+API_KEY_FILENAME=".ask_api_key"
+API_KEY_FILE_PATH="${APP_DIR}/${API_KEY_FILENAME}" # Clave ahora en APP_DIR
+
+# Función para depuración del wrapper
+_ask_wrapper_debug() {
+    if [ "${ASK_WRAPPER_DEBUG:-false}" = "true" ]; then
+        echo "ASK WRAPPER DEBUG: $*" >&2
+    fi
+}
+
+_ask_wrapper_debug "Wrapper 'ask' iniciado."
+_ask_wrapper_debug "LAUNCHER_SCRIPT_DIR: $LAUNCHER_SCRIPT_DIR"
+_ask_wrapper_debug "APP_DIR: $APP_DIR"
+_ask_wrapper_debug "PYTHON_SCRIPT_PATH: $PYTHON_SCRIPT_PATH"
+_ask_wrapper_debug "API_KEY_FILE_PATH: $API_KEY_FILE_PATH"
+
+
+if [ -z "$GEMINI_API_KEY" ]; then
+    _ask_wrapper_debug "GEMINI_API_KEY no está en el entorno."
+    if [ -f "$API_KEY_FILE_PATH" ]; then
+        _ask_wrapper_debug "Archivo de API Key encontrado en '$API_KEY_FILE_PATH'. Intentando cargarlo."
+        
+        # Leer la clave del archivo. El instalador guarda solo la clave.
+        temp_key=$(<"$API_KEY_FILE_PATH")
+        
+        if [ -n "$temp_key" ]; then
+            export GEMINI_API_KEY="$temp_key"
+            _ask_wrapper_debug "GEMINI_API_KEY cargada desde archivo: ${GEMINI_API_KEY:0:7}..."
+        else
+            _ask_wrapper_debug "El archivo de clave API '$API_KEY_FILE_PATH' estaba vacío."
+        fi
+    else
+        _ask_wrapper_debug "Archivo de API Key no encontrado en '$API_KEY_FILE_PATH'."
+    fi
+fi
+
+
+if [ ! -f "$PYTHON_SCRIPT_PATH" ]; then
+    echo "Error: El script de lógica de Python '$PYTHON_SCRIPT_PATH' no se encuentra." >&2
+    echo "Asegúrate de que la instalación se completó correctamente." >&2
+    exit 1
+fi
+
+if ! command -v python3 &> /dev/null; then
+    echo "Error: El comando 'python3' no se encuentra. Por favor, instala Python 3." >&2
+    exit 1
+fi
+
+is_action_command=false
+case "$1" in
+    --clean|--save-local|--append-local|--save-general|--append-general|--help|-h)
+        is_action_command=true
+        ;;
+esac
+
+if [ "$is_action_command" = true ]; then
+    _ask_wrapper_debug "Comando de acción detectado. Ejecutando Python directamente."
+    # Cambiar al directorio de la aplicación para que Python encuentre .ask_context.general correctamente
+    # si SCRIPT_DIR = Path(__file__).resolve().parent se usa en Python para el contexto general
+    # y para que .ask_memory.jsonl y .ask_context.local se creen en el CWD del usuario.
+    # No, SCRIPT_DIR en Python se refiere a la ubicación de ask_gemini.py, lo cual es correcto.
+    # Los archivos locales (.ask_memory.jsonl, .ask_context.local) se manejan con Path.cwd() en Python.
+    python3 "$PYTHON_SCRIPT_PATH" "$@"
+    exit $? 
+fi
+
+_ask_wrapper_debug "Consulta normal. Ejecutando Python y pipe a glow."
+( python3 "$PYTHON_SCRIPT_PATH" "$@" | glow )
+pipeline_exit_codes=("${pipestatus[@]:-${PIPESTATUS[@]}}") 
+
+python_exit_code=${pipeline_exit_codes[0]:-0} 
+glow_exit_code=${pipeline_exit_codes[1]:-0}   
+
+_ask_wrapper_debug "Python exit code: $python_exit_code, Glow exit code: $glow_exit_code"
+
+if [ "$python_exit_code" -ne 0 ]; then
+    exit "$python_exit_code"
+elif [ "$glow_exit_code" -ne 0 ];then
+    exit "$glow_exit_code" 
+fi
+
+_ask_wrapper_debug "Wrapper 'ask' finalizado exitosamente."
+exit 0
