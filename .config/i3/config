@@ -237,3 +237,4 @@ bindsym $mod+Mod1+g exec google-chrome-stable
 
 bindsym $mod+Mod1+n exec lxterminal -e nvim
 
+bindsym Control+Right exec i3-sensible-terminal -e ranger
