@@ -1,0 +1,138 @@
+## Opciones Generales de Comportamiento ##
+# ------------------------------------ #
+
+# Siempre mostrar el número de línea
+set linenumbers
+
+# Activar el sangrado automático
+# Cuando pulsas Enter, el cursor se coloca en la misma sangría que la línea anterior.
+set autoindent
+
+# No dividir líneas largas automáticamente (soft wrapping).
+# En su lugar, las líneas se extienden horizontalmente y puedes desplazarte.
+# Útil para código y archivos de configuración.
+set nowrap
+
+# Mostrar el cursor siempre en la barra de estado (no se borra rápidamente).
+# CORREGIDO: 'const' no existe, se usa 'constantshow'
+set constantshow
+
+# No mostrar el mensaje de bienvenida al iniciar Nano.
+set nohelp
+
+# Activar la verificación ortográfica.
+# Necesita un programa corrector como 'aspell' o 'hunspell'.
+set speller "aspell -x" # Si tienes 'aspell' instalado, usa esto. Si no, prueba "hunspell" o comenta la línea.
+
+# Habilitar el soporte del ratón (si tu terminal lo soporta).
+# Permite hacer clic para mover el cursor, doble clic para marcar texto, etc.
+set mouse
+
+# Habilitar la función de deshacer/rehacer.
+# CORREGIDO: En versiones modernas se llama 'undo', pero si falla, usar 'multibuffer' solamente
+# set undo # Comentado porque puede no estar disponible en tu versión
+
+# Mantener un registro del historial de búsqueda y reemplazo.
+set historylog
+
+# Habilitar múltiples buffers (pestañas).
+# ^R (Ctrl+R) para insertar un archivo en un nuevo buffer.
+# ^X (Ctrl+X) te preguntará si quieres guardar y cerrar el buffer actual.
+# Alt+< (M-<) y Alt+> (M->) para cambiar entre buffers.
+set multibuffer
+
+# Recordar la posición del cursor entre sesiones de edición.
+# Guarda la posición para los 200 archivos editados más recientemente.
+set positionlog
+
+# Usar el modo de búsqueda con expresiones regulares extendidas por defecto.
+# Te permite usar expresiones regulares más potentes en buscar/reemplazar.
+set regexp
+
+# Hacer que la tecla Home sea más inteligente:
+# La primera pulsación va al inicio de la línea. La segunda va al inicio de la línea sin sangría.
+set smarthome
+
+# Activar el desplazamiento suave al mover el cursor.
+# CORREGIDO: 'smooth' no existe en versiones estándar de nano
+# set smooth # Comentado porque no está disponible
+
+# Habilitar los archivos de respaldo (se crea un archivo~ al guardar).
+set backup
+
+# Directorio para guardar los archivos de respaldo únicos.
+# Si no se especifica, se guardan en el mismo directorio que el original.
+# set backupdir "/tmp/nanobackup/" # Descomenta y ajusta si quieres un directorio específico
+
+# No convertir automáticamente los archivos de formato DOS/Mac a Unix.
+set noconvert
+
+# No preguntar al salir si no se han guardado cambios (si se sale sin guardar).
+# ¡Úsalo con precaución! Puedes perder trabajo si no guardas intencionalmente.
+# unset confirmonexit # Es 'unset' porque la opción por defecto es pedir confirmación.
+
+# No mostrar errores de nanorc al iniciar.
+# set noblanks # Esta opción es rara, generalmente se usa con cuidado.
+# set quiet # No mostrar la barra de estado vacía.
+
+## Opciones de Color y Resaltado de Sintaxis ##
+# ------------------------------------------ #
+
+# Incluir archivos de resaltado de sintaxis predefinidos.
+# Nano suele instalarlos en /usr/share/nano/ o /etc/nano/syntax/
+# Puedes ver los disponibles en esos directorios y descomentar los que uses.
+
+include "/usr/share/nano/c.nanorc"
+include "/usr/share/nano/css.nanorc"
+include "/usr/share/nano/html.nanorc"
+# include "/usr/share/nano/ini.nanorc" # CORREGIDO: Comentado porque no existe en tu sistema
+include "/usr/share/nano/java.nanorc"
+include "/usr/share/nano/json.nanorc"
+include "/usr/share/nano/markdown.nanorc"
+include "/usr/share/nano/nanorc.nanorc"
+include "/usr/share/nano/php.nanorc"
+include "/usr/share/nano/python.nanorc"
+include "/usr/share/nano/sh.nanorc" # Para scripts de shell (bash, zsh, etc.)
+include "/usr/share/nano/xml.nanorc"
+include "/usr/share/nano/yaml.nanorc"
+# Añade o quita líneas 'include' según los lenguajes que uses y los archivos disponibles.
+# Puedes usar un 'ls /usr/share/nano/*.nanorc' para ver todos los disponibles.
+
+# ***** COLORES DE INTERFAZ *****
+# CORREGIDO: Los colores de interfaz necesitan estar dentro de un bloque syntax
+# o usar las opciones específicas de la versión de nano
+
+# Para versiones modernas de nano (4.0+), se pueden definir colores directamente:
+# Si estos fallan, comenta estas líneas y usa el bloque syntax de abajo
+
+# Colores de números de línea
+set titlecolor brightwhite,blue
+set statuscolor brightwhite,blue  
+set keycolor brightcyan
+set functioncolor brightgreen
+set numbercolor brightyellow
+set selectedcolor white,magenta
+
+# ALTERNATIVA: Si las opciones de arriba no funcionan, usa este bloque:
+# syntax "all" ".*"
+# color title brightwhite,blue
+# color status brightwhite,blue
+# color key brightcyan
+# color function brightgreen
+# color numbers brightyellow
+# color selected white,magenta
+
+## Reasignación de Teclas (Keybindings) ##
+# ----------------------------------- #
+
+# Puedes reasignar atajos de teclado. Por ejemplo:
+# bind ^J enter main   # Hace que Ctrl+J inserte un salto de línea (Enter)
+# bind ^D delete main  # Hace que Ctrl+D borre el carácter bajo el cursor
+# bind M-p cut main    # Asigna Alt+P a la función de cortar (M- es Alt)
+
+# Para más información sobre las funciones que puedes reasignar, consulta `man nanorc`.
+# Las reasignaciones deben especificarse para un menú específico (main, help, search, etc.).
+
+# Ejemplo de reasignación para un "Home" más tradicional (ir al inicio de la línea sin sangría):
+# bind ^A home main # Redefine Ctrl+A para ir al inicio de la línea real
+# bind ^E end main  # Redefine Ctrl+E para ir al final de la línea 
