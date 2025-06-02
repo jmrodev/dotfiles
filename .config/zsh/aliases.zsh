@@ -1,0 +1,15 @@
+# ~/.config/zsh/aliases.zsh 
+# Alias comunes y prácticos 
+
+alias r='ranger-cd'
+alias tree='eza --tree --icons'
+alias ls='eza  --git --icons'
+alias ll='eza -lh --git --icons' 
+alias la='eza -lah --git --icons' 
+alias gs='git status' 
+alias gd='git diff' 
+alias gp='git push' 
+alias gc='git commit -v' 
+alias ..='cd ..' 
+alias ...='cd ../..' 
+alias dotfiles='git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
