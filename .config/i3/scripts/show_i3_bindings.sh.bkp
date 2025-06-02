@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# Script para mostrar atajos de i3 en Rofi parseando el archivo de configuración
+
+CONFIG_PATH="${HOME}/.config/i3/config"
+
+# Verificar si el archivo de configuración existe
+if [ ! -f "$CONFIG_PATH" ]; then
+    # Intentar la ruta antigua como fallback
+    CONFIG_PATH_OLD="${HOME}/.i3/config"
+    if [ ! -f "$CONFIG_PATH_OLD" ]; then
+        rofi -e "Error: Archivo de configuración de i3 no encontrado en ${CONFIG_PATH} o ${CONFIG_PATH_OLD}"
+        exit 1
+    else
+        CONFIG_PATH="$CONFIG_PATH_OLD"
+    fi
+fi
+
+# Verificar si rofi está instalado
+if ! command -v rofi &> /dev/null; then
+    echo "Error: rofi no está instalado." >&2
+    exit 1
+fi
+
+# Extraer y formatear los atajos del archivo de configuración
+# Esto es una aproximación y podría no capturar todos los casos complejos perfectamente.
+grep -E '^\s*(#\s*)?bindsym' "$CONFIG_PATH" | \
+    # Quitar comentarios y la palabra 'bindsym'
+    sed -E \
+        -e 's/^\s*#\s*bindsym\s+/COMMENTED: /' \
+        -e 's/^\s*bindsym\s+//' \
+        -e 's/--release\s+//' \
+	|awk '{
+        key_combo = $1;
+        command_str = "";
+        for (i = 2; i <= NF; i++) {
+            command_str = command_str $i " ";
+        }
+        # Reemplazar $mod con Mod para legibilidad
+        gsub(/\$mod/, "Mod", key_combo);
+        # Quitar "exec" y "--no-startup-id" para limpiar el comando
+        gsub(/exec\s*(--no-startup-id\s*)?/, "", command_str);
+        # Quitar espacios extra al final del comando
+        gsub(/\s+$/, "", command_str);
+        if (command_str != "") {
+            print key_combo "  →  " command_str;
+        }
+    }' | \
+rofi -dmenu -i -p "Atajos i3 (desde config)" \
+     -mesg "Navega o escribe para filtrar. (Aproximación desde archivo de config)" \
+     -theme-str 'window {width: 70%; border-radius: 8px;} listview {lines: 15; scrollbar: true;} entry {placeholder: "Buscar atajo...";}' \
+     -kb-cancel "Escape,Control+g,Control+c"
