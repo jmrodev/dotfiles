@@ -1,0 +1,83 @@
+#
+# ~/.dmenurc - Configuración mejorada de dmenu
+#
+
+## Configuración de fuente
+# Puedes probar diferentes fuentes y tamaños:
+DMENU_FN="Noto Sans-11"          # Fuente principal
+# DMENU_FN="JetBrains Mono-10"   # Alternativa monospace
+# DMENU_FN="Ubuntu-11"           # Alternativa Ubuntu
+# DMENU_FN="DejaVu Sans-10"      # Alternativa clásica
+
+## Esquema de colores actual (tema oscuro verde)
+DMENU_NB="#2B2C2B"    # Fondo no seleccionado (gris oscuro)
+DMENU_NF="#F9FAF9"    # Texto no seleccionado (blanco)
+DMENU_SB="#16A085"    # Fondo seleccionado (verde azulado)
+DMENU_SF="#F9FAF9"    # Texto seleccionado (blanco)
+
+## Esquemas de colores alternativos (descomenta el que prefieras)
+
+# Tema Dracula
+# DMENU_NB="#282a36"    # Fondo oscuro
+# DMENU_NF="#f8f8f2"    # Texto claro
+# DMENU_SB="#6272a4"    # Fondo seleccionado azul
+# DMENU_SF="#f8f8f2"    # Texto seleccionado
+
+# Tema Nord
+# DMENU_NB="#2e3440"    # Fondo polar night
+# DMENU_NF="#d8dee9"    # Texto snow storm
+# DMENU_SB="#5e81ac"    # Fondo frost blue
+# DMENU_SF="#eceff4"    # Texto bright snow
+
+# Tema Gruvbox Dark
+# DMENU_NB="#282828"    # Fondo dark0
+# DMENU_NF="#ebdbb2"    # Texto light1
+# DMENU_SB="#458588"    # Fondo blue
+# DMENU_SF="#1d2021"    # Texto dark0_hard
+
+# Tema Solarized Dark
+# DMENU_NB="#002b36"    # Fondo base03
+# DMENU_NF="#839496"    # Texto base0
+# DMENU_SB="#268bd2"    # Fondo blue
+# DMENU_SF="#fdf6e3"    # Texto base3
+
+## Configuración del terminal
+# Ajusta según tu terminal preferido:
+TERMINAL_CMD="lxterminal -e"
+# TERMINAL_CMD="terminal -e"        # Tu configuración actual
+# TERMINAL_CMD="alacritty -e"     # Para Alacritty
+# TERMINAL_CMD="kitty -e"         # Para Kitty
+# TERMINAL_CMD="st -e"            # Para st (simple terminal)
+# TERMINAL_CMD="xfce4-terminal -x" # Para XFCE Terminal
+# TERMINAL_CMD="gnome-terminal -- " # Para GNOME Terminal
+
+## Opciones adicionales de dmenu
+# Altura en píxeles (útil para fuentes más grandes)
+DMENU_H="24"
+
+# Posición (puedes especificar coordenadas x,y y ancho,alto)
+# DMENU_GEOM="-x 0 -y 0 -w 1920"  # Para pantalla completa arriba
+# DMENU_GEOM="-c"                  # Para centrar (requiere patch)
+
+# Insensible a mayúsculas/minúsculas
+DMENU_CASE="-i"
+
+# Coincidencia difusa (requiere patch)
+# DMENU_FUZZY="-F"
+
+# Mostrar líneas (modo vertical, requiere patch)
+# DMENU_LINES="-l 10"
+
+## Construcción de opciones finales
+# Básicas (tu configuración actual)
+DMENU_OPTIONS="-fn $DMENU_FN -nb $DMENU_NB -nf $DMENU_NF -sf $DMENU_SF -sb $DMENU_SB"
+
+# Con opciones adicionales (descomenta si quieres usar)
+# DMENU_OPTIONS="-fn $DMENU_FN -nb $DMENU_NB -nf $DMENU_NF -sf $DMENU_SF -sb $DMENU_SB -h $DMENU_H $DMENU_CASE"
+
+## Alias útiles (agrega al final de tu .bashrc o .zshrc)
+# alias dmenu_run='dmenu_run $DMENU_OPTIONS'
+# alias dmenu_path='dmenu_path | dmenu $DMENU_OPTIONS'
+
+## Exportar variables
+export DMENU_FN DMENU_NB DMENU_NF DMENU_SB DMENU_SF TERMINAL_CMD DMENU_OPTIONS 
