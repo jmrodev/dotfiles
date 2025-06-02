@@ -1,0 +1,36 @@
+# Directorios de caché y temporales
+.cache/
+.cargo/
+.npm/
+.m2/
+.java/
+.swt/
+.vscode-insiders/ # O .vscode/ si usas la versión estable
+.pki/
+.subversion/
+.eclipse/
+.dotnet/
+.dbclient/
+.icons/ # Si es una caché de iconos o quieres gestionarlos de otra forma
+
+# Historial y logs
+.bash_history
+.zhistory
+.zcompdump
+.zsh_history
+.xsession-errors
+.xsession-errors.old
+.viminfo # Si es solo historial y no configuración
+.lesshst
+
+# Datos de usuario / Proyectos
+Documentos/
+eclipse-workspace/
+go/
+.local/ # Esto suele contener cachés, datos de aplicaciones, etc. - cuidado al ignorar. Podrías querer ignorar solo ciertas subcarpetas.
+.wakatime/ # Si es solo caché o logs, no configuración
+.Xauthority
+.dmrc
+
+# Otros archivos que no quieres versionar
+# .zsh_secrets # ¡Cuidado con los secretos! Nunca los subas a GitHub directamente.
