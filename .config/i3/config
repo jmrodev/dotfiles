@@ -233,8 +233,12 @@ bar {
     status_command i3status
 }
 
+# Autostart applications
+exec --no-startup-id clipit
+exec --no-startup-id ~/.config/i3/autostart_volumeicon.sh
+
 bindsym $mod+Mod1+g exec google-chrome-stable
 
-bindsym $mod+Mod1+n exec lxterminal -e nvim
+bindsym $mod+Mod1+n exec xfce4-terminal -e nvim
 
-bindsym Control+Right exec i3-sensible-terminal -e ranger
+bindsym Control+Right exec xfce4-terminal -e ranger

@@ -43,12 +43,12 @@ DMENU_SF="#F9FAF9"    # Texto seleccionado (blanco)
 
 ## Configuración del terminal
 # Ajusta según tu terminal preferido:
-TERMINAL_CMD="lxterminal -e"
+# TERMINAL_CMD="lxterminal -e"
 # TERMINAL_CMD="terminal -e"        # Tu configuración actual
 # TERMINAL_CMD="alacritty -e"     # Para Alacritty
 # TERMINAL_CMD="kitty -e"         # Para Kitty
 # TERMINAL_CMD="st -e"            # Para st (simple terminal)
-# TERMINAL_CMD="xfce4-terminal -x" # Para XFCE Terminal
+ TERMINAL_CMD="xfce4-terminal -x" # Para XFCE Terminal
 # TERMINAL_CMD="gnome-terminal -- " # Para GNOME Terminal
 
 ## Opciones adicionales de dmenu
