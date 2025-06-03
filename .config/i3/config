@@ -12,10 +12,8 @@ set $mod Mod4
 # Fuente para títulos de ventanas y barra
 font pango:JetBrainsMono Nerd Font 11
 
+# Autostart - Programas que se ejecutan al iniciar i3
 # ---------------------------
-# Autostart - programas que se ejecutan al iniciar i3
-# ---------------------------
-
 # Ejecutar archivos .desktop según estándar XDG (programas de inicio)
 exec --no-startup-id dex --autostart --environment i3
 
@@ -26,26 +24,32 @@ exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork
 # Applet de NetworkManager para administrar redes
 exec --no-startup-id nm-applet
 
-# ---------------------------
+# Iniciar Clipit (gestor de portapapeles)
+exec --no-startup-id clipit
+
+# Iniciar Volumeicon (icono de volumen, si lo usas fuera de i3blocks)
+exec --no-startup-id ~/.config/i3/autostart_volumeicon.sh
+
 # Control de volumen con teclas multimedia (PulseAudio)
 # ---------------------------
+# Subir volumen 10% y actualizar i3blocks (envía señal SIGRTMIN+10)
+bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10% && killall -SIGRTMIN+10 i3blocks
 
-# Actualizar barra i3status después de cambiar volumen
-set $refresh_i3status killall -SIGUSR1 i3status
+# Bajar volumen 10% y actualizar i3blocks (envía señal SIGRTMIN+10)
+bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10% && killall -SIGRTMIN+10 i3blocks
 
-# Subir volumen 10%
-bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +10% && $refresh_i3status
+# Silenciar o activar sonido y actualizar i3blocks (envía señal SIGRTMIN+10)
+bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && killall -SIGRTMIN+10 i3blocks
 
-# Bajar volumen 10%
-bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -10% && $refresh_i3status
+# Silenciar o activar micrófono y actualizar i3blocks (envía señal SIGRTMIN+10)
+bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle && killall -SIGRTMIN+10 i3blocks
 
-# Silenciar o activar sonido
-bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && $refresh_i3status
+# Subir brillo y actualizar i3blocks (envía señal SIGRTMIN+11)
+bindsym XF86MonBrightnessUp exec --no-startup-id xbacklight -inc 5 && killall -SIGRTMIN+11 i3blocks
 
-# Silenciar o activar micrófono
-bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle && $refresh_i3status
+# Bajar brillo y actualizar i3blocks (envía señal SIGRTMIN+11)
+bindsym XF86MonBrightnessDown exec --no-startup-id xbacklight -dec 5 && killall -SIGRTMIN+11 i3blocks
 
-# ---------------------------
 # Modificador para ventanas flotantes con el mouse
 # ---------------------------
 floating_modifier $mod
@@ -54,30 +58,33 @@ floating_modifier $mod
 # Manteniendo la tecla flotante y click izquierdo en título o ventana
 tiling_drag modifier titlebar
 
-# ---------------------------
 # Atajos básicos para abrir y cerrar ventanas
 # ---------------------------
-
 # Abrir terminal predeterminado (i3-sensible-terminal detecta el terminal instalado)
 bindsym $mod+Return exec i3-sensible-terminal
 
 # Cerrar ventana activa (kill)
 bindsym $mod+Shift+q kill
 
-# ---------------------------
 # Lanzadores de aplicaciones
 # ---------------------------
-
 # Abrir dmenu (lanzador clásico)
 bindsym $mod+d exec --no-startup-id dmenu_run
 
-# Comentado: alternativa moderna rofi para lanzar aplicaciones
-# bindsym $mod+d exec "rofi -modi drun,run -show drun"
+# Abrir Google Chrome
+bindsym $mod+Mod1+g exec google-chrome-stable
 
-# ---------------------------
+# Abrir Neovim en una terminal (xfce4-terminal es tu terminal, nvim tu editor)
+bindsym $mod+Mod1+n exec xfce4-terminal -e nvim
+
+# Abrir Ranger en una terminal (xfce4-terminal es tu terminal)
+bindsym Control+Right exec xfce4-terminal -e ranger
+
+# Abrir PCManFM (gestor de archivos)
+bindsym $mod+Mod1+t exec pcmanfm
+
 # Navegación entre ventanas con teclado
 # ---------------------------
-
 # Cambiar foco a ventanas adyacentes usando mod+j/k/l/ñ
 bindsym $mod+j focus left
 bindsym $mod+k focus down
@@ -90,10 +97,8 @@ bindsym $mod+Down focus down
 bindsym $mod+Up focus up
 bindsym $mod+Right focus right
 
-# ---------------------------
 # Mover ventanas activas con teclado
 # ---------------------------
-
 # Mover ventana a la izquierda, abajo, arriba o derecha con mod+Shift+j/k/l/ñ
 bindsym $mod+Shift+j move left
 bindsym $mod+Shift+k move down
@@ -106,10 +111,8 @@ bindsym $mod+Shift+Down move down
 bindsym $mod+Shift+Up move up
 bindsym $mod+Shift+Right move right
 
-# ---------------------------
 # Organización de ventanas
 # ---------------------------
-
 # Dividir ventana actual horizontalmente
 bindsym $mod+h split h
 
@@ -120,9 +123,9 @@ bindsym $mod+v split v
 bindsym $mod+f fullscreen toggle
 
 # Cambiar tipo de layout (apilado, pestañas, dividir)
-bindsym $mod+s layout stacking     # apilado
-bindsym $mod+w layout tabbed       # pestañas
-bindsym $mod+e layout toggle split # alterna entre apilado y dividido
+bindsym $mod+s layout stacking        # apilado
+bindsym $mod+w layout tabbed          # pestañas
+bindsym $mod+e layout toggle split    # alterna entre apilado y dividido
 
 # Toggle ventana entre tiling y flotante
 bindsym $mod+Shift+space floating toggle
@@ -130,20 +133,16 @@ bindsym $mod+Shift+space floating toggle
 # Cambiar foco entre ventanas flotantes y tiling
 bindsym $mod+space focus mode_toggle
 
-# ---------------------------
 # Navegación entre contenedores padres e hijos
 # ---------------------------
-
 # Enfocar contenedor padre (ventana o grupo que contiene la actual)
 bindsym $mod+a focus parent
 
 # Enfocar contenedor hijo (comentado, no activado)
 #bindsym $mod+d focus child
 
-# ---------------------------
 # Workspaces (escritorios virtuales)
 # ---------------------------
-
 # Definición de nombres para workspaces para usarlos más fácil
 set $ws1 "1"
 set $ws2 "2"
@@ -180,10 +179,8 @@ bindsym $mod+Shift+8 move container to workspace number $ws8
 bindsym $mod+Shift+9 move container to workspace number $ws9
 bindsym $mod+Shift+0 move container to workspace number $ws10
 
-# ---------------------------
 # Recargar y reiniciar i3
 # ---------------------------
-
 # Recargar configuración (leer cambios sin reiniciar i3)
 bindsym $mod+Shift+c reload
 
@@ -193,10 +190,8 @@ bindsym $mod+Shift+r restart
 # Salir de i3 (cierra sesión X)
 bindsym $mod+Shift+e exec "i3-nagbar -t warning -m '¿Querés salir de i3? Esto terminará la sesión X.' -B 'Sí, salir' 'i3-msg exit'"
 
-# ---------------------------
 # Modo de redimensionamiento de ventanas
 # ---------------------------
-
 mode "resize" {
     # Al entrar a modo resize, estas teclas cambian tamaño de la ventana activa
     
@@ -224,21 +219,11 @@ mode "resize" {
 # Entrar al modo resize con mod+r
 bindsym $mod+r mode "resize"
 
-# ---------------------------
 # Barra de estado i3bar
 # ---------------------------
-
 bar {
-    # Ejecuta i3status para mostrar info del sistema en la barra
-    status_command i3status
+    # ¡Importante! Ejecuta i3blocks para mostrar info del sistema en la barra
+    status_command i3blocks
+    # Opcional: Si quieres depurar i3blocks, puedes añadir un nivel de verbosidad y redirigir la salida a un archivo
+    # status_command i3blocks -vvv 2>/tmp/i3blocks_debug.log
 }
-
-# Autostart applications
-exec --no-startup-id clipit
-exec --no-startup-id ~/.config/i3/autostart_volumeicon.sh
-
-bindsym $mod+Mod1+g exec google-chrome-stable
-
-bindsym $mod+Mod1+n exec xfce4-terminal -e nvim
-
-bindsym Control+Right exec xfce4-terminal -e ranger
