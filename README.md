@@ -28,6 +28,64 @@ Aquí hay una lista de algunos de los archivos y directorios que gestiono con es
 
 ---
 
+## Programas Necesarios
+
+Esta es una lista de programas recomendados y/o necesarios para aprovechar al máximo estas configuraciones en un entorno Manjaro i3wm. Puedes instalarlos usando `pacman`:
+
+*   **Git:** Para la gestión de estos dotfiles y control de versiones en general.
+    ```bash
+    sudo pacman -Syu git
+    ```
+*   **Zsh:** Un shell popular con muchas características. Si planeas usar la configuración `.zshrc`.
+    ```bash
+    sudo pacman -Syu zsh
+    ```
+*   **i3wm (i3-gaps):** El gestor de ventanas. Manjaro i3 normalmente viene con `i3-gaps`.
+    ```bash
+    sudo pacman -Syu i3-gaps
+    ```
+*   **i3blocks:** Para la barra de estado en i3.
+    ```bash
+    sudo pacman -Syu i3blocks
+    ```
+*   **i3status:** Utilizado por `i3blocks` para generar información del sistema.
+    ```bash
+    sudo pacman -Syu i3status
+    ```
+*   **dmenu:** Un lanzador de aplicaciones rápido y ligero para i3.
+    ```bash
+    sudo pacman -Syu dmenu
+    ```
+*   **Terminal Emulator (e.g., Alacritty, Kitty, Termite):** Necesitarás un emulador de terminal. Alacritty es una opción popular y performante. Termite es otra opción común en i3.
+    ```bash
+    sudo pacman -Syu alacritty
+    # o sudo pacman -Syu kitty
+    # o sudo pacman -Syu termite
+    ```
+*   **NeoVim (nvim):** Un editor de texto altamente extensible, basado en Vim. Para la configuración `init.vim`.
+    ```bash
+    sudo pacman -Syu neovim
+    ```
+*   **Tmux:** Un multiplexor de terminal, para gestionar múltiples sesiones de terminal. Para la configuración `.tmux.conf`.
+    ```bash
+    sudo pacman -Syu tmux
+    ```
+*   **Nano:** Un editor de texto simple para la línea de comandos. Para la configuración `.nanorc`.
+    ```bash
+    sudo pacman -Syu nano
+    ```
+*   **Feh:** Un visor de imágenes ligero, comúnmente usado con i3 para establecer fondos de pantalla.
+    ```bash
+    sudo pacman -Syu feh
+    ```
+*   **Base-devel:** Grupo de paquetes importantes que contienen herramientas para compilar software (como make, gcc, etc.). Esencial si planeas construir paquetes desde AUR.
+    ```bash
+    sudo pacman -Syu base-devel
+    ```
+
+Asegúrate de ejecutar `sudo pacman -Syu` antes de instalar cualquier paquete para actualizar la base de datos de paquetes y el sistema.
+
+---
 ## Cómo Clonar e Instalar (Primera Vez en una Nueva Máquina)
 
 Sigue estos pasos para clonar este repositorio y configurar tus dotfiles en una nueva máquina. ¡**Haz una copia de seguridad** de tus dotfiles existentes antes de comenzar!
