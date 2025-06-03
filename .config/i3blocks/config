@@ -1,130 +1,94 @@
 # ================================
 # Archivo de configuración de i3blocks
 # Generado para jmro basado en su entorno
+# Incluye la solución para el menú de apagado
 # ================================
 
 # Configuración global
+# Define un intervalo predeterminado para todos los bloques que no especifiquen uno.
 interval=5
 
 # --- Bloques de Sistema ---
 
-# Menú de Apagado/Reinicio
-[shutdown_menu]
-command=~/.config/i3blocks/i3blocks-contrib/shutdown_menu/shutdown_menu
-interval=once
-color=#bf616a # Rojo coral
-label=APAGADO
-
 # Uso de Memoria (RAM)
+# Requiere que el script 'memory' de i3blocks-contrib tenga permisos de ejecución.
 [memory]
 command=~/.config/i3blocks/i3blocks-contrib/memory/memory
 interval=5
 label=MEM:
-color=#a3be8c # Verde
+color=#a3be8c # Verde (Ejemplo de color)
 
 # Uso de CPU
+# Requiere 'sysstat' para 'mpstat' y que el script 'cpu_usage' tenga permisos de ejecución.
 [cpu_usage]
 command=~/.config/i3blocks/i3blocks-contrib/cpu_usage/cpu_usage
 interval=2
 label=CPU:
-color=#88c0d0 # Azul claro
+color=#88c0d0 # Azul claro (Ejemplo de color)
 
 # Temperatura de la CPU
+# Requiere 'lm_sensors' (y configurarlo con 'sudo sensors-detect') y el script 'temperature'.
 [temperature]
 command=~/.config/i3blocks/i3blocks-contrib/temperature/temperature
 interval=5
 label=TEMP:
-color=#ebcb8b # Naranja
+color=#ebcb8b # Naranja (Ejemplo de color)
 
 # Uso de Disco (Partición Raíz /)
+# Requiere el script 'disk' de i3blocks-contrib.
 [disk_root]
 command=~/.config/i3blocks/i3blocks-contrib/disk/disk /
 interval=30
 label=ROOT:
-color=#98c379 # Verde lima
+color=#98c379 # Verde lima (Ejemplo de color)
 
 # Uso de Disco (Partición Home /home)
+# Requiere el script 'disk' de i3blocks-contrib.
 [disk_home]
-command=~/.config/i3blocks/i3blocks-contrib/disk/disk /home
+command=~/.config/i3blocks/i3blocks-contrib/disk/disk /mnt/discoDos
 interval=30
-label=HOME:
-color=#c678dd # Púrpura
+label=DISCO DOS:
+color=#c678dd # Púrpura (Ejemplo de color)
 
 # Carga del Sistema (Load Average)
+# Requiere el script 'load_average' de i3blocks-contrib.
 [load_average]
 command=~/.config/i3blocks/i3blocks-contrib/load_average/load_average
 interval=5
 label=LOAD:
-color=#e06c75 # Rojo claro
+color=#e06c75 # Rojo claro (Ejemplo de color)
 
 # --- Bloques de Red ---
 
 # Ancho de Banda (Tráfico de red)
+# Requiere el script 'bandwidth' de i3blocks-contrib.
 [bandwidth]
 command=~/.config/i3blocks/i3blocks-contrib/bandwidth/bandwidth
 interval=1
 label=NET:
-color=#fab795 # Melocotón
+color=#fab795 # Melocotón (Ejemplo de color)
 
 # Estado de Wi-Fi y ESSID (Nombre de la red)
+# Requiere 'iw' o 'wireless_tools' para 'iwgetid' y el script 'wifi'.
 [wifi]
 command=~/.config/i3blocks/i3blocks-contrib/wifi/wifi
 interval=10
 label=WIFI:
-color=#61afef # Azul
-
-# Estado de Conexión VPN (NetworkManager)
-#[nm-vpn]
-#command=~/.config/i3blocks/i3blocks-contrib/nm-vpn/nm-vpn
-#interval=5
-#label=VPN:
-#color=#d8a657 # Dorado oscuro
+color=#61afef # Azul (Ejemplo de color)
 
 # --- Bloques de Audio y Brillo ---
 
-# Volumen de Audio (PulseAudio)
-#[volume]
-#command=~/.config/i3blocks/i3blocks-contrib/volume-pulseaudio/volume-pulseaudio
-#interval=once
-#signal=10
-#label=VOL:
-#color=#c792ea # Púrpura claro
+# Menú de Apagado/Reinicio (¡Usando el Wrapper para evitar apertura automática!)
+# Requiere el script 'shutdown_wrapper.sh'.
+# Requiere 'rofi' o 'zenity' instalados.
+[shutdown_menu]
+command=~/.config/i3blocks/scripts/shutdown_wrapper.sh
+interval=once      # Se ejecuta solo una vez al inicio para mostrar la etiqueta
+color=#bf616a      # Rojo coral (Ejemplo de color)
+button=1           # Permite abrir el menú con un clic izquierdo
 
-# Brillo de Pantalla
-#[backlight]
-#command=~/.config/i3blocks/i3blocks-contrib/backlight/backlight
-#interval=once
-#signal=11
-#label=BRIGHT:
-#color=#fab795 # Melocotón (sí, se repite, es solo un ejemplo)
-
-# --- Bloques de Actualizaciones ---
-
-# Actualizaciones de Arch Linux (pacman)
-#[arch-update]
-#command=~/.config/i3blocks/i3blocks-contrib/arch-update/arch-update
-#interval=3600 # Cada hora
-#label=PAC:
-#color=#bb86fc # Púrpura medio
-
-# Actualizaciones de AUR (yay)
-#[aur-update]
-#command=~/.config/i3blocks/i3blocks-contrib/aur-update/aur-update
-#interval=3600 # Cada hora
-#label=AUR:
-#color=#f0f0f0 # Blanco
-
-# --- Bloques de Utilidad / Miscelánea ---
-
-# Estado de Contenedores Docker
-#[docker]
-#command=~/.config/i3blocks/i3blocks-contrib/docker/docker
-#interval=10
-#label=DOCKER:
-#color=#0db7ed # Azul Docker
-
-# Fecha y Hora
+# Fecha y Hora (Bloque estándar, no de i3blocks-contrib)
 [time]
 command=date '+%Y-%m-%d %H:%M:%S'
 interval=1
-color=#f0f0f0 # Blanco
+color=#f0f0f0 # Blanco (Ejemplo de color)

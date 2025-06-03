@@ -12,6 +12,8 @@ set $mod Mod4
 # Fuente para títulos de ventanas y barra
 font pango:JetBrainsMono Nerd Font 11
 
+exec --no-startup-id i3-msg "set_input_mode numlock"
+
 # Autostart - Programas que se ejecutan al iniciar i3
 # ---------------------------
 # Ejecutar archivos .desktop según estándar XDG (programas de inicio)
