@@ -1,0 +1,130 @@
+# ================================
+# Archivo de configuración de i3blocks
+# Generado para jmro basado en su entorno
+# ================================
+
+# Configuración global
+interval=5
+
+# --- Bloques de Sistema ---
+
+# Menú de Apagado/Reinicio
+[shutdown_menu]
+command=~/.config/i3blocks/i3blocks-contrib/shutdown_menu/shutdown_menu
+interval=once
+color=#bf616a # Rojo coral
+label=APAGADO
+
+# Uso de Memoria (RAM)
+[memory]
+command=~/.config/i3blocks/i3blocks-contrib/memory/memory
+interval=5
+label=MEM:
+color=#a3be8c # Verde
+
+# Uso de CPU
+[cpu_usage]
+command=~/.config/i3blocks/i3blocks-contrib/cpu_usage/cpu_usage
+interval=2
+label=CPU:
+color=#88c0d0 # Azul claro
+
+# Temperatura de la CPU
+[temperature]
+command=~/.config/i3blocks/i3blocks-contrib/temperature/temperature
+interval=5
+label=TEMP:
+color=#ebcb8b # Naranja
+
+# Uso de Disco (Partición Raíz /)
+[disk_root]
+command=~/.config/i3blocks/i3blocks-contrib/disk/disk /
+interval=30
+label=ROOT:
+color=#98c379 # Verde lima
+
+# Uso de Disco (Partición Home /home)
+[disk_home]
+command=~/.config/i3blocks/i3blocks-contrib/disk/disk /home
+interval=30
+label=HOME:
+color=#c678dd # Púrpura
+
+# Carga del Sistema (Load Average)
+[load_average]
+command=~/.config/i3blocks/i3blocks-contrib/load_average/load_average
+interval=5
+label=LOAD:
+color=#e06c75 # Rojo claro
+
+# --- Bloques de Red ---
+
+# Ancho de Banda (Tráfico de red)
+[bandwidth]
+command=~/.config/i3blocks/i3blocks-contrib/bandwidth/bandwidth
+interval=1
+label=NET:
+color=#fab795 # Melocotón
+
+# Estado de Wi-Fi y ESSID (Nombre de la red)
+[wifi]
+command=~/.config/i3blocks/i3blocks-contrib/wifi/wifi
+interval=10
+label=WIFI:
+color=#61afef # Azul
+
+# Estado de Conexión VPN (NetworkManager)
+#[nm-vpn]
+#command=~/.config/i3blocks/i3blocks-contrib/nm-vpn/nm-vpn
+#interval=5
+#label=VPN:
+#color=#d8a657 # Dorado oscuro
+
+# --- Bloques de Audio y Brillo ---
+
+# Volumen de Audio (PulseAudio)
+#[volume]
+#command=~/.config/i3blocks/i3blocks-contrib/volume-pulseaudio/volume-pulseaudio
+#interval=once
+#signal=10
+#label=VOL:
+#color=#c792ea # Púrpura claro
+
+# Brillo de Pantalla
+#[backlight]
+#command=~/.config/i3blocks/i3blocks-contrib/backlight/backlight
+#interval=once
+#signal=11
+#label=BRIGHT:
+#color=#fab795 # Melocotón (sí, se repite, es solo un ejemplo)
+
+# --- Bloques de Actualizaciones ---
+
+# Actualizaciones de Arch Linux (pacman)
+#[arch-update]
+#command=~/.config/i3blocks/i3blocks-contrib/arch-update/arch-update
+#interval=3600 # Cada hora
+#label=PAC:
+#color=#bb86fc # Púrpura medio
+
+# Actualizaciones de AUR (yay)
+#[aur-update]
+#command=~/.config/i3blocks/i3blocks-contrib/aur-update/aur-update
+#interval=3600 # Cada hora
+#label=AUR:
+#color=#f0f0f0 # Blanco
+
+# --- Bloques de Utilidad / Miscelánea ---
+
+# Estado de Contenedores Docker
+#[docker]
+#command=~/.config/i3blocks/i3blocks-contrib/docker/docker
+#interval=10
+#label=DOCKER:
+#color=#0db7ed # Azul Docker
+
+# Fecha y Hora
+[time]
+command=date '+%Y-%m-%d %H:%M:%S'
+interval=1
+color=#f0f0f0 # Blanco
