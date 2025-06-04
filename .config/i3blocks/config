@@ -42,13 +42,13 @@ interval=30
 label=ROOT:
 color=#98c379 # Verde lima (Ejemplo de color)
 
-# Uso de Disco (Partición Home /home)
-# Requiere el script 'disk' de i3blocks-contrib.
-[disk_home]
-command=~/.config/i3blocks/i3blocks-contrib/disk/disk /mnt/discoDos
-interval=30
-label=DISCO DOS:
-color=#c678dd # Púrpura (Ejemplo de color)
+## Uso de Disco (Partición Home /home)
+## Requiere el script 'disk' de i3blocks-contrib.
+#[disk_home]
+#command=~/.config/i3blocks/i3blocks-contrib/disk/disk /mnt/discoDos
+#interval=30
+#label=DISCO DOS:
+#color=#c678dd # Púrpura (Ejemplo de color)
 
 # Carga del Sistema (Load Average)
 # Requiere el script 'load_average' de i3blocks-contrib.
