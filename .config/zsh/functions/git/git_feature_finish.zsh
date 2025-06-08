@@ -11,21 +11,21 @@ git_feature_finish() {
   fi
 
   # Verificar si la rama develop existe
-  if ! git show-ref --verify --quiet "refs/heads/$develop_branch" && ! git show-ref --verify --quiet "refs/remotes/origin/$develop_branch"; then
+  if ! command git show-ref --verify --quiet "refs/heads/$develop_branch" && ! command git show-ref --verify --quiet "refs/remotes/origin/$develop_branch"; then
     echo "Advertencia: La rama '$develop_branch' no parece existir localmente ni en origin. Intentando continuar..."
   fi
 
   # Verificar si la rama feature existe
-  if ! git show-ref --verify --quiet "refs/heads/feature/$feature_name"; then
+  if ! command git show-ref --verify --quiet "refs/heads/feature/$feature_name"; then
     echo "Error: La rama 'feature/$feature_name' no existe localmente."
     return 1
   fi
 
-  git checkout "$develop_branch" && \
-  git pull origin "$develop_branch" && \
-  git merge --no-ff "feature/$feature_name" && \
-  git branch -d "feature/$feature_name" && \
-  git push origin "$develop_branch" # Opcional: push develop después de mergear
+  command git checkout "$develop_branch" && \
+  command git pull origin "$develop_branch" && \
+  command git merge --no-ff "feature/$feature_name" && \
+  command git branch -d "feature/$feature_name" && \
+  command git push origin "$develop_branch" # Opcional: push develop después de mergear
   # Opcional: Borrar rama remota si existe
-  # git push origin --delete "feature/$feature_name"
+  # command git push origin --delete "feature/$feature_name"
 }

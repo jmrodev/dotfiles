@@ -13,7 +13,7 @@ gpusho() {
   
   if [[ -n "$current_branch" ]]; then
     echo "Haciendo push de '$current_branch' y estableciendo upstream..."
-    git push -u origin "$current_branch"
+    command git push -u origin "$current_branch"
   else
     echo "Error: No estás en una rama de Git válida."
     return 1
@@ -30,10 +30,10 @@ dpusho() {
   fi
   
   if [[ -n "$current_branch" ]]; then
-    echo "Haciendo push de dotfiles '$current_branch' y estableciendo upstream..."
-    dotfiles push -u origin "$current_branch"
+    echo "Haciendo push de command dotfiles '$current_branch' y estableciendo upstream..."
+    command dotfiles push -u origin "$current_branch"
   else
-    echo "Error: No estás en una rama de dotfiles válida."
+    echo "Error: No estás en una rama de command dotfiles válida."
     return 1
   fi
 }
@@ -67,7 +67,7 @@ show_current_dotfiles_branch() {
   if [[ -n "$current_branch" ]]; then
     echo "Rama actual de dotfiles: $current_branch"
   else
-    echo "No estás en un repositorio de dotfiles válido o no hay rama activa."
+    echo "No estás en un repositorio de command dotfiles válido o no hay rama activa."
     return 1
   fi
 }

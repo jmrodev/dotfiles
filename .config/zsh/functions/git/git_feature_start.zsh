@@ -11,12 +11,12 @@ git_feature_start() {
   fi
 
   # Verificar si la rama develop existe
-  if ! git show-ref --verify --quiet "refs/heads/$develop_branch" && ! git show-ref --verify --quiet "refs/remotes/origin/$develop_branch"; then
+  if ! command git show-ref --verify --quiet "refs/heads/$develop_branch" && ! command git show-ref --verify --quiet "refs/remotes/origin/$develop_branch"; then
     echo "Advertencia: La rama '$develop_branch' no parece existir localmente ni en origin. Intentando continuar..."
     # Podrías querer hacer 'git checkout main' o la rama principal por defecto aquí como fallback.
   fi
 
-  git checkout "$develop_branch" && \
-  git pull origin "$develop_branch" && \
-  git checkout -b "feature/$feature_name" "$develop_branch"
+  command git checkout "$develop_branch" && \
+  command git pull origin "$develop_branch" && \
+  command git checkout -b "feature/$feature_name" "$develop_branch"
 }
