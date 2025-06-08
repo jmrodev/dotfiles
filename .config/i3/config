@@ -1,293 +1,47 @@
- 
 # ================================
-# Archivo de configuración de i3 (v4)
-# Fecha de última revisión: [FECHA_ACTUAL]
-# Más info: https://i3wm.org/docs/userguide.html
+# Variables y configuraciones base
 # ================================
 
 # Tecla modificadora principal (mod)
 # Mod4 normalmente es la tecla "Super" o "Windows"
 set $mod Mod4
 
-# Fuente para títulos de ventanas y barra
-font pango:JetBrainsMono Nerd Font 11
+set $i3conf ~/.config/i3
+
+# Cargar variables. DEBE ser el primero.
+include $i3conf/conf.d/00-variables.conf
+
+# Cargar programas de inicio
+include $i3configdir/conf.d/10-autostart.conf
+
+# Cargar todos los atajos de teclado y modos
+include $i3configdir/conf.d/20-keybindings.conf
+
+# Cargar configuración de apariencia (barra, colores, gaps, fuentes)
+include $i3configdir/conf.d/30-visuals.conf
+
+# Cargar reglas para ventanas específicas
+include $i3configdir/conf.d/40-window_rules.conf
+
 
 # Variables para directorios
 set $i3configdir ~/.config/i3
+set $i3blockdir ~/.config/i3blocks
 set $scriptsdir $i3configdir/scripts
-
-# Autostart - Programas que se ejecutan al iniciar i3
-# ---------------------------
-# Activar NumLock al inicio (si lo deseas)
-exec --no-startup-id i3-msg "set_input_mode numlock"
-
-# Ejecutar archivos .desktop según estándar XDG (programas de inicio)
-exec --no-startup-id dex --autostart --environment i3
-
-# Bloqueo de pantalla automático antes de suspensión y con i3lock
-exec --no-startup-id xss-lock --transfer-sleep-lock -- i3lock --nofork # O tu comando i3lock preferido
-
-# Applet de NetworkManager para administrar redes
-exec --no-startup-id nm-applet
-
-# Iniciar Clipit (gestor de portapapeles)
-exec --no-startup-id clipit
-
-# Opcional: Script de autostart para volumeicon (si no usas i3blocks para volumen)
-# exec --no-startup-id $i3configdir/autostart_volumeicon.sh
-
-# Compositor para transparencias y efectos
-exec --no-startup-id picom -b
-
-# Gestor de fondos de pantalla (Nitrogen)
-exec_always --no-startup-id nitrogen --restore
-
-# Para cuidado visual (temperatura de color)
-exec --no-startup-id gammastep-gtk # O redshift-gtk
-
-# Control de volumen con teclas multimedia (PulseAudio) y brillo
-# ---------------------------
-bindsym XF86AudioRaiseVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ +5% && killall -SIGRTMIN+10 i3blocks
-bindsym XF86AudioLowerVolume exec --no-startup-id pactl set-sink-volume @DEFAULT_SINK@ -5% && killall -SIGRTMIN+10 i3blocks
-bindsym XF86AudioMute exec --no-startup-id pactl set-sink-mute @DEFAULT_SINK@ toggle && killall -SIGRTMIN+10 i3blocks
-bindsym XF86AudioMicMute exec --no-startup-id pactl set-source-mute @DEFAULT_SOURCE@ toggle && killall -SIGRTMIN+10 i3blocks # Asume que el bloque de mic también usa signal 10
-bindsym XF86MonBrightnessUp exec --no-startup-id xbacklight -inc 5 && killall -SIGRTMIN+11 i3blocks
-bindsym XF86MonBrightnessDown exec --no-startup-id xbacklight -dec 5 && killall -SIGRTMIN+11 i3blocks
 
 # Modificador para ventanas flotantes con el mouse
 floating_modifier $mod
 tiling_drag modifier titlebar
 
-# Atajos básicos para abrir y cerrar ventanas
-# ---------------------------
-bindsym $mod+Return exec i3-sensible-terminal
-bindsym $mod+Shift+q kill
-
-# Lanzadores de aplicaciones
-# ---------------------------
-bindsym $mod+d exec --no-startup-id "rofi -show drun -show-icons"
-bindsym Mod1+Tab exec --no-startup-id "rofi -show window -show-icons"
-
-# Tus lanzadores personalizados
-bindsym $mod+Mod1+g exec google-chrome-stable
-bindsym $mod+Mod1+n exec xfce4-terminal -e nvim # Asegúrate que xfce4-terminal esté instalado o cambia al tuyo
-bindsym Control+Right exec xfce4-terminal -e ranger # Considera un atajo menos propenso a conflictos
-bindsym $mod+Mod1+t exec pcmanfm
-
-# Capturas de pantalla
-# ---------------------------
-# Flameshot para captura interactiva
-bindsym Print exec flameshot gui
-# Maim para capturar ventana seleccionada y copiar al portapapeles
-bindsym Shift+Print exec --no-startup-id "maim -s | tee ~/Pictures/Screenshots/$(date +%Y-%m-%d_%H-%M-%S)_selection.png | xclip -selection clipboard -t image/png"
-# Maim para capturar pantalla completa
-bindsym Control+Print exec --no-startup-id "maim ~/Pictures/Screenshots/$(date +%Y-%m-%d_%H-%M-%S)_fullscreen.png"
-
-
-# Navegación entre ventanas con teclado
-# ---------------------------
-bindsym $mod+j focus left
-bindsym $mod+k focus down
-bindsym $mod+l focus up
-bindsym $mod+ntilde focus right # Usando ñ como en tu preferencia
-
-bindsym $mod+Left focus left
-bindsym $mod+Down focus down
-bindsym $mod+Up focus up
-bindsym $mod+Right focus right
-
-# Mover ventanas activas con teclado
-# ---------------------------
-bindsym $mod+Shift+j move left
-bindsym $mod+Shift+k move down
-bindsym $mod+Shift+l move up
-bindsym $mod+Shift+ntilde move right # Usando ñ
-
-bindsym $mod+Shift+Left move left
-bindsym $mod+Shift+Down move down
-bindsym $mod+Shift+Up move up
-bindsym $mod+Shift+Right move right
-
-# Organización de ventanas
-# ---------------------------
-bindsym $mod+h split h
-bindsym $mod+v split v
-bindsym $mod+f fullscreen toggle
-bindsym $mod+s layout stacking
-bindsym $mod+w layout tabbed
-bindsym $mod+e layout toggle split
-bindsym $mod+Shift+space floating toggle
-bindsym $mod+space focus mode_toggle
-bindsym $mod+a focus parent
-#bindsym $mod+d focus child # (comentado, como en tu original)
-
 # Workspaces (escritorios virtuales) con iconos
 # ---------------------------
-set $ws1  "1:"  # Terminal
-set $ws2  "2:"  # Web
-set $ws3  "3:"  # Code
-set $ws4  "4:"  # Files
-set $ws5  "5:"  # Chat/Comms
+set $ws1  "1:"  # Terminal
+set $ws2  "2:"  # Web
+set $ws3  "3:"  # Code
+set $ws4  "4:"  # Files
+set $ws5  "5:"  # Chat/Comms
 set $ws6  "6"
 set $ws7  "7"
-set $ws8  "8:"  # Music
-set $ws9  "9:漣"  # Settings/Misc
-set $ws10 "10:" # Video/Media
-
-bindsym $mod+1 workspace number $ws1
-bindsym $mod+2 workspace number $ws2
-bindsym $mod+3 workspace number $ws3
-bindsym $mod+4 workspace number $ws4
-bindsym $mod+5 workspace number $ws5
-bindsym $mod+6 workspace number $ws6
-bindsym $mod+7 workspace number $ws7
-bindsym $mod+8 workspace number $ws8
-bindsym $mod+9 workspace number $ws9
-bindsym $mod+0 workspace number $ws10
-
-bindsym $mod+Shift+1 move container to workspace number $ws1
-bindsym $mod+Shift+2 move container to workspace number $ws2
-bindsym $mod+Shift+3 move container to workspace number $ws3
-bindsym $mod+Shift+4 move container to workspace number $ws4
-bindsym $mod+Shift+5 move container to workspace number $ws5
-bindsym $mod+Shift+6 move container to workspace number $ws6
-bindsym $mod+Shift+7 move container to workspace number $ws7
-bindsym $mod+Shift+8 move container to workspace number $ws8
-bindsym $mod+Shift+9 move container to workspace number $ws9
-bindsym $mod+Shift+0 move container to workspace number $ws10
-
-# Renombrar workspace dinámicamente
-bindsym $mod+t exec i3-input -F 'rename workspace to "%s"' -P 'Nuevo nombre para workspace: '
-
-
-# Recargar y reiniciar i3
-# ---------------------------
-bindsym $mod+Shift+c reload
-bindsym $mod+Shift+r restart
-bindsym $mod+Shift+e exec "i3-nagbar -t warning -m '¿Realmente quieres salir de i3? Esto terminará tu sesión X.' -B 'Sí, salir de i3' 'i3-msg exit'"
-
-# Modo de redimensionamiento de ventanas
-# ---------------------------
-mode "resize" {
-    bindsym j resize shrink width 10 px or 10 ppt
-    bindsym k resize grow height 10 px or 10 ppt
-    bindsym l resize shrink height 10 px or 10 ppt
-    bindsym ntilde resize grow width 10 px or 10 ppt # Usando ntilde
-
-    bindsym Left resize shrink width 10 px or 10 ppt
-    bindsym Down resize grow height 10 px or 10 ppt
-    bindsym Up resize shrink height 10 px or 10 ppt
-    bindsym Right resize grow width 10 px or 10 ppt
-
-    bindsym Return mode "default"
-    bindsym Escape mode "default"
-    bindsym $mod+r mode "default" # También salir del modo con la misma tecla que lo activa
-}
-bindsym $mod+r mode "resize"
-
-
-
-
-
-
-
-
-# Modo sistema para bloquear, salir, suspender, hibernar
-# ---------------------------
-#	set $mode_system "Sistema: (l) Bloquear, (x) Salir i3, (r) Reiniciar PC, (s) Suspender, (h) Hibernar, (p) Apagar PC"
-#	mode "$mode_system" {
-#	    bindsym l exec --no-startup-id i3lock --color 000000, mode "default" # O tu comando i3lock favorito
-#	    bindsym x exec --no-startup-id "i3-nagbar -t warning -m '¿Salir de i3?' -B 'Sí' 'i3-msg exit'", mode "default" # Cambiado 'e' por 'x' para evitar conflictos
-#	    bindsym s exec --no-startup-id "systemctl suspend && i3lock --color 000000", mode "default" # Bloquear después de suspender
-#	    bindsym h exec --no-startup-id "systemctl hibernate && i3lock --color 000000", mode "default" # Bloquear después de hibernar
-#	    bindsym r exec --no-startup-id systemctl reboot, mode "default"
-#	    bindsym p exec --no-startup-id systemctl poweroff, mode "default"
-#
-#	    bindsym Return mode "default"
-#	    bindsym Escape mode "default"
-#	}
-#	bindsym $mod+Pause mode "$mode_system" # Usando Mod+Pause (o elige otra tecla como $mod+Delete, $mod+Escape)
-
-
-
-# Barra de estado i3bar
-# ---------------------------
-bar {
-    status_command i3blocks -c $i3configdir/i3blocks.conf # Asegúrate que esta ruta y archivo existan
-    position top
-    font pango:JetBrainsMono Nerd Font 10 # Fuente ligeramente más pequeña para la barra
-    strip_workspace_numbers yes
-    workspace_buttons yes
-    tray_output primary # Muestra la bandeja en el monitor primario
-    tray_padding 2
-
-    colors {
-        background #222222
-        statusline #bbbbbb
-        separator  #666666
-
-        #                   borde     fondo     texto
-        focused_workspace  #4c7899 #285577 #ffffff
-        active_workspace   #333333 #5f676a #ffffff
-        inactive_workspace #333333 #222222 #888888
-        urgent_workspace   #2f343a #900000 #ffffff
-        binding_mode       #2f343a #900000 #ffffff # Misma que urgent, o cámbiala
-    }
-}
-
-# Colores de las ventanas
-# ---------------------------
-# Formato: borde, fondo, texto, indicador (opcional), borde hijo (opcional)
-client.focused          #4c7899 #285577 #ffffff #2e9ef4   #285577
-client.focused_inactive #333333 #5f676a #ffffff #484e50   #5f676a
-client.unfocused        #333333 #222222 #888888 #292d2e   #222222
-client.urgent           #2f343a #900000 #ffffff #900000   #900000
-client.placeholder      #000000 #0c0c0c #ffffff #000000   #0c0c0c
-
-client.background #ffffff # Color de fondo para nuevas ventanas vacías
-
-# Gaps (espaciados entre ventanas)
-# ---------------------------
-gaps inner 8
-gaps outer 4
-smart_gaps on
-smart_borders on
-
-# Asignar aplicaciones a workspaces específicos
-# ---------------------------
-assign [class="(?i)firefox"] $ws2
-assign [class="(?i)google-chrome(-stable)?"] $ws2
-assign [class="(?i)chromium"] $ws2
-assign [class="(?i)vivaldi(-stable)?"] $ws2
-assign [class="Code"] $ws3 # VSCode
-assign [class="(?i)thunar"] $ws4
-assign [class="Pcmanfm"] $ws4
-assign [class="(?i)telegramdesktop"] $ws5
-assign [class="(?i)discord"] $ws5
-assign [class="Cmus"] $ws8
-assign [class="(?i)pavucontrol"] $ws9
-assign [class="(?i)lxappearance"] $ws9
-assign [class="(?i)mpv"] $ws10
-assign [class="(?i)vlc"] $ws10
-
-# Reglas para ventanas específicas
-# ---------------------------
-for_window [class="(?i)galculator"] floating enable
-for_window [class="(?i)nitrogen"] floating enable, sticky enable
-for_window [class="Lxappearance"] floating enable
-for_window [class="Pavucontrol"] floating enable
-for_window [title="(?i)file operation progress"] floating enable
-for_window [title="(?i)preferencias"] floating enable # Para diálogos de preferencias
-for_window [window_role="(?i)pop-up"] floating enable
-for_window [window_role="(?i)bubble"] floating enable
-for_window [window_role="(?i)dialog"] floating enable
-for_window [window_type="(?i)dialog"] floating enable
-for_window [window_type="(?i)splash"] floating enable, sticky enable
-
-# Tamaño de los bordes de las ventanas
-for_window [class="^.*"] border pixel 2
-
-# Opcional: Iniciar una terminal en un workspace específico al arrancar i3
-# exec --no-startup-id i3-msg 'workspace number $ws1; exec i3-sensible-terminal'
-
-# Fin del archivo de configuración de i3
+set $ws8  "8:"  # Music
+set $ws9  "9:漣"  # Settings/Misc
+set $ws10 "10:" # Video/Media

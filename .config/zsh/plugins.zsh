@@ -1,7 +1,6 @@
 # ~/.config/zsh/plugins.zsh 
 
 # fzf 
-
 [ -f /usr/share/fzf/key-bindings.zsh ] && source /usr/share/fzf/key-bindings.zsh
 [ -f /usr/share/fzf/completion.zsh ] && source /usr/share/fzf/completion.zsh 
 
@@ -14,13 +13,23 @@ source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zs
 # thefuck 
 eval "$(thefuck --alias)" 
 
-# ranger_cd si existe 
-
+# ranger_cd function
 function ranger-cd {     
-	temp_file="$(mktemp -t "ranger_cd.XXXXXXXXXX")"     
+	local temp_file="$(mktemp -t "ranger_cd.XXXXXXXXXX")"     
 	ranger --choosedir="$temp_file" "${@:-.}"     
 	if [ -f "$temp_file" ] && [ -s "$temp_file" ]; then         	
 		cd -- "$(cat "$temp_file")"     
 	fi     
 	rm -f -- "$temp_file" 	
 }
+
+# Auto-cargar funciones personalizadas
+fpath=(
+~/.config/zsh/functions
+~/.config/zsh/functions/git
+$fpath
+
+)
+#autoload -Uz ~/.config/zsh/functions/*(:t) 2>/dev/null
+#autoload -Uz ~/.config/zsh/functions/*(:t) ~/.config/zsh/functions/git/*(:t) 2>/dev/null
+
