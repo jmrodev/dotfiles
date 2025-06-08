@@ -37,6 +37,6 @@ gdelb() {
     return 0
   fi
 
-  git branch -D "$branch_name" && \
-  git push origin --delete "$branch_name"
+  command git branch -D "$branch_name" && \
+  command git push origin --delete "$branch_name"
 }

@@ -2,5 +2,5 @@
 # gunwip
 # Deshace el último commit, pero mantiene los cambios en el área de staging.
 gunwip() {
-  git reset --soft HEAD^
+  command git reset --soft HEAD^
 }

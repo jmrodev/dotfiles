@@ -2,5 +2,5 @@
 # gwip
 # Añade todos los cambios y hace un commit con el mensaje "WIP"
 gwip() {
-  git add -A && git commit -m "WIP"
+  command git add -A && command git commit -m "WIP"
 }

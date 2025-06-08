@@ -26,6 +26,6 @@ gcbp() {
     return 1
   fi
 
-  git checkout -b "$new_branch_name" "$base_branch" && \
-  git push -u origin "$new_branch_name"
+  command git checkout -b "$new_branch_name" "$base_branch" && \
+  command git push -u origin "$new_branch_name"
 }

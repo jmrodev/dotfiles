@@ -12,7 +12,7 @@ gup() {
 
   if [[ -n "$current_branch" ]]; then
     echo "Actualizando rama '$current_branch' desde origin..."
-    git fetch origin "$current_branch" && git rebase "origin/$current_branch"
+    command git fetch origin "$current_branch" && command git rebase "origin/$current_branch"
   else
     echo "No estás en una rama de Git."
     return 1
