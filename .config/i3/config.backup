@@ -1,0 +1,26 @@
+# =====================================================================
+# Archivo de configuración principal de i3 (v4) - Estructura Modular
+# Fecha de última revisión: [FECHA_ACTUAL]
+#
+# Este archivo carga la configuración desde el directorio conf.d/
+# Para hacer cambios, edita los archivos correspondientes en esa carpeta.
+# =====================================================================
+
+set $i3conf ~/.config/i3
+
+# Cargar variables. DEBE ser el primero.
+include $i3conf/conf.d/00-variables.conf
+
+# Cargar programas de inicio
+include $i3configdir/conf.d/10-autostart.conf
+
+# Cargar todos los atajos de teclado y modos
+include $i3configdir/conf.d/20-keybindings.conf
+
+# Cargar configuración de apariencia (barra, colores, gaps, fuentes)
+include $i3configdir/conf.d/30-visuals.conf
+
+# Cargar reglas para ventanas específicas
+include $i3configdir/conf.d/40-window_rules.conf
+
+# Fin del archivo de configuración principal

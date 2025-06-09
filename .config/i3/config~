@@ -6,7 +6,7 @@
 # Mod4 normalmente es la tecla "Super" o "Windows"
 set $mod Mod4
 
-#set $i3conf ~/.config/i3
+set $i3conf ~/.config/i3
 
 # Cargar variables. DEBE ser el primero.
 include $i3conf/conf.d/00-variables.conf
