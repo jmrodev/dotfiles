@@ -1,1 +1,2 @@
-source .config/zsh/.zshrc
+source ~/.zsh_secrets
+source ~/.config/zsh/.zshrc
