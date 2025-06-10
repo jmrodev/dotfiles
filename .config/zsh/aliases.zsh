@@ -184,7 +184,7 @@ alias flatclear='sudo rm -rf /var/tmp/flatpak-cache*'
 alias updater='psyu && ysyu && flatup && flatclean && flatclear && sudo pacman -Scc && rm -rf ~/.cache/*'
 
 # Red y servidor
-alias net='nmap -sP 192.168.1.1/24'
+alias net='nmap -sP 192.168.0.1/24'
 alias server='python -m http.server 8000'
 alias myip='curl ifconfig.me'
 alias repo='sudo reflector --verbose -l 200 -p http --sort rate --save /etc/pacman.d/mirrorlist'

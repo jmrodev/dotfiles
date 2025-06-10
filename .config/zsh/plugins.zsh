@@ -30,6 +30,3 @@ fpath=(
 $fpath
 
 )
-#autoload -Uz ~/.config/zsh/functions/*(:t) 2>/dev/null
-#autoload -Uz ~/.config/zsh/functions/*(:t) ~/.config/zsh/functions/git/*(:t) 2>/dev/null
-
