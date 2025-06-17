@@ -2,58 +2,14 @@
 # Variables y configuraciones base
 # ================================
 
-# Tecla modificadora principal (mod)
-# Mod4 normalmente es la tecla "Super" o "Windows"
 set $mod Mod4
-
----
-
-## Definición de Directorios
-
-# Variables para directorios (¡DEBEN ir primero para que los includes funcionen!)
 set $i3configdir ~/.config/i3
 set $i3blockdir ~/.config/i3blocks
 set $scriptsdir $i3configdir/scripts
-
----
-
-## Carga de Archivos de Configuración
-
-# Cargar variables. DEBE ser el primero de los includes.
 include $i3configdir/conf.d/00-variables.conf
-
-# Cargar programas de inicio
 include $i3configdir/conf.d/10-autostart.conf
-
-# Cargar todos los atajos de teclado y modos
 include $i3configdir/conf.d/20-keybindings.conf
-
-# Cargar configuración de apariencia (barra, colores, gaps, fuentes)
 include $i3configdir/conf.d/30-visuals.conf
-
-# Cargar reglas para ventanas específicas
 include $i3configdir/conf.d/40-window_rules.conf
-
----
-
-## Comportamiento de Ventanas
-
-# Modificador para ventanas flotantes con el mouse
 floating_modifier $mod
 tiling_drag modifier titlebar
-
----
-
-## Workspaces (Escritorios Virtuales)
-
-# Definición de Workspaces con iconos para fácil referencia
-set $ws1  "1: Terminal" # Nombre descriptivo para el workspace 1
-set $ws2  "2: Web"
-set $ws3  "3: Code"
-set $ws4  "4: Files"
-set $ws5  "5: Chat/Comms"
-set $ws6  "6"
-set $ws7  "7"
-set $ws8  "8: Music"
-set $ws9  "9: 涟 Settings/Misc" # Corregí el espacio después del número
-set $ws10 "10: Video/Media"

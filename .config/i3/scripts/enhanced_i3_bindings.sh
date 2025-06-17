@@ -1,22 +1,22 @@
 #!/bin/bash
 
-# Script mejorado para mostrar atajos de i3 en Rofi parseando el archivo de configuración
-# Incluye soporte para variables, bindcode, categorización, atajos comentados, modos y archivos incluidos
 
-# Colores para la salida
+
+
+
 BLUE='\033[0;34m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 RED='\033[0;31m'
-NC='\033[0m' # No Color
+NC='\033[0m' 
 
-# Opciones por defecto
+
 SHOW_COMMENTED=false
 TEMP_FILE="/tmp/i3_bindings_temp.txt"
 CATEGORY_FILTER="Todas"
 MODE_FILTER="Todos"
 
-# Función de ayuda
+
 show_help() {
     echo -e "${BLUE}Uso: $0 [OPCIONES]${NC}"
     echo -e "Muestra los atajos de teclado de i3wm en una interfaz Rofi"
@@ -33,7 +33,7 @@ show_help() {
     exit 0
 }
 
-# Procesar argumentos
+
 while [[ $# -gt 0 ]]; do
     case $1 in
         -h|--help)
@@ -60,11 +60,11 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Determinar la ruta del archivo de configuración si no se especificó
+
 if [ -z "$CONFIG_PATH" ]; then
     CONFIG_PATH="${HOME}/.config/i3/config"
     if [ ! -f "$CONFIG_PATH" ]; then
-        # Intentar la ruta antigua como fallback
+        
         CONFIG_PATH_OLD="${HOME}/.i3/config"
         if [ ! -f "$CONFIG_PATH_OLD" ]; then
             echo -e "${RED}Error: Archivo de configuración de i3 no encontrado en ${CONFIG_PATH} o ${CONFIG_PATH_OLD}${NC}" >&2
@@ -75,34 +75,34 @@ if [ -z "$CONFIG_PATH" ]; then
     fi
 fi
 
-# Verificar si rofi está instalado
+
 if ! command -v rofi &> /dev/null; then
     echo -e "${RED}Error: rofi no está instalado.${NC}" >&2
     echo "Instálalo con: sudo pacman -S rofi (Arch/Manjaro) o sudo apt install rofi (Debian/Ubuntu)"
     exit 1
 fi
 
-# Limpiar archivo temporal si existe
+
 > "$TEMP_FILE"
 
-# Función para extraer y procesar variables
+
 extract_variables() {
     local file="$1"
     grep -E '^\s*set\s+\$\w+' "$file" | sed -E 's/^\s*set\s+(\$\w+)\s+(.*)/\1|\2/' | sed -E 's/"//g' | sed -E "s/'//g"
 }
 
-# Función para reemplazar variables en una cadena
+
 replace_variables() {
     local input="$1"
     local variables="$2"
     
-    # Reemplazar $mod primero (caso especial)
+    
     local mod_value=$(echo "$variables" | grep '^\$mod|' | cut -d'|' -f2)
     if [ -n "$mod_value" ]; then
         input=${input//\$mod/Mod}
     fi
     
-    # Reemplazar otras variables
+    
     while IFS="|" read -r var_name var_value; do
         if [ -n "$var_name" ] && [ -n "$var_value" ] && [ "$var_name" != '$mod' ]; then
             input=${input//$var_name/$var_value}
@@ -112,82 +112,82 @@ replace_variables() {
     echo "$input"
 }
 
-# Función para procesar archivos incluidos recursivamente
+
 process_config_file() {
     local file="$1"
     local variables="$2"
     local current_mode="Default"
     local in_mode=false
     
-    # Si es la primera llamada, extraer variables
+    
     if [ -z "$variables" ]; then
         variables=$(extract_variables "$file")
     fi
     
-    # Procesar includes primero
+    
     while read -r include_line; do
         include_path=$(echo "$include_line" | sed -E 's/^\s*include\s+//' | sed -E 's/"//g' | sed -E "s/'//g")
         
-        # Expandir rutas relativas o con comodines
+        
         if [[ "$include_path" == /* ]]; then
-            # Ruta absoluta
+            
             for expanded_path in $include_path; do
                 if [ -f "$expanded_path" ]; then
-                    # Extraer variables del archivo incluido y añadirlas a las existentes
+                    
                     local new_vars=$(extract_variables "$expanded_path")
                     if [ -n "$new_vars" ]; then
                         variables="$variables"$'\n'"$new_vars"
                     fi
-                    # Procesar el archivo incluido con todas las variables conocidas
+                    
                     process_config_file "$expanded_path" "$variables"
                 fi
             done
         else
-            # Ruta relativa al directorio del archivo actual
+            
             dir=$(dirname "$file")
             for expanded_path in "$dir/$include_path"; do
                 if [ -f "$expanded_path" ]; then
-                    # Extraer variables del archivo incluido y añadirlas a las existentes
+                    
                     local new_vars=$(extract_variables "$expanded_path")
                     if [ -n "$new_vars" ]; then
                         variables="$variables"$'\n'"$new_vars"
                     fi
-                    # Procesar el archivo incluido con todas las variables conocidas
+                    
                     process_config_file "$expanded_path" "$variables"
                 fi
             done
         fi
     done < <(grep -E '^\s*include\s+' "$file")
     
-    # Procesar el archivo línea por línea para manejar modos correctamente
+    
     while IFS= read -r line; do
-        # Detectar inicio de modo
+        
         if [[ "$line" =~ ^\s*mode\s+ ]]; then
             in_mode=true
             current_mode=$(echo "$line" | sed -E 's/^\s*mode\s+"([^"]+)".*/\1/' | sed -E "s/^\s*mode\s+'([^']+)'.*/\1/")
             continue
         fi
         
-        # Detectar fin de modo
+        
         if [[ "$in_mode" == true && "$line" =~ ^\s*\} ]]; then
             in_mode=false
             current_mode="Default"
             continue
         fi
         
-        # Procesar bindsym y bindcode
+        
         if [[ "$line" =~ ^\s*(#\s*)?(bindsym|bindcode) ]]; then
-            # Determinar si está comentado
+            
             is_commented=false
             if [[ "$line" =~ ^\s*# ]]; then
                 is_commented=true
-                # Saltar si no se muestran comentados
+                
                 if [ "$SHOW_COMMENTED" = false ]; then
                     continue
                 fi
             fi
             
-            # Extraer tipo (bindsym o bindcode)
+            
             bind_type=$(echo "$line" | sed -E 's/^\s*(#\s*)?(bindsym|bindcode).*/\2/')
             
             # Extraer combinación de teclas y comando
