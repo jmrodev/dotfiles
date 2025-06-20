@@ -11,7 +11,8 @@ source /usr/share/zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 source /usr/share/zsh/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh 
 
 # thefuck 
-eval "$(thefuck --alias)" 
+# eval "$(thefuck --alias)" 
+alias fuck='thefuck --alias'
 
 # ranger_cd function
 function ranger-cd {     

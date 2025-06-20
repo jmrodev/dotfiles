@@ -1,63 +1,74 @@
+# vim:ft=dosini
 
-interval=5
+# Archivo de configuración FINAL para i3blocks
+# Usa rutas absolutas y configuraciones corregidas
 
-
-[memory]
-command=~/.config/i3blocks/i3blocks-contrib/memory/memory
-interval=5
-label=MEM:
-color=#a3be8c 
-
-[cpu_usage]
-command=~/.config/i3blocks/i3blocks-contrib/cpu_usage/cpu_usage
-interval=2
-label=CPU:
-color=#88c0d0
-
-[temperature]
-command=~/.config/i3blocks/i3blocks-contrib/temperature/temperature
-interval=5
-label=TEMP:
-color=#ebcb8b
-
-[disk_root]
-command=~/.config/i3blocks/i3blocks-contrib/disk/disk /
-interval=30
-label=ROOT:
-color=#98c379
-[load_average]
-command=~/.config/i3blocks/i3blocks-contrib/load_average/load_average
-interval=5
-label=LOAD:
-color=#e06c75 
-[bandwidth]
-command=~/.config/i3blocks/i3blocks-contrib/bandwidth/bandwidth
-interval=1
-label=NET:
-color=#fab795
-
-[wifi]
-command=~/.config/i3blocks/i3blocks-contrib/wifi/wifi
+# Intervalo global por defecto
 interval=10
-label=WIFI:
-color=#61afef
 
+# --- BLOQUES FUNCIONALES ---
 
-[qpwgraph]
-command=echo "🎵 Qpwgraph"; setsid qpwgraph & disown
-button=1
-interval=once
-min_width=100
-align=center
-color=#8BE9FD
+# Actualizaciones de Arch/Manjaro
+[arch-update]
+command=/home/jmro/.config/i3blocks/i3blocks-contrib/arch-update/arch-update
+interval=3600
+markup=pango
+# Le pasamos el icono como variable de entorno al script de python
+LABEL=󰮯 
+AUR_YAY=true
+QUIET=true
 
+# Carga de la CPU
+[cpu_usage]
+command=/home/jmro/.config/i3blocks/i3blocks-contrib/cpu_usage2/cpu_usage2
+interval=persist
+markup=pango
+LABEL= 
+DECIMALS=1
+
+# Uso de Memoria
+[memory]
+command=/home/jmro/.config/i3blocks/i3blocks-contrib/memory/memory
+label= 
+interval=5
+PERCENT=false
+
+# Temperatura del CPU (corregido)
+# Ejecuta `sensors` para ver tus chips. Este es un ejemplo común.
+[temperature]
+command=/home/jmro/.config/i3blocks/i3blocks-contrib/temperature/temperature --chip coretemp-isa-0000
+label=󰔏 
+interval=10
+
+# Ancho de banda
+[bandwidth]
+command=/home/jmro/.config/i3blocks/i3blocks-contrib/bandwidth3/bandwidth3
+instance=wlp2s0b1
+label=↓↑ 
+interval=persist
+UNIT=MB
+PRINTF_COMMAND="printf \"${LABEL} %.1f/%.1f %s/s\", rx, wx, unit"
+
+# Calidad del WiFi
+[wifi]
+command=/home/jmro/.config/i3blocks/i3blocks-contrib/wifi/wifi
+instance=wlp2s0b1
+label=󰖩 
+interval=10
+
+# Espacio en disco
+[disk_root]
+command=/home/jmro/.config/i3blocks/i3blocks-contrib/disk/disk /
+LABEL= 
+interval=300
+
+# Menú de apagado
 [shutdown_menu]
-command=~/.config/i3blocks/scripts/shutdown_wrapper.sh
-interval=once      
-color=#bf616a
-button=1           
+full_text=
+command=/home/jmro/.config/i3blocks/i3blocks-contrib/shutdown_menu/shutdown_menu
+interval=once
 
+# Hora y fecha
 [time]
-command=date '+%Y-%m-%d %H:%M:%S'
-interval=1
-color=#f0f0f0
+command=date '+%a %d %b  %H:%M'
+interval=5

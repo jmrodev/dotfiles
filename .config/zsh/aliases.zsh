@@ -222,3 +222,6 @@ alias nano='nano -w'
 # Funciones de ayuda para información de ramas (disponibles como comandos)
 alias current-branch='show_current_branch'
 alias current-dotfiles-branch='show_current_dotfiles_branch'
+
+
+alias npm='pnpm'
