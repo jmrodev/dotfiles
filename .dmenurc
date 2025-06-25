@@ -63,14 +63,14 @@ DMENU_H="24"
 DMENU_CASE="-i"
 
 # Coincidencia difusa (requiere patch)
-# DMENU_FUZZY="-F"
+DMENU_FUZZY="-F"
 
 # Mostrar líneas (modo vertical, requiere patch)
 # DMENU_LINES="-l 10"
 
 ## Construcción de opciones finales
 # Básicas (tu configuración actual)
-DMENU_OPTIONS="-fn $DMENU_FN -nb $DMENU_NB -nf $DMENU_NF -sf $DMENU_SF -sb $DMENU_SB"
+DMENU_OPTIONS="-fn $DMENU_FN -nb $DMENU_NB -nf $DMENU_NF -sf $DMENU_SF -sb $DMENU_SB $DMENU_FUZZY"
 
 # Con opciones adicionales (descomenta si quieres usar)
 # DMENU_OPTIONS="-fn $DMENU_FN -nb $DMENU_NB -nf $DMENU_NF -sf $DMENU_SF -sb $DMENU_SB -h $DMENU_H $DMENU_CASE"
