@@ -80,6 +80,7 @@ alias ds='dotfiles status -s' # Status corto para dotfiles
 alias da='dotfiles add' # Ya lo tienes, pero como referencia
 alias dc='dotfiles commit -m' # Ya lo tienes
 alias dp='dotfiles push origin main' # Ya lo tienes
+alias dif='dotfiles diff'
 
 # --- Dotfiles: Status & Log (derivados de los alias de Git) ---
 alias dlog='dotfiles log --oneline --decorate --graph --all' # Equivalente a glog
