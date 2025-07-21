@@ -1,0 +1,3 @@
+disable() {
+    sudo systemctl disable $1.service
+} 

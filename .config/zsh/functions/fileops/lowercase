@@ -1,0 +1,15 @@
+lowercase() {
+    for file; do
+        local filename=${file##*/}
+        local dirname=${file%/*}
+        [[ "$dirname" == "$filename" ]] && dirname="."
+        local nf=$(echo "$filename" | tr A-Z a-z)
+        local newname="${dirname}/${nf}"
+        if [[ "$nf" != "$filename" ]]; then
+            mv "$file" "$newname"
+            echo "lowercase: $file --> $newname"
+        else
+            echo "lowercase: $file sin cambios."
+        fi
+    done
+} 

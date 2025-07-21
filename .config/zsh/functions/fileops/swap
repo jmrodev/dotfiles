@@ -1,0 +1,10 @@
+swap() {
+    local TMPFILE="tmp.$$"
+    [[ $# -ne 2 ]] && echo "swap: necesita 2 argumentos" && return 1
+    [[ ! -e $1 ]] && echo "swap: $1 no existe" && return 1
+    [[ ! -e $2 ]] && echo "swap: $2 no existe" && return 1
+    mv "$1" "$TMPFILE"
+    mv "$2" "$1"
+    mv "$TMPFILE" "$2"
+    echo "Archivos intercambiados: $1 <-> $2"
+} 

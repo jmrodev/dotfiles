@@ -1,51 +1,40 @@
-# ~/.config/zsh/.zshrc 
+# ~/.zshrc
 
-# 1. CARGAR FUNCIONES DE GIT PRIMERO
-# Esto asegura que todas las funciones estén disponibles antes de evaluar aliases
-#if [[ -d "$HOME/.config/zsh/functions/git" ]]; then
-#    for func in "$HOME"/.config/zsh/functions/git/*.zsh; do
-#       if [[ -r "$func" ]]; then
-#            source "$func"
-#        fi
-#    done
-#fi
-
-# 2. CARGAR ALIASES DESPUÉS
-# Los aliases pueden referenciar las funciones cargadas arriba
-if [[ -f "$HOME/.config/zsh/aliases.zsh" ]]; then
-    source "$HOME/.config/zsh/aliases.zsh"
+# 1. Cargar secretos (como GEMINI_API_KEY) - Muy importante, debe ser el primero
+if [[ -f ~/.zsh_secrets ]]; then
+  source ~/.zsh_secrets
 fi
 
-# 3. VERIFICACIÓN OPCIONAL (puedes comentar esto después de verificar que funciona)
-# Verificar que las funciones críticas estén cargadas
-#if ! command -v git_current_branch &> /dev/null; then
-#    echo "⚠️  Advertencia: La función git_current_branch no está cargada"
-#fi
-
-#if ! command -v dotfiles_current_branch &> /dev/null; then
-#    echo "⚠️  Advertencia: La función dotfiles_current_branch no está cargada"
-#fi
-
-
-
-# Cargar la configuración y el prompt por defecto de Manjaro si existen 
-
 if [[ -f /usr/share/zsh/manjaro-zsh-config ]]; then   
-	source /usr/share/zsh/manjaro-zsh-config 
+    source /usr/share/zsh/manjaro-zsh-config 
 fi 
 
 if [[ -f /usr/share/zsh/manjaro-zsh-prompt ]]; then   
-	source /usr/share/zsh/manjaro-zsh-prompt 
+    source /usr/share/zsh/manjaro-zsh-prompt 
 fi
 
+# 1. Funciones autoload (todas las subcarpetas)
+fpath=(~/.config/zsh/functions/utils ~/.config/zsh/functions ~/.config/zsh/functions/git ~/.config/zsh/functions/systemd ~/.config/zsh/functions/fileops $fpath)
+autoload -Uz calc ff top10 dirsize compress extract up urlencode title \
+  swap lowercase start restart stop enable status disable \
+  gup gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch \
+  git_feature_start git_feature_finish dotfiles_add_select
 
-# Fuente todos los módulos 
+# 2. Scripts ejecutables (menús, utilidades grandes)
+export PATH="$HOME/.config/zsh/git-scripts:$PATH"
+export PATH="$HOME/.config/zsh/scripts:$PATH"
 
-#for f in ~/.config/zsh/*.zsh ~/.config/zsh/functions/*.zsh; do   
-#	[ -f "$f" ] && source "$f" 
-#done 
+# 3. Alias útiles
+source ~/.config/zsh/aliases.zsh
 
-for f in ~/.config/zsh/*.zsh; do   
-	[ -f "$f" ] && source "$f" 
-done 
+# 4. Menú principal de gestión git (local y GitHub)
+# Ejecuta: git_manager_main.zsh para elegir menú
+# Ejemplo: ~/.config/zsh/git-scripts/git_manager_main.zsh
+
+# 5. Configuración de PNPM
+export PNPM_HOME="/home/jmro/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
 

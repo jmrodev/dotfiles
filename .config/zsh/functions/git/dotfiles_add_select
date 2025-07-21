@@ -1,0 +1,7 @@
+# ~/.config/zsh/functions/git/dotfiles_add_select.zsh
+
+dotfiles_add_select() {
+  local files
+  files=$(dotfiles status -s | awk '{print $2}' | fzf -m --prompt="Selecciona archivos para agregar: ")
+  [[ -n "$files" ]] && dotfiles add $files
+} 

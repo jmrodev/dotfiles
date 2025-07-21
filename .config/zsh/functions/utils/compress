@@ -1,7 +1,7 @@
 # ~/.config/zsh/functions/compress.zsh
 
 # Comprimir archivos
-function compress() {
+compress() {
     if [[ -n "$1" ]]; then
         local FILE=$1
         case $FILE in

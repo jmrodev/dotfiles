@@ -1,23 +1,16 @@
-# ~/.config/zsh/functions/extract.zsh
-
-# Extractor universal de archivos
-function extract() {
+extract() {
     local clrstart="\033[1;34m"
     local clrend="\033[0m"
-
     if [[ "$#" -lt 1 ]]; then
         echo -e "${clrstart}Uso: extract <archivo> [directorio_destino] [v]${clrend}"
         return 1
     fi
-
     if [[ ! -e "$1" ]]; then
         echo -e "${clrstart}¡El archivo no existe!${clrend}"
         return 2
     fi
-
     local DESTDIR=${2:-.}
     local filename=$(basename "$1")
-
     case "${filename##*.}" in
         tar)
             echo -e "${clrstart}Extrayendo $1 a $DESTDIR: (tar sin comprimir)${clrend}"
