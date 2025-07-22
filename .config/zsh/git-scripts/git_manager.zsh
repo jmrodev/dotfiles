@@ -6,10 +6,14 @@ while true; do
     "❌ Salir" | "") break;;
     "📋 Gists")
       while true; do
-        gist_action=$(printf "➕ Crear Gist\n📄 Listar Gists\n✏️  Editar Gist\n🗑️  Borrar Gist\n📥 Descargar Gist\n🔗 Copiar URL de Gist\n🔙 Volver" | fzf --prompt="Acción Gist: (q para volver) " --height=40% --border)
+        gist_action=$(printf "➕ Crear Gist\n📄 Listar Gists\n👁️ Leer Gist\n🌐 Abrir Gist en navegador\n🔁 Clonar y publicar Gist\n🌍 Volver todos los Gists públicos\n✏️  Editar Gist\n🗑️  Borrar Gist\n📥 Descargar Gist\n🔗 Copiar URL de Gist\n🔙 Volver" | fzf --prompt="Acción Gist: (q para volver) " --height=40% --border)
         case "$gist_action" in
           "➕ Crear Gist") ~/.config/zsh/git-scripts/gist_create.zsh; read -k1 -s -p $'\nPresiona cualquier tecla para continuar...';;
           "📄 Listar Gists") ~/.config/zsh/git-scripts/gist_list.zsh; read -k1 -s -p $'\nPresiona cualquier tecla para continuar...';;
+          "👁️ Leer Gist") ~/.config/zsh/git-scripts/gist_read.zsh; read -k1 -s -p $'\nPresiona cualquier tecla para continuar...';;
+          "🌐 Abrir Gist en navegador") ~/.config/zsh/git-scripts/gist_open_web.zsh; read -k1 -s -p $'\nPresiona cualquier tecla para continuar...';;
+          "🔁 Clonar y publicar Gist") ~/.config/zsh/git-scripts/gist_clone_publish.zsh; read -k1 -s -p $'\nPresiona cualquier tecla para continuar...';;
+          "🌍 Volver todos los Gists públicos") ~/.config/zsh/git-scripts/gists_make_all_public.zsh; read -k1 -s -p $'\nPresiona cualquier tecla para continuar...';;
           "✏️  Editar Gist") ~/.config/zsh/git-scripts/gist_edit.zsh; read -k1 -s -p $'\nPresiona cualquier tecla para continuar...';;
           "🗑️  Borrar Gist") ~/.config/zsh/git-scripts/gist_delete.zsh; read -k1 -s -p $'\nPresiona cualquier tecla para continuar...';;
           "📥 Descargar Gist") ~/.config/zsh/git-scripts/gist_download.zsh; read -k1 -s -p $'\nPresiona cualquier tecla para continuar...';;

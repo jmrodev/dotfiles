@@ -1,2 +1,2 @@
 #!/bin/zsh
-gh gist list | less
+gh gist list --limit 100 | less
