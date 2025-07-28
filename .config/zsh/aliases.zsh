@@ -1,19 +1,19 @@
-# ~/.config/zsh/aliases.zsh 
-# Alias comunes y prácticos 
+# ~/.config/zsh/aliases.zsh
+# Alias comunes y prácticos
 
 # Navegación y archivos
 alias r='ranger-cd'
 alias tree='eza --tree --icons'
 alias ls='eza --git --icons'
-alias ll='eza -lh --git --icons' 
-alias la='eza -lah --git --icons' 
-alias ..='cd ..' 
+alias ll='eza -lh --git --icons'
+alias la='eza -lah --git --icons'
+alias ..='cd ..'
 alias ...='cd ../..'
 
 # Git shortcuts
-alias gs='git status' 
-alias gd='git diff' 
-alias gp='git push' 
+alias gs='git status'
+alias gd='git diff'
+alias gp='git push'
 alias gc='git commit -v'
 
 # --- Status & Log ---
@@ -46,7 +46,7 @@ alias gpull='git pull'
 alias gpullr='git pull --rebase' # Pull con rebase en lugar de merge
 alias gpush='git push'
 alias gpushf='git push --force-with-lease' # Push forzado más seguro que --force (¡AÚN ASÍ, CUIDADO!)
-# REMOVIDO: alias gpusho='git push -u origin $(git_current_branch)' 
+# REMOVIDO: alias gpusho='git push -u origin $(git_current_branch)'
 # REEMPLAZADO POR: función gpusho() en git_dynamic_aliases.zsh
 
 # --- Merging & Rebasing ---
@@ -73,8 +73,10 @@ alias gtd='git tag -d' # Borrar tag
 alias gclean='git clean -fd' # Borrar archivos no trackeados (¡CUIDADO!)
 alias gcleanx='git clean -fdx' # Borrar archivos no trackeados e ignorados (¡AÚN MÁS CUIDADO!)
 
-# --- Dotfiles Management (tus alias base) ---
-alias dotfiles='git --git-dir=$HOME/.dotfiles --work-tree=$HOME'
+# --- Dotfiles Management ---
+# IMPORTANTE: Definido como función para que sea accesible dentro de otras funciones.
+# Asegúrate de que esta definición sea la única para 'dotfiles' y esté antes de cualquier alias que la use.
+
 alias dl='dotfiles log --oneline --decorate --graph --all' # Mejorando tu 'dl' original
 alias ds='dotfiles status -s' # Status corto para dotfiles
 alias da='dotfiles add' # Ya lo tienes, pero como referencia
@@ -86,7 +88,6 @@ alias dif='dotfiles diff'
 alias dlog='dotfiles log --oneline --decorate --graph --all' # Equivalente a glog
 alias dloga='dotfiles log --oneline --decorate --graph --all --date=relative --pretty=format:"%C(yellow)%h %C(cyan)%ad %C(green)%<(20)%an %C(reset)%s"' # Equivalente a gloga
 alias dlogs='dotfiles log --pretty=format:"%C(yellow)%h %C(cyan)%ad %C(reset)%s" --date=short --graph' # Equivalente a glogs
-alias dss='dotfiles status -s' # Equivalente a gss (ds ya es similar)
 
 # --- Dotfiles: Branching ---
 alias db='dotfiles branch'
@@ -156,10 +157,10 @@ alias trimhome='sudo fstrim -v /home'
 alias trim='trimhome && trimroot'
 
 # Pacman aliases
-alias p='pacman' 
+alias p='pacman'
 alias update='sudo pacman -Syu && yay -Syu --aur --noconfirm'
 alias pQ='pacman -Q'
-alias pqs='pacman -Qs' 
+alias pqs='pacman -Qs'
 alias pqi='pacman -Qi'
 alias pS='sudo pacman -S'
 alias psyu='sudo pacman -Syu'
@@ -224,8 +225,4 @@ alias nano='nano -w'
 alias current-branch='show_current_branch'
 alias current-dotfiles-branch='show_current_dotfiles_branch'
 
-
 alias npm='pnpm'
-
-
-
