@@ -1,28 +1,40 @@
 #!/bin/bash
 #
 # Script para instalar todo el software y herramientas en una nueva instalación de Arch Linux.
-# Se asegura de que yay esté instalado y luego instala paquetes de los repositorios oficiales y del AUR.
 
 # Detiene el script si algún comando falla
 set -e
 
-echo "Iniciando la configuración del sistema..."
+echo "🚀 Iniciando la configuración completa del sistema..."
 
-# 1. Instalar yay si no está presente
+# 1. Instalar Dependencias Esenciales
+# -------------------------------------
+sudo pacman -S --needed --noconfirm git base-devel curl zsh
+
+# 2. Instalar Oh My Zsh
+# -------------------------------------
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    echo "Oh My Zsh no encontrado. Instalando..."
+    # El flag --unattended lo instala sin iniciar zsh ni cambiar la shell automáticamente
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    echo "Oh My Zsh instalado exitosamente."
+else
+    echo "Oh My Zsh ya está instalado."
+fi
+
+# 3. Instalar yay si no está presente
 # -------------------------------------
 if ! command -v yay &> /dev/null; then
     echo "yay no encontrado. Instalando yay..."
-    # Se necesitan git y base-devel para compilar paquetes
-    sudo pacman -S --needed --noconfirm git base-devel
     git clone https://aur.archlinux.org/yay.git /tmp/yay
     (cd /tmp/yay && makepkg -si --noconfirm)
     rm -rf /tmp/yay
     echo "yay instalado exitosamente."
 else
-    echo "yay ya está instalado."
+    echo "yay ya está instalado.
 fi
 
-# 2. Listas de paquetes
+# 4. Listas de paquetes
 # ----------------------
 
 # Paquetes de los repositorios oficiales de Arch (instalados con pacman)
@@ -30,7 +42,6 @@ PACMAN_PACKAGES=(
     "ark"
     "archlinux-wallpaper"
     "clipit"
-    "curl"
     "dex"
     "dunst"
     "gammastep"
@@ -95,8 +106,8 @@ NPM_PACKAGES=(
 )
 
 
-# 3. Proceso de Instalación
-# -------------------------
+# 5. Proceso de Instalación de Software
+# -------------------------------------
 
 echo "Instalando paquetes de los repositorios oficiales con pacman..."
 sudo pacman -S --needed --noconfirm "${PACMAN_PACKAGES[@]}"
@@ -107,9 +118,19 @@ yay -S --needed --noconfirm "${YAY_PACKAGES[@]}"
 echo "Instalando paquetes globales de NPM con pnpm..."
 sudo pnpm install -g "${NPM_PACKAGES[@]}"
 
+# 6. Cambiar la Shell por Defecto a Zsh
+# -------------------------------------
+ZSH_PATH=$(which zsh)
+if [ "$SHELL" != "$ZSH_PATH" ]; then
+    echo "Cambiando la shell por defecto a Zsh. Se requerirá tu contraseña."
+    chsh -s "$ZSH_PATH"
+    echo "La shell ha sido cambiada. El cambio tomará efecto en el próximo inicio de sesión."
+else
+    echo "La shell por defecto ya es Zsh."
+fi
+
 
 echo "-------------------------------------------------"
-echo "¡Instalación de software completada!"
-echo "Reinicia tu sesión para asegurar que todos los cambios tomen efecto."
+echo "✅ ¡Instalación de software y configuración completada!"
+echo "🔴 IMPORTANTE: Cierra sesión y vuelve a iniciarla (o reinicia) para que todos los cambios tomen efecto."
 echo "-------------------------------------------------"
-
