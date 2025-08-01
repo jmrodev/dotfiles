@@ -13,7 +13,7 @@ sudo pacman -S --needed --noconfirm git base-devel curl zsh
 
 # 2. Instalar Oh My Zsh
 # -------------------------------------
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
+#:if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo "Oh My Zsh no encontrado. Instalando..."
     # El flag --unattended lo instala sin iniciar zsh ni cambiar la shell automáticamente
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
