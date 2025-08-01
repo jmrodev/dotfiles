@@ -3,13 +3,33 @@
 # ================================
 
 set $mod Mod4
+set $alt Mod1
 set $i3configdir ~/.config/i3
 set $i3blockdir ~/.config/i3blocks
 set $scriptsdir $i3configdir/scripts
+
+# ================================
+# Archivos de Configuración
+# ================================
+
+# --- Base ---
 include $i3configdir/conf.d/00-variables.conf
 include $i3configdir/conf.d/10-autostart.conf
+
+# --- Atajos de Teclado ---
+include $i3configdir/conf.d/20-keybindings-base.conf
 include $i3configdir/conf.d/20-keybindings.conf
+include $i3configdir/conf.d/25-keybindings-rofi.conf
+include $i3configdir/conf.d/30-keybindings-apps.conf
+include $i3configdir/conf.d/35-keybindings-media.conf
+include $i3configdir/conf.d/40-keybindings-modes.conf
+
+# --- Visuales y Reglas de Ventanas ---
 include $i3configdir/conf.d/30-visuals.conf
 include $i3configdir/conf.d/40-window_rules.conf
+
+# ================================
+# Comportamiento de i3
+# ================================
 floating_modifier $mod
 tiling_drag modifier titlebar
