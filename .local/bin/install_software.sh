@@ -31,7 +31,7 @@ if ! command -v yay &> /dev/null; then
     rm -rf /tmp/yay
     echo "yay instalado exitosamente."
 else
-    echo "yay ya está instalado.
+    echo "yay ya está instalado."
 fi
 
 # 4. Listas de paquetes
@@ -82,6 +82,7 @@ YAY_PACKAGES=(
     "mousepad"
     "nmcli"
     "pnpm"
+    "pyenv-virtualenv" # <-- AÑADIDO AQUÍ
     "rofi"
     "rofi-autorandr"
     "rofi-bluetooth-git"
