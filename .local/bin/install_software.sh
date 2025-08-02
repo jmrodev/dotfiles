@@ -64,23 +64,32 @@ else
     fi
 fi
 
-# 4. Listas de paquetes
-# ----------------------
-
-# Paquetes de los repositorios oficiales de Arch (instalados con pacman)
-PACMAN_PACKAGES=(
+# 4. Lista de paquetes a instalar (Oficiales y AUR)
+# -----------------------------------------------------
+# yay gestionará automáticamente si vienen de los repositorios oficiales o del AUR.
+ALL_PACKAGES=(
     "ark"
     "archlinux-wallpaper"
+    "autorandr"
     "clipit"
     "dex"
+    "dolphin-meld"
+    "dolphin-plugins"
+    "dolphin-quick-view"
     "dunst"
+    "eza"
+    "fzf"
     "gammastep"
+    "gh"
     "gnome-backgrounds"
     "libnotify"
     "lsof"
     "lua"
     "lua51"
     "lzop"
+    "maim"
+    "mousepad"
+    "networkmanager"
     "nitrogen"
     "numlockx"
     "p7zip"
@@ -91,28 +100,8 @@ PACMAN_PACKAGES=(
     "pipewire-audio"
     "pipewire-jack"
     "pipewire-pulse"
-    "unarchiver"
-    "wget"
-    "wireplumber"
-    "xorg-xbacklight"
-    "xfce4-artwork"
-    "xss-lock"
-)
-
-# Paquetes del AUR (instalados con yay)
-YAY_PACKAGES=(
-    "autorandr"
-    "dolphin-meld"
-    "dolphin-plugins"
-    "dolphin-quick-view"
-    "eza"
-    "fzf"
-    "gh"
-    "maim"
-    "mousepad"
-    "nmcli"
     "pnpm"
-    "pyenv-virtualenv" # <-- AÑADIDO AQUÍ
+    "pyenv-virtualenv"
     "rofi"
     "rofi-autorandr"
     "rofi-bluetooth-git"
@@ -126,6 +115,12 @@ YAY_PACKAGES=(
     "rofi-screenshot-git"
     "rofi-search-git"
     "rofi-wifi-menu-git"
+    "unarchiver"
+    "wget"
+    "wireplumber"
+    "xfce4-artwork"
+    "xorg-xbacklight"
+    "xss-lock"
     "zsh-autosuggestions"
     "zsh-syntax-highlighting"
 )
@@ -140,14 +135,12 @@ NPM_PACKAGES=(
 # 5. Proceso de Instalación de Software
 # -------------------------------------
 
-echo "Instalando paquetes de los repositorios oficiales con pacman..."
-sudo pacman -S --needed --noconfirm "${PACMAN_PACKAGES[@]}"
-
-echo "Instalando paquetes del AUR con yay..."
-yay -S --needed --noconfirm "${YAY_PACKAGES[@]}"
+echo "Instalando todos los paquetes (oficiales y AUR) con yay..."
+yay -S --needed --noconfirm "${ALL_PACKAGES[@]}"
 
 echo "Instalando paquetes globales de NPM con pnpm..."
-sudo pnpm install -g "${NPM_PACKAGES[@]}"
+# Se ejecuta sin sudo para instalar los paquetes en el directorio del usuario
+pnpm install -g "${NPM_PACKAGES[@]}"
 
 # 6. Cambiar la Shell por Defecto a Zsh
 # -------------------------------------
