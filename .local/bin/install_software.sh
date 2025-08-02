@@ -13,13 +13,23 @@ sudo pacman -S --needed --noconfirm git base-devel curl zsh
 
 # 2. Instalar Oh My Zsh
 # -------------------------------------
-#:if [ ! -d "$HOME/.oh-my-zsh" ]; then
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
     echo "Oh My Zsh no encontrado. Instalando..."
     # El flag --unattended lo instala sin iniciar zsh ni cambiar la shell automáticamente
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
     echo "Oh My Zsh instalado exitosamente."
 else
     echo "Oh My Zsh ya está instalado."
+    read -p "¿Deseas reinstalarlo? (Esto eliminará la configuración existente) (s/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Ss]$ ]]; then
+        echo "Eliminando la instalación anterior y reinstalando Oh My Zsh..."
+        rm -rf "$HOME/.oh-my-zsh"
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+        echo "Oh My Zsh reinstalado exitosamente."
+    else
+        echo "Omitiendo la reinstalación de Oh My Zsh."
+    fi
 fi
 
 # 3. Instalar yay si no está presente
@@ -36,6 +46,22 @@ if ! command -v yay &> /dev/null; then
     echo "yay instalado exitosamente."
 else
     echo "yay ya está instalado."
+    read -p "¿Deseas reinstalarlo? (s/N) " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Ss]$ ]]; then
+        echo "Reinstalando yay..."
+        git clone https://aur.archlinux.org/yay.git /tmp/yay
+        (
+            cd /tmp/yay
+            makepkg -s --noconfirm
+            # Usamos -U sin --needed para forzar la reinstalación
+            sudo pacman -U --noconfirm *.pkg.tar.zst
+        )
+        rm -rf /tmp/yay
+        echo "yay reinstalado exitosamente."
+    else
+        echo "Omitiendo la reinstalación de yay."
+    fi
 fi
 
 # 4. Listas de paquetes
