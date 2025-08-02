@@ -73,7 +73,6 @@ ALL_PACKAGES=(
     "autorandr"
     "clipit"
     "dex"
-    "dolphin-meld"
     "dolphin-plugins"
     "dolphin-quick-view"
     "dunst"
