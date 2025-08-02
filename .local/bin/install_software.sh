@@ -27,7 +27,11 @@ fi
 if ! command -v yay &> /dev/null; then
     echo "yay no encontrado. Instalando yay..."
     git clone https://aur.archlinux.org/yay.git /tmp/yay
-    (cd /tmp/yay && makepkg -si --noconfirm)
+    (
+        cd /tmp/yay
+        makepkg -s --noconfirm
+        sudo pacman -U --noconfirm --needed *.pkg.tar.zst
+    )
     rm -rf /tmp/yay
     echo "yay instalado exitosamente."
 else
