@@ -1,9 +1,74 @@
 # ~/.zshrc
-unalias dotfiles 2>/dev/null
-
+# Definición de la función dotfiles para gestionar el repositorio bare
 dotfiles() {
-  git --git-dir=$HOME/.dotfiles --work-tree=$HOME "$@"
+    git --git-dir=$HOME/.dotfiles --work-tree=$HOME "$@"
 }
+
+# Configuración del tema y plugins de Oh My Zsh
+# ---------------------------------------------
+
+# Tema (Powerlevel10k clonado en custom/themes)
+ZSH_THEME="powerlevel10k/powerlevel10k"
+
+# Lista de plugins a cargar (clonados en custom/plugins)
+# El orden importa, especialmente para zsh-syntax-highlighting, que debe ir al final.
+plugins=(
+    git
+    zsh-autosuggestions
+    zsh-syntax-highlighting
+)
+
+# Carga de Oh My Zsh
+if [ -f "$HOME/.oh-my-zsh/oh-my-zsh.sh" ]; then
+    source "$HOME/.oh-my-zsh/oh-my-zsh.sh"
+fi
+
+# Carga de archivos de configuración modulares
+# -------------------------------------------
+
+# Directorio base para la configuración de Zsh
+ZDOTDIR=${ZDOTDIR:-$HOME/.config/zsh}
+
+# Lista de archivos a cargar en orden
+config_files=(
+    options.zsh
+    aliases.zsh
+    keybindings.zsh
+    plugins.zsh # Ahora solo contiene fzf, thefuck y funciones
+    # git-scripts/git_manager_main.zsh
+)
+
+# Bucle para cargar los archivos de configuración
+for config_file in "${config_files[@]}"; do
+    if [ -f "$ZDOTDIR/$config_file" ]; then
+        source "$ZDOTDIR/$config_file"
+    fi
+done
+
+# Limpieza de variables para no dejar rastros
+unset config_files config_file
+
+# Funciones no gestionadas por el sistema de plugins
+# (Asegúrate de que no haya conflictos con los plugins cargados)
+
+# Des-registrar funciones para evitar errores en la recarga
+# Se comprueba si la función existe antes de intentar eliminarla.
+functions_to_undef=(
+  gup gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch
+  git_feature_start git_feature_finish dotfiles_add_select
+)
+for func in ${functions_to_undef[@]}; do
+  if typeset -f "$func" > /dev/null; then
+    unfunction "$func"
+  fi
+done
+unset functions_to_undef func
+
+# Cargar scripts de funciones dinámicas
+if [ -f "$ZDOTDIR/functions/git/git_dynamic_aliases" ]; then
+    source "$ZDOTDIR/functions/git/git_dynamic_aliases"
+fi
+
 
 # 1. Cargar secretos (como GEMINI_API_KEY) - Muy importante, debe ser el primero
 if [[ -f ~/.zsh_secrets ]]; then

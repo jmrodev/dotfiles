@@ -120,10 +120,6 @@ ALL_PACKAGES=(
     "xfce4-artwork"
     "xorg-xbacklight"
     "xss-lock"
-    "zsh-autosuggestions"
-    "zsh-syntax-highlighting"
-    # Tema para Zsh
-    "zsh-theme-powerlevel10k-git"
     # Dependencias para atajos de i3
     "dmenu"
     "flameshot"
