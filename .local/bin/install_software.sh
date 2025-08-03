@@ -122,6 +122,8 @@ ALL_PACKAGES=(
     "xss-lock"
     "zsh-autosuggestions"
     "zsh-syntax-highlighting"
+    # Tema para Zsh
+    "zsh-theme-powerlevel10k-git"
     # Dependencias para atajos de i3
     "dmenu"
     "flameshot"
@@ -154,12 +156,26 @@ pnpm install -g "${NPM_PACKAGES[@]}"
 # 6. Cambiar la Shell por Defecto a Zsh
 # -------------------------------------
 ZSH_PATH=$(which zsh)
+
+# Comprobamos si la shell actual ya es Zsh para evitar trabajo innecesario.
 if [ "$SHELL" != "$ZSH_PATH" ]; then
-    echo "Cambiando la shell por defecto a Zsh. Se requerirá tu contraseña."
-    chsh -s "$ZSH_PATH"
-    echo "La shell ha sido cambiada. El cambio tomará efecto en el próximo inicio de sesión."
+    echo "Cambiando la shell por defecto a Zsh para el usuario $USER..."
+    # Usamos 'sudo chsh' para que el cambio no sea interactivo.
+    # Esto aprovecha la sesión de sudo ya iniciada para la instalación de paquetes.
+    sudo chsh -s "$ZSH_PATH" "$USER"
+
+    # VERIFICACIÓN: Comprobamos la base de datos de usuarios, no la variable $SHELL, que no cambiará hasta el próximo login.
+    echo "Verificando que el cambio se haya registrado en el sistema..."
+    CONFIGURED_SHELL=$(getent passwd "$USER" | cut -d: -f7)
+
+    if [ "$CONFIGURED_SHELL" = "$ZSH_PATH" ]; then
+        echo "✅ Verificación exitosa: La shell por defecto ahora está configurada como $ZSH_PATH."
+    else
+        echo "❌ Error: No se pudo cambiar la shell automáticamente."
+        echo "   Por favor, ejecuta este comando manualmente: sudo chsh -s $ZSH_PATH $USER"
+    fi
 else
-    echo "La shell por defecto ya es Zsh."
+    echo "La shell por defecto ya es Zsh. No se necesita ninguna acción."
 fi
 
 
