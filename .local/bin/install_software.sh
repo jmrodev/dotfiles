@@ -122,6 +122,16 @@ ALL_PACKAGES=(
     "xss-lock"
     "zsh-autosuggestions"
     "zsh-syntax-highlighting"
+    # Dependencias para atajos de i3
+    "dmenu"
+    "flameshot"
+    "google-chrome"
+    "neovim"
+    "pcmanfm"
+    "ranger"
+    "xclip"
+    "xdotool"
+    "xfce4-terminal"
 )
 
 # Paquetes globales de NPM (instalados con pnpm)
