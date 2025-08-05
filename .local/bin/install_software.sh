@@ -97,14 +97,35 @@ if [ ! -d "$FONT_DIR" ]; then
     mkdir -p "$FONT_DIR"
 fi
 
-echo "Descargando e instalando la fuente MesloLGS NF..."
-wget -P "$FONT_DIR" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
-wget -P "$FONT_DIR" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
-wget -P "$FONT_DIR" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
-wget -P "$FONT_DIR" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
+# Variable para saber si necesitamos actualizar la caché
+FONTS_INSTALLED=false
 
-echo "Actualizando la caché de fuentes..."
-fc-cache -f -v
+# --- Descargar cada fuente solo si no existe ---
+# Usamos un array para hacerlo más limpio y fácil de extender
+declare -A fonts
+fonts["MesloLGS NF Regular.ttf"]="https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf"
+fonts["MesloLGS NF Bold.ttf"]="https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf"
+fonts["MesloLGS NF Italic.ttf"]="https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf"
+fonts["MesloLGS NF Bold Italic.ttf"]="https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf"
+
+for font_name in "${!fonts[@]}"; do
+    if [ ! -f "$FONT_DIR/$font_name" ]; then
+        echo "Descargando $font_name..."
+        # Usamos -O para especificar el nombre de archivo exacto y evitar duplicados .1, .2, etc.
+        wget -O "$FONT_DIR/$font_name" "${fonts[$font_name]}"
+        FONTS_INSTALLED=true
+    else
+        echo "Fuente '$font_name' ya instalada. Omitiendo."
+    fi
+done
+
+# --- Actualizar la caché solo si se instalaron fuentes nuevas ---
+if [ "$FONTS_INSTALLED" = true ]; then
+    echo "Se instalaron fuentes nuevas. Actualizando la caché de fuentes..."
+    fc-cache -f -v
+else
+    echo "Todas las fuentes ya estaban presentes. No se necesita actualizar la caché."
+fi
 
 # 6. Corregir el archivo .zshrc
 # -----------------------------
@@ -193,6 +214,11 @@ ALL_PACKAGES=(
     "lua-language-server"
     "bash-language-server"
     "gopls"
+    "gnome-keyring"
+    "network-manager-applet"
+    "volumeicon"
+    "i3lock"
+    "i3blocks"
 )
 
 # Paquetes globales de NPM (instalados con pnpm)
