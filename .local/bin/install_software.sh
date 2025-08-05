@@ -134,7 +134,64 @@ if [ -f "$HOME/.zshrc" ]; then
     sed -i 's/zsh-syntax-hightlighting/zsh-syntax-highlighting/g' "$HOME/.zshrc"
 fi
 
-# 7. Lista de paquetes a instalar (Oficiales y AUR)
+# 7. Configurar logind.conf para el boton de apagado
+# ----------------------------------------------------
+echo "Configurando el boton de apagado del sistema con logind..."
+
+# Path del archivo de configuración del sistema
+SYSTEM_CONF="/etc/systemd/logind.conf"
+
+# Path en tu repositorio de dotfiles
+DOTFILES_CONF="$HOME/.dotfiles/systemd/logind.conf"
+
+# 1. Asegurarse de que el directorio en dotfiles exista
+mkdir -p "$(dirname "$DOTFILES_CONF")"
+
+# 2. Copiar el archivo de configuración si no existe en dotfiles
+if [ ! -f "$DOTFILES_CONF" ]; then
+    echo "Copiando '$SYSTEM_CONF' al repositorio de dotfiles..."
+    # Asegúrate de usar sudo para leer el archivo del sistema
+    sudo cp "$SYSTEM_CONF" "$DOTFILES_CONF"
+else
+    echo "El archivo '$DOTFILES_CONF' ya existe en el repositorio."
+fi
+
+# 3. Editar el archivo en el repositorio
+echo "Activando el 'poweroff' para el boton de encendido en el archivo del repositorio."
+# Usamos sed para descomentar la línea y asegurar el valor
+sed -i 's/^#HandlePowerKey=.*/HandlePowerKey=poweroff/' "$DOTFILES_CONF"
+
+# 4. Crear el enlace simbólico si no existe
+if [ ! -L "$SYSTEM_CONF" ]; then
+    echo "Creando un enlace simbólico de '$DOTFILES_CONF' a '$SYSTEM_CONF'..."
+    # Si el archivo original existe, lo movemos como backup
+    if [ -f "$SYSTEM_CONF" ]; then
+        sudo mv "$SYSTEM_CONF" "$SYSTEM_CONF.bak"
+    fi
+    # Crear el enlace simbólico. Usa '-sfn' para forzar, evitar errores y no preguntar
+    sudo ln -sfn "$DOTFILES_CONF" "$SYSTEM_CONF"
+else
+    echo "El enlace simbólico ya existe. No se necesita ninguna acción."
+fi
+
+echo "Verificando el enlace simbólico..."
+if [ -L "$SYSTEM_CONF" ]; then
+    echo "✅ El enlace simbólico fue creado exitosamente."
+else
+    echo "❌ Error: No se pudo crear el enlace simbólico. El script continuará."
+fi
+
+# 5. Reiniciar el servicio para aplicar los cambios
+echo "Reiniciando el servicio systemd-logind para aplicar los cambios..."
+sudo systemctl restart systemd-logind.service
+
+# 6. Agregar al repositorio de Git (esto lo harás manualmente con tu alias)
+# Este paso no es automático para evitar commits no deseados, pero el script
+# te deja el archivo preparado para que lo agregues con tu alias `dotfiles`.
+echo " IMPORTANTE: El archivo de configuracion '$DOTFILES_CONF' se ha modificado. "
+echo "   Por favor, ejecuta 'dotfiles add systemd/logind.conf' y luego 'dotfiles commit' para guardar los cambios."
+
+# 8. Lista de paquetes a instalar (Oficiales y AUR)
 # ----------------------------------------------------
 ALL_PACKAGES=(
     "ark"
@@ -227,7 +284,7 @@ NPM_PACKAGES=(
     "express-generator"
 )
 
-# 8. Proceso de Instalación de Software
+# 9. Proceso de Instalación de Software
 # -------------------------------------
 echo "Instalando todos los paquetes (oficiales y AUR) con yay..."
 yay -S --needed --noconfirm "${ALL_PACKAGES[@]}"
@@ -235,7 +292,7 @@ yay -S --needed --noconfirm "${ALL_PACKAGES[@]}"
 echo "Instalando paquetes globales de NPM con pnpm..."
 pnpm install -g "${NPM_PACKAGES[@]}"
 
-# 9. Cambiar la Shell por Defecto a Zsh
+# 10. Cambiar la Shell por Defecto a Zsh
 # -------------------------------------
 ZSH_PATH=$(which zsh)
 if [ "$SHELL" != "$ZSH_PATH" ]; then
@@ -260,7 +317,7 @@ echo "   Después de reiniciar, abre una terminal y ejecuta 'p10k configure' par
 echo "   Asegúrate de que tu terminal esté usando la fuente 'MesloLGS NF'."
 echo "-------------------------------------------------"
 
-# 10. Configurar Git para Dotfiles
+# 11. Configurar Git para Dotfiles
 # ---------------------------------
 echo "Configurando el repositorio de dotfiles para ignorar archivos no rastreados..."
 # Esta línea es crucial para que 'dotfiles status' no muestre todos los archivos del home
