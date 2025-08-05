@@ -9,7 +9,7 @@ echo "🚀 Iniciando la configuración completa del sistema..."
 
 # 1. Instalar Dependencias Esenciales
 # -------------------------------------
-sudo pacman -S --needed --noconfirm git base-devel curl zsh
+sudo pacman -S --needed --noconfirm git base-devel curl zsh autoconf automake
 
 # 2. Instalar Oh My Zsh
 # -------------------------------------
@@ -64,9 +64,57 @@ else
     fi
 fi
 
-# 4. Lista de paquetes a instalar (Oficiales y AUR)
-# -----------------------------------------------------
-# yay gestionará automáticamente si vienen de los repositorios oficiales o del AUR.
+# 4. Instalar plugins y tema de Oh My Zsh
+# -----------------------------------------
+ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
+# Powerlevel10k
+if [ ! -d "${ZSH_CUSTOM}/themes/powerlevel10k" ]; then
+    echo "Instalando el tema Powerlevel10k..."
+    git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "${ZSH_CUSTOM}/themes/powerlevel10k"
+else
+    echo "El tema Powerlevel10k ya está instalado."
+fi
+# zsh-autosuggestions
+if [ ! -d "${ZSH_CUSTOM}/plugins/zsh-autosuggestions" ]; then
+    echo "Instalando zsh-autosuggestions..."
+    git clone https://github.com/zsh-users/zsh-autosuggestions "${ZSH_CUSTOM}/plugins/zsh-autosuggestions"
+else
+    echo "El plugin zsh-autosuggestions ya está instalado."
+fi
+# zsh-syntax-highlighting
+if [ ! -d "${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting" ]; then
+    echo "Instalando zsh-syntax-highlighting..."
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "${ZSH_CUSTOM}/plugins/zsh-syntax-highlighting"
+else
+    echo "El plugin zsh-syntax-highlighting ya está instalado."
+fi
+
+# 5. Instalar Nerd Fonts (MesloLGS NF)
+# --------------------------------------
+FONT_DIR="$HOME/.local/share/fonts"
+if [ ! -d "$FONT_DIR" ]; then
+    echo "Creando el directorio de fuentes: $FONT_DIR"
+    mkdir -p "$FONT_DIR"
+fi
+
+echo "Descargando e instalando la fuente MesloLGS NF..."
+wget -P "$FONT_DIR" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
+wget -P "$FONT_DIR" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
+wget -P "$FONT_DIR" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
+wget -P "$FONT_DIR" https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
+
+echo "Actualizando la caché de fuentes..."
+fc-cache -f -v
+
+# 6. Corregir el archivo .zshrc
+# -----------------------------
+if [ -f "$HOME/.zshrc" ]; then
+    echo "Corrigiendo el nombre del plugin de resaltado de sintaxis en .zshrc..."
+    sed -i 's/zsh-syntax-hightlighting/zsh-syntax-highlighting/g' "$HOME/.zshrc"
+fi
+
+# 7. Lista de paquetes a instalar (Oficiales y AUR)
+# ----------------------------------------------------
 ALL_PACKAGES=(
     "ark"
     "archlinux-wallpaper"
@@ -111,8 +159,6 @@ ALL_PACKAGES=(
     "rofi-mpd"
     "rofi-power-menu"
     "rofi-randr"
-    "rofi-screenshot-git"
-    "rofi-search-git"
     "rofi-wifi-menu-git"
     "unarchiver"
     "wget"
@@ -130,6 +176,23 @@ ALL_PACKAGES=(
     "xclip"
     "xdotool"
     "xfce4-terminal"
+    "ttf-firacode-nerd"
+    # Dependencias para Neovim y Mason
+    "unzip"
+    "rust"
+    "luarocks"
+    "ruby"
+    "php"
+    "composer"
+    "jdk-openjdk"
+    "go"
+    # Servidores de Lenguaje (LSPs) para Neovim
+    "clangd"
+    "typescript-language-server"
+    "python-lsp-server"
+    "lua-language-server"
+    "bash-language-server"
+    "gopls"
 )
 
 # Paquetes globales de NPM (instalados con pnpm)
@@ -138,32 +201,22 @@ NPM_PACKAGES=(
     "express-generator"
 )
 
-
-# 5. Proceso de Instalación de Software
+# 8. Proceso de Instalación de Software
 # -------------------------------------
-
 echo "Instalando todos los paquetes (oficiales y AUR) con yay..."
 yay -S --needed --noconfirm "${ALL_PACKAGES[@]}"
 
 echo "Instalando paquetes globales de NPM con pnpm..."
-# Se ejecuta sin sudo para instalar los paquetes en el directorio del usuario
 pnpm install -g "${NPM_PACKAGES[@]}"
 
-# 6. Cambiar la Shell por Defecto a Zsh
+# 9. Cambiar la Shell por Defecto a Zsh
 # -------------------------------------
 ZSH_PATH=$(which zsh)
-
-# Comprobamos si la shell actual ya es Zsh para evitar trabajo innecesario.
 if [ "$SHELL" != "$ZSH_PATH" ]; then
     echo "Cambiando la shell por defecto a Zsh para el usuario $USER..."
-    # Usamos 'sudo chsh' para que el cambio no sea interactivo.
-    # Esto aprovecha la sesión de sudo ya iniciada para la instalación de paquetes.
     sudo chsh -s "$ZSH_PATH" "$USER"
-
-    # VERIFICACIÓN: Comprobamos la base de datos de usuarios, no la variable $SHELL, que no cambiará hasta el próximo login.
     echo "Verificando que el cambio se haya registrado en el sistema..."
     CONFIGURED_SHELL=$(getent passwd "$USER" | cut -d: -f7)
-
     if [ "$CONFIGURED_SHELL" = "$ZSH_PATH" ]; then
         echo "✅ Verificación exitosa: La shell por defecto ahora está configurada como $ZSH_PATH."
     else
@@ -174,8 +227,16 @@ else
     echo "La shell por defecto ya es Zsh. No se necesita ninguna acción."
 fi
 
-
 echo "-------------------------------------------------"
 echo "✅ ¡Instalación de software y configuración completada!"
 echo "🔴 IMPORTANTE: Cierra sesión y vuelve a iniciarla (o reinicia) para que todos los cambios tomen efecto."
+echo "   Después de reiniciar, abre una terminal y ejecuta 'p10k configure' para configurar tu prompt."
+echo "   Asegúrate de que tu terminal esté usando la fuente 'MesloLGS NF'."
 echo "-------------------------------------------------"
+
+# 10. Configurar Git para Dotfiles
+# ---------------------------------
+echo "Configurando el repositorio de dotfiles para ignorar archivos no rastreados..."
+# Esta línea es crucial para que 'dotfiles status' no muestre todos los archivos del home
+git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME config status.showUntrackedFiles no
+echo "Configuración de dotfiles aplicada."
