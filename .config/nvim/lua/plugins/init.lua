@@ -147,6 +147,7 @@ local plugins = {
       keepFoldsAcrossSessions = true,
       pauseFoldsOnSearch = true,
     },
+    config = function() end,
   },
 
   -- ===============================
@@ -594,8 +595,8 @@ local plugins = {
     config = function(_, opts)
       -- Add multiple completion sources
       table.insert(opts.sources, { name = "conjure" })
-      table.insert(opts.sources, { name = "codeium" })
-      table.insert(opts.sources, { name = "cmp_tabnine" })
+      
+      
       require("cmp").setup(opts)
     end,
     dependencies = {
@@ -622,28 +623,8 @@ local plugins = {
         end,
         dependencies = { "PaterJason/cmp-conjure" },
       },
-      {
-        "jcdickinson/codeium.nvim",
-        config = function()
-          require("codeium").setup({})
-        end,
-      },
-      {
-        "tzachar/cmp-tabnine",
-        build = "./install.sh",
-        config = function()
-          local tabnine = require "cmp_tabnine.config"
-          tabnine:setup {
-            max_lines = 1000,
-            max_num_results = 3,
-            sort = true,
-            show_prediction_strength = false,
-            run_on_every_keystroke = true,
-            snipper_placeholder = "..",
-            ignored_file_types = {},
-          }
-        end,
-      },
+      
+      
     },
   },
 

@@ -255,6 +255,10 @@ ALL_PACKAGES=(
     "xdotool"
     "xfce4-terminal"
     "ttf-firacode-nerd"
+    "feh"
+    "zathura"
+    "mpd"
+    "mpc"
     # Dependencias para Neovim y Mason
     "unzip"
     "rust"
@@ -265,7 +269,6 @@ ALL_PACKAGES=(
     "jdk-openjdk"
     "go"
     # Servidores de Lenguaje (LSPs) para Neovim
-    "clangd"
     "typescript-language-server"
     "python-lsp-server"
     "lua-language-server"
@@ -287,6 +290,7 @@ NPM_PACKAGES=(
 # 9. Proceso de Instalación de Software
 # -------------------------------------
 echo "Instalando todos los paquetes (oficiales y AUR) con yay..."
+sudo pacman -S --needed --noconfirm clang clangd
 yay -S --needed --noconfirm "${ALL_PACKAGES[@]}"
 
 echo "Instalando paquetes globales de NPM con pnpm..."
