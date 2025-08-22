@@ -97,7 +97,7 @@ fpath=(~/.config/zsh/functions/utils \
 $fpath)
 
 # Cargar funciones de gestión de servicios según el SO
-if [ "$OS_ID" = "arch" ]; then
+if [[ "$OS_ID" == "arch" || "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" || "$OS_ID" == "pop" ]]; then
     fpath+=(~/.config/zsh/functions/systemd)
 elif [ "$OS_ID" = "void" ]; then
     fpath+=(~/.config/zsh/functions/runit)

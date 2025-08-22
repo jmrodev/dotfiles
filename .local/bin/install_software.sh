@@ -49,7 +49,20 @@ VOID_PACKAGES=(
     "volumeicon" "i3lock" "i3blocks"
 )
 
-# Paquetes globales de NPM (comunes para ambos)
+# Paquetes para Debian/Ubuntu
+DEBIAN_PACKAGES=(
+    "ark" "autorandr" "clipit" "dex" "dunst" "exa" "fzf" "gammastep" "gh" "libnotify-bin"
+    "lsof" "lua5.1" "lzop" "maim" "mousepad" "network-manager" "nitrogen" "numlockx"
+    "p7zip-full" "pavucontrol" "picom" "pipewire" "pipewire-audio-client-libraries"
+    "pipewire-jack" "rofi" "wget" "wireplumber" "xbacklight" "xss-lock" "dmenu"
+    "flameshot" "neovim" "pcmanfm" "ranger" "xclip" "xdotool" "xfce4-terminal" "feh"
+    "zathura" "mpd" "mpc" "unzip" "rustc" "luarocks" "ruby-full" "php-cli" "composer"
+    "default-jdk" "golang" "node-typescript" "python3-pylsp" "bash-language-server"
+    "gnome-keyring" "network-manager-gnome" "volumeicon-alsa" "i3lock" "i3blocks"
+    "fontconfig"
+)
+
+# Paquetes globales de NPM (comunes)
 NPM_PACKAGES=(
     "@google/gemini-cli"
     "express-generator"
@@ -102,6 +115,14 @@ case "$OS_ID" in
         # Instalar dependencias básicas y todos los paquetes
         sudo xbps-install -S --yes git xtools curl zsh autoconf automake clang
         sudo xbps-install -S --yes "${VOID_PACKAGES[@]}"
+        ;;
+    "debian" | "ubuntu" | "pop")
+        echo "Sistema basado en Debian detectado. Usando apt."
+
+        # Actualizar repositorios e instalar paquetes
+        sudo apt-get update
+        sudo apt-get install -y git build-essential curl zsh autoconf automake clang
+        sudo apt-get install -y "${DEBIAN_PACKAGES[@]}"
         ;;
     *)
         echo "Distribución no soportada: $OS_ID"

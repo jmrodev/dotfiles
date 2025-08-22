@@ -4,7 +4,7 @@
 
 *Tu imagen de previsualización podría ir aquí. ¡Sube una captura de pantalla a una issue de GitHub y pega el enlace!*
 
-Este repositorio contiene mi configuración personal para un entorno de desarrollo productivo en **Arch Linux** y **Void Linux**, usando **i3**, **Zsh**, **Rofi**, **Neovim (NvChad)** y más. Todo se gestiona a través de un [repositorio bare de Git](https://www.atlassian.com/git/tutorials/dotfiles), lo que permite versionar y desplegar la configuración fácilmente en cualquier máquina nueva.
+Este repositorio contiene mi configuración personal para un entorno de desarrollo productivo en **Arch Linux, Void Linux y sistemas basados en Debian (Ubuntu, etc.)**, usando **i3**, **Zsh**, **Rofi**, **Neovim (NvChad)** y más. Todo se gestiona a través de un [repositorio bare de Git](https://www.atlassian.com/git/tutorials/dotfiles), lo que permite versionar y desplegar la configuración fácilmente en cualquier máquina nueva.
 
 El script de instalación detectará automáticamente tu distribución y instalará los paquetes correspondientes.
 
@@ -34,6 +34,18 @@ Necesitas `git` y `xtools` (para compilar si es necesario).
 
 ```bash
 sudo xbps-install -S --yes git xtools
+```
+
+### Para Debian / Ubuntu
+
+Sigue estos pasos en una instalación limpia de Debian o Ubuntu.
+
+**1. Requisitos Previos**
+
+Solo necesitas `git` y `build-essential` para empezar.
+
+```bash
+sudo apt-get update && sudo apt-get install -y git build-essential
 ```
 
 ### 2. Clonar el Repositorio
@@ -85,10 +97,13 @@ chmod +x ~/.local/bin/install_software.sh
 El script detectará tu sistema operativo e instalará el software correspondiente.
 - **En Arch Linux:** Instalará paquetes de los repositorios oficiales y del AUR (usando `yay`).
 - **En Void Linux:** Instalará paquetes desde los repositorios oficiales usando `xbps`.
+- **En Debian/Ubuntu:** Instalará paquetes desde los repositorios oficiales usando `apt`.
 
-**Nota para usuarios de Void Linux:**
-- Algunos paquetes del AUR no están disponibles en los repositorios de Void (ej. `rofi-bluetooth-git`, `google-chrome`). Estos han sido omitidos.
-- La gestión de servicios se realiza con `runit` (`sv` command) en lugar de `systemd`. Se han añadido alias de Zsh (`start`, `stop`, `restart`, etc.) que usan `sv` automáticamente.
+**Notas Importantes:**
+- **Paquetes no disponibles:** Algunos paquetes específicos de AUR (como `rofi-bluetooth-git` o `google-chrome`) no están en los repositorios oficiales de Void o Debian y han sido omitidos en esas instalaciones.
+- **Gestión de Servicios:**
+    - En **Arch, Debian y Ubuntu**, los alias de Zsh (`start`, `stop`, etc.) usan `systemd`.
+    - En **Void Linux**, los mismos alias usan `runit` (`sv` command).
 
 ---
 
