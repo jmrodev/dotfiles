@@ -1,0 +1,4 @@
+disable() {
+    sudo sv down $1
+    sudo rm /var/service/$1
+}

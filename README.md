@@ -4,20 +4,36 @@
 
 *Tu imagen de previsualización podría ir aquí. ¡Sube una captura de pantalla a una issue de GitHub y pega el enlace!*
 
-Este repositorio contiene mi configuración personal para un entorno de desarrollo productivo en Arch Linux, usando **i3**, **Zsh**, **Rofi**, **Neovim (NvChad)** y más. Todo se gestiona a través de un [repositorio bare de Git](https://www.atlassian.com/git/tutorials/dotfiles), lo que permite versionar y desplegar la configuración fácilmente en cualquier máquina nueva.
+Este repositorio contiene mi configuración personal para un entorno de desarrollo productivo en **Arch Linux** y **Void Linux**, usando **i3**, **Zsh**, **Rofi**, **Neovim (NvChad)** y más. Todo se gestiona a través de un [repositorio bare de Git](https://www.atlassian.com/git/tutorials/dotfiles), lo que permite versionar y desplegar la configuración fácilmente en cualquier máquina nueva.
+
+El script de instalación detectará automáticamente tu distribución y instalará los paquetes correspondientes.
 
 ---
 
 ## Guía de Instalación Rápida
 
-Sigue estos pasos en una instalación limpia de Arch Linux para replicar este entorno.
+### Para Arch Linux
 
-### 1. Requisitos Previos
+Sigue estos pasos en una instalación limpia de Arch Linux.
 
-Solo necesitas tener `git` instalado para empezar.
+**1. Requisitos Previos**
+
+Solo necesitas `git` para empezar.
 
 ```bash
 sudo pacman -S --noconfirm git
+```
+
+### Para Void Linux
+
+Sigue estos pasos en una instalación limpia de Void Linux.
+
+**1. Requisitos Previos**
+
+Necesitas `git` y `xtools` (para compilar si es necesario).
+
+```bash
+sudo xbps-install -S --yes git xtools
 ```
 
 ### 2. Clonar el Repositorio
@@ -66,9 +82,15 @@ chmod +x ~/.local/bin/install_software.sh
 ~/.local/bin/install_software.sh
 ```
 
-Este script se encargará de instalar `yay` y todo el software listado (de los repositorios oficiales y del AUR).
+El script detectará tu sistema operativo e instalará el software correspondiente.
+- **En Arch Linux:** Instalará paquetes de los repositorios oficiales y del AUR (usando `yay`).
+- **En Void Linux:** Instalará paquetes desde los repositorios oficiales usando `xbps`.
 
---- 
+**Nota para usuarios de Void Linux:**
+- Algunos paquetes del AUR no están disponibles en los repositorios de Void (ej. `rofi-bluetooth-git`, `google-chrome`). Estos han sido omitidos.
+- La gestión de servicios se realiza con `runit` (`sv` command) en lugar de `systemd`. Se han añadido alias de Zsh (`start`, `stop`, `restart`, etc.) que usan `sv` automáticamente.
+
+---
 
 ## ¡Listo!
 
