@@ -84,12 +84,24 @@ if [[ -f /usr/share/zsh/manjaro-zsh-prompt ]]; then
 fi
 
 # 1. Funciones autoload (todas las subcarpetas)
+# --- Detección del Sistema Operativo para cargar funciones específicas ---
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_ID=$ID
+fi
+
 fpath=(~/.config/zsh/functions/utils \
 ~/.config/zsh/functions \
 ~/.config/zsh/functions/git \
-~/.config/zsh/functions/systemd \
 ~/.config/zsh/functions/fileops \
 $fpath)
+
+# Cargar funciones de gestión de servicios según el SO
+if [[ "$OS_ID" == "arch" || "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" || "$OS_ID" == "pop" ]]; then
+    fpath+=(~/.config/zsh/functions/systemd)
+elif [ "$OS_ID" = "void" ]; then
+    fpath+=(~/.config/zsh/functions/runit)
+fi
 
 autoload -Uz calc ff top10 dirsize compress extract up urlencode title \
   swap lowercase start restart stop enable status disable \
