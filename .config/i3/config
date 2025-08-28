@@ -2,6 +2,8 @@
 # Variables y configuraciones base
 # ================================
 
+exec --no-startup-id  /usr/lib/polkit-kde-authentication-agent-1
+
 set $mod Mod4
 set $alt Mod1
 set $i3configdir ~/.config/i3
@@ -33,3 +35,4 @@ include $i3configdir/conf.d/40-window_rules.conf
 # ================================
 floating_modifier $mod
 tiling_drag modifier titlebar
+

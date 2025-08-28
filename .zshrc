@@ -116,3 +116,7 @@ source $ZSH/oh-my-zsh.sh
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# Open Watcom Configuration
+source /opt/watcom/owsetenv.sh
+export INCLUDE="$WATCOM/h:$INCLUDE"
