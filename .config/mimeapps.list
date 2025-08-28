@@ -1,0 +1,36 @@
+[Added Associations]
+text/x-lua=mousepad.desktop;
+application/pdf=zathura.desktop;
+image/jpeg=feh.desktop;
+image/png=feh.desktop;
+image/gif=feh.desktop;
+image/webp=feh.desktop;
+video/mp4=mpv.desktop;
+video/webm=mpv.desktop;
+video/x-matroska=mpv.desktop;
+text/plain=mousepad.desktop;
+application/zip=org.gnome.FileRoller.desktop;
+application/x-rar-compressed=org.gnome.FileRoller.desktop;
+application/x-7z-compressed=org.gnome.FileRoller.desktop;
+application/x-tar=org.gnome.FileRoller.desktop;
+
+[Default Applications]
+text/html=google-chrome.desktop
+text/x-lua=mousepad.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/http=google-chrome.desktop
+x-scheme-handler/https=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
+application/pdf=zathura.desktop
+image/jpeg=feh.desktop
+image/png=feh.desktop
+image/gif=feh.desktop
+image/webp=feh.desktop
+video/mp4=mpv.desktop
+video/webm=mpv.desktop
+video/x-matroska=mpv.desktop
+text/plain=mousepad.desktop
+application/zip=org.gnome.FileRoller.desktop
+application/x-rar-compressed=org.gnome.FileRoller.desktop
+application/x-7z-compressed=org.gnome.FileRoller.desktop
+application/x-tar=org.gnome.FileRoller.desktop
