@@ -1,3 +1,9 @@
+# Custom Git Aliases
+alias grb='git fetch origin && git rebase origin/$(git rev-parse --abbrev-ref HEAD)'
+alias grbm='git fetch origin && git rebase origin/marcelo'
+alias gbr='git branch -r'
+alias glg='git log --oneline --graph --all'
+
 # ~/.config/zsh/aliases.zsh
 # Alias comunes y prácticos
 
@@ -62,7 +68,7 @@ alias gst='git stash'
 alias gstp='git stash pop'
 alias gstl='git stash list'
 alias gsta='git stash apply'
-alias gstd='git stash drop'
+alias gstd='git stash stash drop'
 
 # --- Tags ---
 alias gt='git tag'
@@ -229,4 +235,4 @@ alias npm='pnpm'
 
 # Gestión de memoria
 alias mem='free -h'
-alias topmem='ps aux --sort=-%mem | head -n 10'
+alias topmem='ps aux --sort=-%mem | head -n 10' 
