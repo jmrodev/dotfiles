@@ -595,8 +595,18 @@ local plugins = {
     config = function(_, opts)
       -- Add multiple completion sources
       table.insert(opts.sources, { name = "conjure" })
-      
-      
+
+      -- Custom mapping for Tab to prioritize Copilot
+      opts.mapping = vim.tbl_extend("force", opts.mapping, {
+        ["<Tab>"] = function(fallback)
+          if require("copilot.suggestion").is_visible() then
+            require("copilot.suggestion").accept()
+          else
+            fallback()
+          end
+        end,
+      })
+
       require("cmp").setup(opts)
     end,
     dependencies = {

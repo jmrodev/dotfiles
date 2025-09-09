@@ -54,7 +54,7 @@ unset config_files config_file
 # Des-registrar funciones para evitar errores en la recarga
 # Se comprueba si la función existe antes de intentar eliminarla.
 functions_to_undef=(
-  gup gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch
+  gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch
   git_feature_start git_feature_finish dotfiles_add_select
 )
 for func in ${functions_to_undef[@]}; do
@@ -106,7 +106,7 @@ fi
 autoload -Uz calc ff top10 dirsize compress extract up urlencode title \
   swap lowercase start restart stop enable status disable \
   gup gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch \
-  git_feature_start git_feature_finish dotfiles_add_select
+  git_feature_start git_feature_finish dotfiles_add_select git-publish gsync gforce gpub gstart gupdate
 
 # 2. Scripts ejecutables (menús, utilidades grandes)
 export PATH="$HOME/.config/zsh/git-scripts:$PATH"
@@ -130,4 +130,4 @@ esac
 export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init --path)"
 eval "$(pyenv virtualenv-init -)"
-# <<< pyenv initialization <<<
+# <<< pyenv initialization <<<on <<<

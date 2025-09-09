@@ -1,9 +1,3 @@
-# ~/.config/zsh/functions/git/dotfiles_current_branch.zsh
 dotfiles_current_branch() {
-  if alias dotfiles &> /dev/null; then
-    command dotfiles rev-parse --abbrev-ref HEAD 2>/dev/null
-  else
-    echo "Error: El alias 'dotfiles' no está definido." >&2
-    return 1
-  fi
+    git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME rev-parse --abbrev-ref HEAD
 }
