@@ -1,0 +1,3 @@
+stop() {
+    sudo sv down $1
+}

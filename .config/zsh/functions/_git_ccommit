@@ -1,0 +1,67 @@
+# ~/.config/zsh/functions/_git_ccommit
+
+function git_ccommit() {
+  local commit_type
+  local commit_scope
+  local commit_description
+  local commit_message
+  local options=(
+    "feat: A new feature"
+    "fix: A bug fix"
+    "docs: Documentation only changes"
+    "style: Code style changes (formatting, whitespace)"
+    "refactor: Code change that neither fixes a bug nor adds a feature"
+    "perf: Code change that improves performance"
+    "test: Adding missing tests or correcting existing tests"
+    "build: Changes that affect the build system or external dependencies"
+    "ci: Changes to CI configuration files and scripts"
+    "chore: Other changes that don't modify src or test files"
+    "revert: Reverts a previous commit"
+    "Exit"
+  )
+
+  PS3="Select commit type: "
+
+  select opt in "${options[@]}"; do
+    case $opt in
+      "Exit")
+        echo "Commit process cancelled."
+        return 1
+        ;;
+      *)
+        if [[ -n "$opt" ]]; then
+          commit_type=$(echo "$opt" | cut -d':' -f1)
+          break
+        else
+          echo "Invalid option. Please try again."
+        fi
+        ;;
+    esac
+  done
+
+  vared -p "Enter scope (optional, e.g., 'auth', 'crud', 'parser'): " commit_scope
+  vared -p "Enter commit description (e.g., 'add user authentication'): " commit_description
+
+  if [[ -z "$commit_description" ]]; then
+    echo "Commit description cannot be empty. Commit process cancelled."
+    return 1
+  fi
+
+  if [[ -n "$commit_scope" ]]; then
+    commit_message="${commit_type}(${commit_scope}): ${commit_description}"
+  else
+    commit_message="${commit_type}: ${commit_description}"
+  fi
+
+  echo "
+Generated commit message: '$commit_message'"
+  read -q "REPLY?Proceed with 'git commit -m "$commit_message"'? (y/N) "
+  echo # Newline after read -q
+
+  if [[ "$REPLY" =~ ^[Yy]$ ]]; then
+    git commit -m "$commit_message"
+    echo "Commit successful!"
+  else
+    echo "Commit cancelled by user."
+  fi
+}

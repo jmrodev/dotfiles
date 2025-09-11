@@ -1,3 +1,9 @@
+# Custom Git Aliases
+alias grb='git fetch origin && git rebase origin/$(git rev-parse --abbrev-ref HEAD)'
+alias gfogr='git fetch origin && git rebase '
+alias gbr='git branch -r'
+alias glg='git log --oneline --graph --all'
+
 # ~/.config/zsh/aliases.zsh
 # Alias comunes y prácticos
 
@@ -62,7 +68,7 @@ alias gst='git stash'
 alias gstp='git stash pop'
 alias gstl='git stash list'
 alias gsta='git stash apply'
-alias gstd='git stash drop'
+alias gstd='git stash stash drop'
 
 # --- Tags ---
 alias gt='git tag'
@@ -121,7 +127,7 @@ alias dmt='dotfiles mergetool'
 alias drb='dotfiles rebase'
 alias drba='dotfiles rebase --abort'
 alias drbc='dotfiles rebase --continue'
-alias drbi='dotfiles rebase -i'
+alias drbi='git rebase -i'
 
 # --- Dotfiles: Stash (puede ser útil si editas dotfiles y necesitas cambiar de rama temporalmente) ---
 alias dst='dotfiles stash'
@@ -225,4 +231,12 @@ alias nano='nano -w'
 alias current-branch='show_current_branch'
 alias current-dotfiles-branch='show_current_dotfiles_branch'
 
+
 alias npm='pnpm'
+
+# Gestión de memoria
+alias mem='free -h'
+alias topmem='ps aux --sort=-%mem | head -n 10'
+
+# Validation Scripts
+alias validarhtml='/home/jmro/.config/zsh/functions/validar.sh'

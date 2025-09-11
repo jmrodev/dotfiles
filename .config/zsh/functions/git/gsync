@@ -1,0 +1,11 @@
+gsync() {
+    if [[ -z "$1" ]]; then
+        echo "Aviso: Debes especificar un nombre de rama."
+        echo "Uso: gsync <rama>"
+        return 1
+    fi
+
+    local branch_name="$1"
+    echo "--- Sincronizando '$branch_name' ---"
+    git checkout "$branch_name" && git fetch origin && git rebase "origin/$branch_name"
+}

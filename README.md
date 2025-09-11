@@ -4,20 +4,48 @@
 
 *Tu imagen de previsualización podría ir aquí. ¡Sube una captura de pantalla a una issue de GitHub y pega el enlace!*
 
-Este repositorio contiene mi configuración personal para un entorno de desarrollo productivo en Arch Linux, usando **i3**, **Zsh**, **Rofi**, **Neovim (NvChad)** y más. Todo se gestiona a través de un [repositorio bare de Git](https://www.atlassian.com/git/tutorials/dotfiles), lo que permite versionar y desplegar la configuración fácilmente en cualquier máquina nueva.
+Este repositorio contiene mi configuración personal para un entorno de desarrollo productivo en **Arch Linux, Void Linux y sistemas basados en Debian (Ubuntu, etc.)**, usando **i3**, **Zsh**, **Rofi**, **Neovim (NvChad)** y más. Todo se gestiona a través de un [repositorio bare de Git](https://www.atlassian.com/git/tutorials/dotfiles), lo que permite versionar y desplegar la configuración fácilmente en cualquier máquina nueva.
+
+El script de instalación detectará automáticamente tu distribución y instalará los paquetes correspondientes.
 
 ---
 
 ## Guía de Instalación Rápida
 
-Sigue estos pasos en una instalación limpia de Arch Linux para replicar este entorno.
+### Para Arch Linux
 
-### 1. Requisitos Previos
+Sigue estos pasos en una instalación limpia de Arch Linux.
 
-Solo necesitas tener `git` instalado para empezar.
+**1. Requisitos Previos**
+
+Solo necesitas `git` para empezar.
 
 ```bash
 sudo pacman -S --noconfirm git
+```
+
+### Para Void Linux
+
+Sigue estos pasos en una instalación limpia de Void Linux.
+
+**1. Requisitos Previos**
+
+Necesitas `git` y `xtools` (para compilar si es necesario).
+
+```bash
+sudo xbps-install -S --yes git xtools
+```
+
+### Para Debian / Ubuntu
+
+Sigue estos pasos en una instalación limpia de Debian o Ubuntu.
+
+**1. Requisitos Previos**
+
+Solo necesitas `git` y `build-essential` para empezar.
+
+```bash
+sudo apt-get update && sudo apt-get install -y git build-essential
 ```
 
 ### 2. Clonar el Repositorio
@@ -66,9 +94,18 @@ chmod +x ~/.local/bin/install_software.sh
 ~/.local/bin/install_software.sh
 ```
 
-Este script se encargará de instalar `yay` y todo el software listado (de los repositorios oficiales y del AUR).
+El script detectará tu sistema operativo e instalará el software correspondiente.
+- **En Arch Linux:** Instalará paquetes de los repositorios oficiales y del AUR (usando `yay`).
+- **En Void Linux:** Instalará paquetes desde los repositorios oficiales usando `xbps`.
+- **En Debian/Ubuntu:** Instalará paquetes desde los repositorios oficiales usando `apt`.
 
---- 
+**Notas Importantes:**
+- **Paquetes no disponibles:** Algunos paquetes específicos de AUR (como `rofi-bluetooth-git` o `google-chrome`) no están en los repositorios oficiales de Void o Debian y han sido omitidos en esas instalaciones.
+- **Gestión de Servicios:**
+    - En **Arch, Debian y Ubuntu**, los alias de Zsh (`start`, `stop`, etc.) usan `systemd`.
+    - En **Void Linux**, los mismos alias usan `runit` (`sv` command).
+
+---
 
 ## ¡Listo!
 

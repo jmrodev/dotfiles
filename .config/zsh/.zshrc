@@ -54,7 +54,7 @@ unset config_files config_file
 # Des-registrar funciones para evitar errores en la recarga
 # Se comprueba si la función existe antes de intentar eliminarla.
 functions_to_undef=(
-  gup gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch
+  gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch
   git_feature_start git_feature_finish dotfiles_add_select
 )
 for func in ${functions_to_undef[@]}; do
@@ -84,17 +84,29 @@ if [[ -f /usr/share/zsh/manjaro-zsh-prompt ]]; then
 fi
 
 # 1. Funciones autoload (todas las subcarpetas)
+# --- Detección del Sistema Operativo para cargar funciones específicas ---
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_ID=$ID
+fi
+
 fpath=(~/.config/zsh/functions/utils \
 ~/.config/zsh/functions \
 ~/.config/zsh/functions/git \
-~/.config/zsh/functions/systemd \
 ~/.config/zsh/functions/fileops \
 $fpath)
+
+# Cargar funciones de gestión de servicios según el SO
+if [[ "$OS_ID" == "arch" || "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" || "$OS_ID" == "pop" ]]; then
+    fpath+=(~/.config/zsh/functions/systemd)
+elif [ "$OS_ID" = "void" ]; then
+    fpath+=(~/.config/zsh/functions/runit)
+fi
 
 autoload -Uz calc ff top10 dirsize compress extract up urlencode title \
   swap lowercase start restart stop enable status disable \
   gup gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch \
-  git_feature_start git_feature_finish dotfiles_add_select
+  git_feature_start git_feature_finish dotfiles_add_select git-publish gsync gforce gpub gstart gupdate
 
 # 2. Scripts ejecutables (menús, utilidades grandes)
 export PATH="$HOME/.config/zsh/git-scripts:$PATH"
@@ -118,4 +130,4 @@ esac
 export PATH="$HOME/.pyenv/bin:$PATH"
 eval "$(pyenv init --path)"
 eval "$(pyenv virtualenv-init -)"
-# <<< pyenv initialization <<<
+# <<< pyenv initialization <<<on <<<

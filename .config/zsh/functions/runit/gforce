@@ -1,0 +1,6 @@
+# 5. Forzar la subida después de un rebase
+function gforce() {
+  local current_branch
+  current_branch=$(git rev-parse --abbrev-ref HEAD)
+  git push --force-with-lease origin "$current_branch"
+}

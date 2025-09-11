@@ -1,0 +1,3 @@
+status() {
+    sudo sv status $1
+}

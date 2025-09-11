@@ -1,0 +1,6 @@
+# 4. Publicar una rama por primera vez
+function gpub() {
+  local current_branch
+  current_branch=$(git rev-parse --abbrev-ref HEAD)
+  git push -u origin "$current_branch"
+}

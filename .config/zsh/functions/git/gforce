@@ -1,0 +1,3 @@
+gforce() {
+    git push --force
+}

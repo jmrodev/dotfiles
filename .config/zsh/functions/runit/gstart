@@ -1,0 +1,4 @@
+# 2. Iniciar una nueva rama de trabajo
+function gstart() {
+  git checkout -b "$1"
+}
