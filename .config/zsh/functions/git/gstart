@@ -1,0 +1,3 @@
+gstart() {
+    git flow feature start $1
+}
