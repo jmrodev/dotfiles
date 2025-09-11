@@ -1,0 +1,37 @@
+[Default Applications]
+text/plain=nvim.desktop
+text/html=google-chrome.desktop
+x-scheme-handler/http=google-chrome.desktop
+x-scheme-handler/https=google-chrome.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop
+
+# Imágenes
+image/jpeg=feh.desktop
+image/png=feh.desktop
+image/gif=feh.desktop
+image/webp=feh.desktop
+image/svg+xml=google-chrome.desktop
+
+# Documentos
+application/pdf=zathura.desktop
+application/json=nvim.desktop
+application/xml=nvim.desktop
+text/markdown=nvim.desktop
+text/csv=nvim.desktop
+
+# Audio
+audio/mpeg=mpv.desktop
+audio/ogg=mpv.desktop
+audio/flac=mpv.desktop
+
+# Video
+video/mp4=mpv.desktop
+video/webm=mpv.desktop
+video/x-matroska=mpv.desktop
+
+# Archivos comprimidos
+application/zip=ark.desktop
+application/x-tar=ark.desktop
+application/x-rar=ark.desktop
+application/x-7z-compressed=ark.desktop
