@@ -214,11 +214,11 @@ local plugins = {
     end,
   },
 
-  {
-    "lewis6991/satellite.nvim",
-    event = "BufWinEnter",
-    opts = { excluded_filetypes = { "prompt", "TelescopePrompt", "noice", "notify", "neo-tree" } },
-  },
+  --  {
+--    "lewis6991/satellite.nvim",
+--    event = "BufWinEnter",
+--    opts = { excluded_filetypes = { "prompt", "TelescopePrompt", "noice", "notify", "neo-tree" } },
+--  },
 
   {
     "okuuva/auto-save.nvim",
@@ -709,6 +709,11 @@ local plugins = {
       "<C-u>",
       "<C-d>",
     } },
+  },
+  {
+    "numToStr/Comment.nvim",
+    opts = {},
+    lazy = false,
   },
 }
 

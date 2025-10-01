@@ -7,6 +7,35 @@ x-scheme-handler/about=google-chrome.desktop
 x-scheme-handler/unknown=google-chrome.desktop
 
 # Imágenes
+
+[Added Associations]
+application/pdf=okular-2.desktop;okular.desktop;zathura-2.desktop;zathura.desktop;
+application/x-7z-compressed=org.gnome.FileRoller.desktop;
+application/x-php=mousepad-2.desktop;
+application/x-rar-compressed=org.gnome.FileRoller.desktop;
+application/x-tar=org.gnome.FileRoller.desktop;
+application/zip=org.gnome.FileRoller.desktop;
+image/gif=feh.desktop;
+image/jpeg=feh.desktop;
+image/png=feh.desktop;
+image/webp=feh.desktop;
+text/html=google-chrome-stable.desktop;xdg-open.desktop;
+text/markdown=org.xfce.mousepad.desktop;org.pwmt.zathura.desktop;
+text/plain=mousepad.desktop;
+text/x-lua=mousepad.desktop;
+video/mp4=mpv.desktop;
+video/webm=mpv.desktop;
+video/x-matroska=mpv.desktop;
+
+[Default Applications]
+application/pdf=okular-2.desktop;
+application/x-7z-compressed=org.gnome.FileRoller.desktop
+application/x-php=mousepad-2.desktop;
+application/x-rar-compressed=org.gnome.FileRoller.desktop
+application/x-tar=org.gnome.FileRoller.desktop
+application/zip=org.gnome.FileRoller.desktop
+image/gif=feh.desktop
+>>>>>>> 0a4c001 (uodate conf)
 image/jpeg=feh.desktop
 image/png=feh.desktop
 image/gif=feh.desktop

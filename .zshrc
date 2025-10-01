@@ -81,6 +81,7 @@ plugins=(
 git
 zsh-autosuggestions
 zsh-syntax-highlighting
+zsh-navigation-tools
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -120,3 +121,5 @@ source $ZSH/oh-my-zsh.sh
 # Open Watcom Configuration
 source /opt/watcom/owsetenv.sh
 export INCLUDE="$WATCOM/h:$INCLUDE"
+autoload n-aliases
+autoload n-list
