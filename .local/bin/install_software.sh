@@ -193,6 +193,13 @@ fi
 # 6. Instalar paquetes de NPM (Común)
 # -----------------------------------
 if command -v pnpm &> /dev/null; then
+    echo "Configurando pnpm..."
+    # Redirigir la salida para evitar que el script se detenga si ya está configurado
+    pnpm setup > /dev/null 2>&1 || true
+    # Exportar las variables para que estén disponibles en esta misma sesión del script
+    export PNPM_HOME="$HOME/.local/share/pnpm"
+    export PATH="$PNPM_HOME:$PATH"
+
     echo "Instalando paquetes globales de NPM con pnpm..."
     pnpm install -g "${NPM_PACKAGES[@]}"
 else
