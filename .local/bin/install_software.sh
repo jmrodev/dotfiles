@@ -32,7 +32,7 @@ ARCH_PACKAGES=(
     "feh" "zathura" "mpd" "mpc" "unzip" "rust" "luarocks" "ruby" "php"
     "composer" "jdk-openjdk" "go" "typescript-language-server" "python-lsp-server"
     "lua-language-server" "bash-language-server" "gopls" "gnome-keyring"
-    "network-manager-applet" "volumeicon" "i3lock" "i3blocks"
+    "network-manager-applet" "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver"
 )
 
 # Paquetes para Void Linux
@@ -46,7 +46,7 @@ VOID_PACKAGES=(
     "mpd" "mpc" "unzip" "rust" "luarocks" "ruby" "php" "composer" "openjdk" "go"
     "typescript-language-server" "python-lsp-server" "lua-language-server"
     "bash-language-server" "gopls" "gnome-keyring" "NetworkManager-applet"
-    "volumeicon" "i3lock" "i3blocks"
+    "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver"
 )
 
 # Paquetes para Debian/Ubuntu
@@ -59,7 +59,7 @@ DEBIAN_PACKAGES=(
     "zathura" "mpd" "mpc" "unzip" "rustc" "luarocks" "ruby-full" "php-cli" "composer"
     "default-jdk" "golang" "node-typescript" "python3-pylsp" "bash-language-server"
     "gnome-keyring" "network-manager-gnome" "volumeicon-alsa" "i3lock" "i3blocks"
-    "fontconfig"
+    "fontconfig" "tree" "dbeaver"
 )
 
 # Paquetes globales de NPM (comunes)
@@ -76,7 +76,7 @@ case "$OS_ID" in
         echo "Sistema Arch Linux detectado. Usando pacman y yay."
 
         # Instalar dependencias básicas
-        sudo pacman -S --needed --noconfirm git base-devel curl zsh autoconf automake clang clangd
+        sudo pacman -S --needed --noconfirm git base-devel curl zsh autoconf automake clang
 
         # Instalar yay si no está presente
         if ! command -v yay &> /dev/null; then
@@ -107,6 +107,20 @@ case "$OS_ID" in
         fi
         sudo systemctl restart systemd-logind.service
         echo "IMPORTANTE: El archivo '$DOTFILES_CONF' ha sido modificado. Añádelo a git."
+
+        # --- Instalación de LAMP (Apache, MariaDB, PHP) ---
+        echo "--- Iniciando la instalación de la pila LAMP ---"
+        LAMP_SCRIPTS_DIR="$HOME/.local/bin/lamp_scripts"
+
+        if [ -d "$LAMP_SCRIPTS_DIR" ]; then
+            echo "Ejecutando scripts de instalación de LAMP..."
+            sudo "$LAMP_SCRIPTS_DIR/install_apache.sh"
+            sudo "$LAMP_SCRIPTS_DIR/install_mysql.sh"
+            sudo "$LAMP_SCRIPTS_DIR/install_php.sh"
+            echo "--- Instalación de la pila LAMP completada ---"
+        else
+            echo "ADVERTENCIA: Directorio de scripts LAMP no encontrado en '$LAMP_SCRIPTS_DIR'. Omitiendo instalación de LAMP."
+        fi
 
         ;;
     "void")
@@ -193,15 +207,13 @@ fi
 # 6. Instalar paquetes de NPM (Común)
 # -----------------------------------
 if command -v pnpm &> /dev/null; then
-    echo "Configurando pnpm..."
-    # Redirigir la salida para evitar que el script se detenga si ya está configurado
-    pnpm setup > /dev/null 2>&1 || true
-    # Exportar las variables para que estén disponibles en esta misma sesión del script
-    export PNPM_HOME="$HOME/.local/share/pnpm"
-    export PATH="$PNPM_HOME:$PATH"
-
-    echo "Instalando paquetes globales de NPM con pnpm..."
-    pnpm install -g "${NPM_PACKAGES[@]}"
+        echo "Configurando pnpm..."
+        # Redirigir la salida para evitar que el script se detenga si ya está configurado
+        pnpm setup > /dev/null 2>&1 || true
+        # Exportar las variables para que estén disponibles en esta misma sesión del script
+        export PNPM_HOME="$HOME/.local/share/pnpm"
+        export PATH="$PNPM_HOME:$PATH"
+        echo "Instalando paquetes globales de NPM con pnpm..."    pnpm install -g "${NPM_PACKAGES[@]}"
 else
     echo "ADVERTENCIA: pnpm no está instalado. Omitiendo la instalación de paquetes de NPM."
 fi
@@ -223,6 +235,36 @@ fi
 # ---------------------------------------
 echo "Configurando el repositorio de dotfiles para ignorar archivos no rastreados..."
 git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME config status.showUntrackedFiles no
+
+
+# 9. Instalar NvChad para Neovim (Común)
+# ---------------------------------------
+if command -v nvim &> /dev/null; then
+    echo "Instalando/Actualizando NvChad para Neovim..."
+    
+    # Hacer copia de seguridad de las configuraciones existentes
+    if [ -d "$HOME/.config/nvim" ]; then
+        echo "Haciendo copia de seguridad de la configuración de nvim existente en ~/.config/nvim.bak..."
+        mv "$HOME/.config/nvim" "$HOME/.config/nvim.bak"
+    fi
+    if [ -d "$HOME/.local/share/nvim" ]; then
+        echo "Haciendo copia de seguridad de los datos de nvim existentes en ~/.local/share/nvim.bak..."
+        mv "$HOME/.local/share/nvim" "$HOME/.local/share/nvim.bak"
+    fi
+    if [ -d "$HOME/.cache/nvim" ]; then
+        echo "Haciendo copia de seguridad de la caché de nvim existente en ~/.cache/nvim.bak..."
+        mv "$HOME/.cache/nvim" "$HOME/.cache/nvim.bak"
+    fi
+
+    # Clonar NvChad
+    echo "Clonando NvChad..."
+    git clone https://github.com/NvChad/starter ~/.config/nvim
+    
+    echo "NvChad se ha clonado en ~/.config/nvim."
+    echo "🔴 IMPORTANTE: Abre Neovim ('nvim') para completar la instalación de plugins."
+else
+    echo "ADVERTENCIA: Neovim (nvim) no está instalado. Omitiendo la instalación de NvChad."
+fi
 
 
 echo "-------------------------------------------------"

@@ -11,38 +11,19 @@ end
 
 vim.opt.rtp:prepend(lazypath)
 
--- Define plugins
-local plugins = {
+local lazy_config = require "configs.lazy"
+
+-- load plugins
+require("lazy").setup({
   {
     "NvChad/NvChad",
     lazy = false,
     branch = "v2.5",
     import = "nvchad.plugins",
-    -- NOTE: opts are not passed here, NvChad loads chadrc automatically
   },
 
-  -- import custom plugins
-  {
-    import = "plugins",
-  },
-}
-
--- Define lazy.nvim options
-local lazy_opts = {
-  defaults = { lazy = true },
-  install = { colorscheme = { "nvchad" } },
-  ui = {
-    icons = {
-      ft = "",
-      lazy = "󰂠 ",
-      loaded = "",
-      not_loaded = "",
-    },
-  },
-}
-
--- Setup lazy.nvim
-require("lazy").setup(plugins, lazy_opts)
+  { import = "plugins" },
+}, lazy_config)
 
 -- load theme
 dofile(vim.g.base46_cache .. "defaults")
