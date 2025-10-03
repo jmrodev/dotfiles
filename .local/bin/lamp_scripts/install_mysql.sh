@@ -202,6 +202,17 @@ setup_phpmyadmin() {
     find "$pma_dir" -type d -exec chmod 755 {} +
     find "$pma_dir" -type f -exec chmod 644 {} +
 
+    # Configurar blowfish_secret para phpMyAdmin
+    log "INFO" "Configurando blowfish_secret para phpMyAdmin..."
+    local pma_config_file="$pma_dir/config.inc.php"
+    if [[ ! -f "$pma_config_file" ]]; then
+        cp "$pma_dir/config.sample.inc.php" "$pma_config_file"
+        log "SUCCESS" "config.sample.inc.php copiado a config.inc.php."
+    fi
+    local BLOWFISH_SECRET=$(openssl rand -base64 32)
+    sed -i "s|\$cfg['blowfish_secret'] = '';|\$cfg['blowfish_secret'] = '$BLOWFISH_SECRET';|" "$pma_config_file"
+    log "SUCCESS" "blowfish_secret configurado en $pma_config_file."
+
     systemctl restart httpd || { log "ERROR" "Fallo al reiniciar Apache."; return 1; }
     log "SUCCESS" "Apache reiniciado."
 }

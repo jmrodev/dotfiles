@@ -52,7 +52,40 @@ uninstall_apache() {
     rm -rf /etc/httpd
     rm -rf /srv/http
 
-    log "SUCCESS" "Directorios de configuración eliminados."
+    # Eliminar override de systemd para ProtectHome
+    log "INFO" "Eliminando override de systemd para ProtectHome..."
+    rm -f /etc/systemd/system/httpd.service.d/override.conf
+    rmdir /etc/systemd/system/httpd.service.d/ 2>/dev/null || true
+    systemctl daemon-reload
+
+    # Eliminar configuraciones extra de Apache
+    log "INFO" "Eliminando configuraciones extra de Apache..."
+    rm -f /etc/httpd/conf/extra/httpd-userdir.conf
+    rm -f /etc/httpd/conf/extra/php.conf
+    rm -f /etc/httpd/conf/extra/httpd-phpmyadmin.conf
+
+    # Eliminar líneas Include de httpd.conf
+    log "INFO" "Eliminando líneas Include de httpd.conf..."
+    sed -i '/Include conf\/extra\/httpd-userdir.conf/d' /etc/httpd/conf/httpd.conf
+    sed -i '/Include conf\/extra\/php.conf/d' /etc/httpd/conf/httpd.conf
+    sed -i '/Include conf\/extra\/httpd-phpmyadmin.conf/d' /etc/httpd/conf/httpd.conf
+
+    log "SUCCESS" "Directorios de configuración y archivos extra eliminados."
+
+    # Preguntar si desea eliminar el directorio public_html del usuario
+    read -p "¿Deseas eliminar el directorio public_html del usuario? (y/n): " REMOVE_PUBLIC_HTML
+    if [[ "$REMOVE_PUBLIC_HTML" =~ ^[Yy]$ ]]; then
+        local sudo_user=${SUDO_USER:-$(whoami)}
+        read -p "Introduce el nombre de usuario [default: $sudo_user]: " username
+        username=${username:-$sudo_user}
+        local user_home=$(eval echo ~$username)
+        if [[ -d "$user_home/public_html" ]]; then
+            rm -rf "$user_home/public_html"
+            log "SUCCESS" "Directorio public_html de $username eliminado."
+        else
+            log "INFO" "Directorio public_html de $username no encontrado."
+        fi
+    fi
 
     # 5. Verificación final
     log "INFO" "Verificando el estado del servicio httpd..."

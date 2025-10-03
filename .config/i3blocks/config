@@ -63,10 +63,10 @@ LABEL=
 interval=300
 
 # Menú de apagado
-[shutdown_menu]
-full_text=
-command=/home/jmro/.config/i3blocks/i3blocks-contrib/shutdown_menu/shutdown_menu
-interval=once
+#[shutdown_menu]
+#full_text=
+#command=/home/jmro/.local/bin/rofi_shutdown_menu.sh
+#interval=once
 
 # Hora y fecha
 [time]

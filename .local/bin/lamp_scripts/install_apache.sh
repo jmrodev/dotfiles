@@ -117,6 +117,20 @@ create_test_page() {
     return 0
 }
 
+# Configurar systemd para Apache (deshabilitar ProtectHome)
+configure_systemd_hardening() {
+    log "INFO" "Configurando systemd para Apache (deshabilitar ProtectHome)..."
+    local override_dir="/etc/systemd/system/httpd.service.d"
+    local override_file="$override_dir/override.conf"
+
+    mkdir -p "$override_dir"
+    echo -e "[Service]\nProtectHome=off" | tee "$override_file" > /dev/null
+
+    systemctl daemon-reload
+    log "SUCCESS" "ProtectHome deshabilitado para httpd.service."
+    return 0
+}
+
 # --- Lógica de public_html ---
 
 setup_user_public_html() {
@@ -161,9 +175,15 @@ setup_user_public_html() {
 
         # Crear directorio public_html y establecer permisos
         sudo -u "$username" mkdir -p "$user_home/public_html"
-        chmod o+x "$user_home"
-        chmod o+x "$user_home/public_html"
-        chmod -R o+r "$user_home/public_html"
+        chmod 711 "$user_home" # Permiso de ejecución para otros en el home dir
+        chmod 755 "$user_home/public_html" # Permiso de lectura y ejecución para otros en public_html
+        chmod -R 644 "$user_home/public_html"/* # Permiso de lectura para archivos
+
+        # Habilitar UserDir para el usuario específico
+        if ! grep -q "UserDir enabled $username" "$userdir_conf"; then
+            echo "UserDir enabled $username" >> "$userdir_conf"
+            log "SUCCESS" "UserDir habilitado para $username en $userdir_conf."
+        fi
 
         # Crear página de prueba
         sudo -u "$username" echo "<html><body><h1>Página de usuario de $username</h1></body></html>" > "$user_home/public_html/index.html"
@@ -183,6 +203,9 @@ main_installation() {
 
     # 2. Instalación de Apache
     install_package "apache" || return 1
+
+    # Configurar systemd para Apache (deshabilitar ProtectHome)
+    configure_systemd_hardening || return 1
 
     # 3. Solicitud de configuración al usuario
     local DEFAULT_PORT=80
@@ -209,11 +232,15 @@ main_installation() {
     # Modificar Listen Port, ServerName, DocumentRoot y Directorio
     sed -i "s|^Listen.*|Listen $PORT|" "$HTTPD_CONF"
     sed -i "s|#ServerName www.example.com:80|ServerName localhost:$PORT|" "$HTTPD_CONF"
-    sed -i "s|^DocumentRoot ".*"|DocumentRoot \"$DOCROOT\"|" "$HTTPD_CONF"
+    sed -i "s|^DocumentRoot \".*\"|DocumentRoot \"$DOCROOT\"|" "$HTTPD_CONF"
     sed -i "s|<Directory \"/srv/http\">|<Directory \"$DOCROOT\">|" "$HTTPD_CONF"
 
     # Habilitar el módulo de reescritura de URL (mod_rewrite)
     sed -i 's|^#LoadModule rewrite_module modules/mod_rewrite.so|LoadModule rewrite_module modules/mod_rewrite.so|' "$HTTPD_CONF"
+
+    # Configurar MPM para usar mpm_event_module (recomendado con PHP-FPM)
+    sed -i 's|^LoadModule mpm_prefork_module modules/mod_mpm_prefork.so|#LoadModule mpm_prefork_module modules/mod_mpm_prefork.so|' "$HTTPD_CONF"
+    sed -i 's|^#LoadModule mpm_event_module modules/mod_mpm_event.so|LoadModule mpm_event_module modules/mod_mpm_event.so|' "$HTTPD_CONF"
 
     # 5. Crear DocumentRoot y página de prueba
     create_test_page "$DOCROOT" || return 1

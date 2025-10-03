@@ -120,3 +120,11 @@ source $ZSH/oh-my-zsh.sh
 
 autoload n-aliases
 autoload n-list
+
+# pnpm
+export PNPM_HOME="/home/jmro/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end

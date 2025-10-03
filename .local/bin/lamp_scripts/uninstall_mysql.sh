@@ -47,6 +47,28 @@ uninstall_mariadb() {
         log "ERROR" "Fallo al desinstalar el paquete 'mariadb'. Puede que ya no esté instalado."
     fi
 
+    # Desinstalar phpMyAdmin si está instalado
+    if pacman -Q phpmyadmin &>/dev/null; then
+        log "INFO" "Desinstalando phpMyAdmin..."
+        if pacman -Rns --noconfirm phpmyadmin; then
+            log "SUCCESS" "phpMyAdmin desinstalado exitosamente."
+            rm -f /usr/share/webapps/phpMyAdmin/config.inc.php
+            log "SUCCESS" "Configuración de phpMyAdmin eliminada."
+        else
+            log "WARN" "Fallo al desinstalar phpMyAdmin."
+        fi
+    fi
+
+    # Desinstalar expect si está instalado
+    if pacman -Q expect &>/dev/null; then
+        log "INFO" "Desinstalando expect..."
+        if pacman -Rns --noconfirm expect; then
+            log "SUCCESS" "Paquete 'expect' desinstalado exitosamente."
+        else
+            log "WARN" "Fallo al desinstalar el paquete 'expect'."
+        fi
+    fi
+
     # 4. Eliminar directorios de configuración y datos restantes
     log "INFO" "Eliminando directorios de configuración y datos..."
     rm -rf /etc/mysql

@@ -44,16 +44,31 @@ uninstall_php_fpm() {
 
     # 2. Desinstalar paquetes de PHP
     log "INFO" "Desinstalando paquetes 'php' y 'php-fpm'..."
-    if pacman -Rns --noconfirm php php-fpm php-mariadb; then
+    if pacman -Rns --noconfirm php php-fpm; then
         log "SUCCESS" "Paquetes de PHP desinstalados exitosamente."
     else
         log "WARN" "Fallo al desinstalar los paquetes de PHP. Puede que ya no estén instalados."
+    fi
+
+    # Desinstalar php-apcu si está instalado
+    if pacman -Q php-apcu &>/dev/null; then
+        log "INFO" "Desinstalando php-apcu..."
+        if pacman -Rns --noconfirm php-apcu; then
+            log "SUCCESS" "Paquete 'php-apcu' desinstalado exitosamente."
+        else
+            log "WARN" "Fallo al desinstalar el paquete 'php-apcu'."
+        fi
     fi
 
     # 3. Eliminar archivos y directorios de configuración
     log "INFO" "Eliminando archivos de configuración de PHP..."
     rm -rf /etc/php
     rm -f /usr/lib/php/modules/php.ini
+
+    # Eliminar configuración de Apache para PHP-FPM
+    log "INFO" "Eliminando configuración de Apache para PHP-FPM..."
+    rm -f /etc/httpd/conf/extra/php-fpm.conf
+    sed -i '/Include conf\/extra\/php-fpm.conf/d' /etc/httpd/conf/httpd.conf
 
     log "SUCCESS" "Archivos de configuración de PHP eliminados."
 
