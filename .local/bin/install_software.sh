@@ -52,7 +52,12 @@ ARCH_PACKAGES=(
     "feh" "zathura" "mpd" "mpc" "unzip" "rust" "luarocks" "ruby" "php"
     "composer" "jdk-openjdk" "go" "typescript-language-server" "python-lsp-server"
     "lua-language-server" "bash-language-server" "gopls" "gnome-keyring"
-    "network-manager-applet" "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver" "bat"
+    "network-manager-applet" "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver" "bat" 
+    "bluez" "bluez-utils" "openvpn" "networkmanager-openvpn" "networkmanager-openvpn-gnome" \
+    "wireguard-tools" "protonvpn" "smarty" "man-es" "man" "man-pages" "man-pages-es" \
+    "gpg" "prism" "reflector" "protonvpn-cli" "hurl" "i3lock-color" "tera" "encfs" \
+    "qalculate!" "qalculate-qt" "bc" "brave" "brave-bin" "kmag" "broadcom-bt-firmware-git" \
+    "libreoffice" "konsole" "net-tools" "asciinema" "vlc" "flow" "git-flow" "gitflow-cjs"\
 )
 
 # Paquetes para Void Linux
@@ -86,6 +91,8 @@ DEBIAN_PACKAGES=(
 NPM_PACKAGES=(
     "@google/gemini-cli"
     "express-generator"
+    "@stoplight/prism-cli"
+    "httpyac"
 )
 
 
