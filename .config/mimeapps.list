@@ -1,13 +1,3 @@
-[Default Applications]
-text/plain=nvim.desktop
-text/html=google-chrome.desktop
-x-scheme-handler/http=google-chrome.desktop
-x-scheme-handler/https=google-chrome.desktop
-x-scheme-handler/about=google-chrome.desktop
-x-scheme-handler/unknown=google-chrome.desktop
-
-# Imágenes
-
 [Added Associations]
 application/pdf=okular-2.desktop;okular.desktop;zathura-2.desktop;zathura.desktop;
 application/x-7z-compressed=org.gnome.FileRoller.desktop;
@@ -28,39 +18,32 @@ video/webm=mpv.desktop;
 video/x-matroska=mpv.desktop;
 
 [Default Applications]
-application/pdf=okular-2.desktop;
-application/x-7z-compressed=org.gnome.FileRoller.desktop
-application/x-php=mousepad-2.desktop;
-application/x-rar-compressed=org.gnome.FileRoller.desktop
-application/x-tar=org.gnome.FileRoller.desktop
-application/zip=org.gnome.FileRoller.desktop
-image/gif=feh.desktop
->>>>>>> 0a4c001 (uodate conf)
-image/jpeg=feh.desktop
-image/png=feh.desktop
-image/gif=feh.desktop
-image/webp=feh.desktop
-image/svg+xml=google-chrome.desktop
-
-# Documentos
-application/pdf=zathura.desktop
 application/json=nvim.desktop
+application/pdf=zathura.desktop
+application/x-7z-compressed=ark.desktop
+application/x-php=mousepad-2.desktop;
+application/x-rar=ark.desktop
+application/x-rar-compressed=org.gnome.FileRoller.desktop
+application/x-tar=ark.desktop
 application/xml=nvim.desktop
-text/markdown=nvim.desktop
-text/csv=nvim.desktop
-
-# Audio
+application/zip=ark.desktop
+audio/flac=mpv.desktop
 audio/mpeg=mpv.desktop
 audio/ogg=mpv.desktop
-audio/flac=mpv.desktop
-
-# Video
+image/gif=feh.desktop
+image/jpeg=feh.desktop
+image/png=feh.desktop
+image/svg+xml=google-chrome.desktop
+image/webp=feh.desktop
+text/csv=nvim.desktop
+text/html=google-chrome.desktop
+text/markdown=nvim.desktop
+text/plain=mousepad.desktop;
 video/mp4=mpv.desktop
 video/webm=mpv.desktop
 video/x-matroska=mpv.desktop
-
-# Archivos comprimidos
-application/zip=ark.desktop
-application/x-tar=ark.desktop
-application/x-rar=ark.desktop
-application/x-7z-compressed=ark.desktop
+x-scheme-handler/about=google-chrome.desktop
+x-scheme-handler/http=google-chrome.desktop
+x-scheme-handler/https=google-chrome.desktop
+x-scheme-handler/mailto=google-chrome.desktop
+x-scheme-handler/unknown=google-chrome.desktop

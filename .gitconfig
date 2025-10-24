@@ -9,3 +9,9 @@
 	helper = !/usr/bin/gh auth git-credential
 [init]
 	defaultBranch = main
+[http "https://repo.or.cz"]
+	sslCert = /home/jmro/.certs/rorcz_jmrodev_user_1.pem
+	sslKey = /home/jmro/.ssh/id_rsa
+	sslCertPasswordProtected = false
+[core]
+	editor = nvim

@@ -16,6 +16,26 @@ fi
 
 echo "🚀 Iniciando la configuración completa del sistema para $PRETTY_NAME..."
 
+# 0. Crear Carpetas de Usuario Estándar
+# ------------------------------------
+echo "Creando carpetas de usuario estándar en español..."
+USER_DIRS=(
+    "Documentos"
+    "Descargas"
+    "Escritorio"
+    "Imágenes"
+    "Música"
+    "Público"
+    "Plantillas"
+    "Videos"
+)
+
+for dir in "${USER_DIRS[@]}"; do
+    mkdir -p "$HOME/$dir"
+done
+echo "Carpetas creadas exitosamente."
+
+
 # --- Definición de Paquetes ---
 # Paquetes para Arch Linux (incluye AUR)
 ARCH_PACKAGES=(
@@ -32,7 +52,7 @@ ARCH_PACKAGES=(
     "feh" "zathura" "mpd" "mpc" "unzip" "rust" "luarocks" "ruby" "php"
     "composer" "jdk-openjdk" "go" "typescript-language-server" "python-lsp-server"
     "lua-language-server" "bash-language-server" "gopls" "gnome-keyring"
-    "network-manager-applet" "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver"
+    "network-manager-applet" "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver" "bat"
 )
 
 # Paquetes para Void Linux
@@ -46,7 +66,7 @@ VOID_PACKAGES=(
     "mpd" "mpc" "unzip" "rust" "luarocks" "ruby" "php" "composer" "openjdk" "go"
     "typescript-language-server" "python-lsp-server" "lua-language-server"
     "bash-language-server" "gopls" "gnome-keyring" "NetworkManager-applet"
-    "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver"
+    "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver" "bat"
 )
 
 # Paquetes para Debian/Ubuntu
@@ -59,7 +79,7 @@ DEBIAN_PACKAGES=(
     "zathura" "mpd" "mpc" "unzip" "rustc" "luarocks" "ruby-full" "php-cli" "composer"
     "default-jdk" "golang" "node-typescript" "python3-pylsp" "bash-language-server"
     "gnome-keyring" "network-manager-gnome" "volumeicon-alsa" "i3lock" "i3blocks"
-    "fontconfig" "tree" "dbeaver"
+    "fontconfig" "tree" "dbeaver" "bat"
 )
 
 # Paquetes globales de NPM (comunes)
@@ -272,3 +292,6 @@ echo "✅ ¡Instalación de software y configuración completada!"
 echo "🔴 IMPORTANTE: Cierra sesión y vuelve a iniciarla (o reinicia) para que todos los cambios tomen efecto."
 echo "   Si es la primera vez, ejecuta 'p10k configure' para configurar tu prompt."
 echo "-------------------------------------------------"
+yay -S archlinux-xdg-menu
+sudo mv /etc/xdg/menus/arch-applications.menu /etc/xdg/menus/applications.menu
+kbuildsycoca6 --noincremental
