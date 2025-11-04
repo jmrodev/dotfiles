@@ -94,8 +94,10 @@ alias google-chrome2='nohup google-chrome-stable --profile-directory="Profile 3"
 alias cat='bat'
 
 # Custom cd function to create directory if it doesn't exist
-function cd() {
-  if [ -d "$1" ]; then
+function _cd_with_prompt() {
+  if [ -z "$1" ]; then # Check if $1 is empty
+    builtin cd # Go to home directory if no argument
+  elif [ -d "$1" ]; then
     builtin cd "$@"
   else
     vared -p "Directory '$1' does not exist. Create it? (y/N) " -c create_dir_response
@@ -105,6 +107,11 @@ function cd() {
       echo "Directory not created."
     fi
   fi
+}
+
+# Wrapper for the cd command to use the custom prompt function
+function cd() {
+  _cd_with_prompt "$@"
 }
 
 # Function to move files to trash

@@ -13,9 +13,10 @@ function ranger-cd {
 	local temp_file="$(mktemp -t "ranger_cd.XXXXXXXXXX")"     
 	ranger --choosedir="$temp_file" "${@:-.}"     
 	if [ -f "$temp_file" ] && [ -s "$temp_file" ]; then         	
-		cd -- "$(cat "$temp_file")"     
+		_ranger_cd_active=1 builtin cd -- "$(cat "$temp_file")"
+		unset _ranger_cd_active     
 	fi     
-	rm -f -- "$temp_file" 	
+	command rm -f -- "$temp_file" 	
 }
 
 # Auto-cargar funciones personalizadas
