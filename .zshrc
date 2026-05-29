@@ -91,12 +91,37 @@ alias npx="pnpm dlx"
 [[ -f ~/.zsh_secrets ]] && source ~/.zsh_secrets
 
 # === INTEGRACIÓN CON DOTFILES MODULARES ===
-# Carga de funciones del repositorio
-for func in ~/.config/zsh/functions/utils/*; do
-    [[ -f "$func" ]] && source "$func"
-done
-# Carga de alias unificados (Repo manda)
-[[ -f ~/.config/zsh/aliases.zsh ]] && source ~/.config/zsh/aliases.zsh
+# Directorio base para la configuración modular
+ZDOTDIR=${ZDOTDIR:-$HOME/.config/zsh}
 
-# Path
+# 1. Cargar opciones adicionales del repo
+[[ -f $ZDOTDIR/options.zsh ]] && source $ZDOTDIR/options.zsh
+
+# 2. Configurar fpath para autoloading (Repo manda)
+fpath=(
+  ~/.config/zsh/functions/utils
+  ~/.config/zsh/functions
+  ~/.config/zsh/functions/git
+  ~/.config/zsh/functions/fileops
+  ~/.config/zsh/functions/systemd
+  $fpath
+)
+
+# 3. Autoload de funciones específicas del repo
+autoload -Uz calc ff top10 dirsize compress extract up urlencode title \
+  swap lowercase start restart stop enable status disable \
+  gup gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch \
+  git_feature_start git_feature_finish dotfiles_add_select git-publish gsync gforce gpub gstart gupdate
+
+# 4. Cargar scripts y funciones dinámicas
+[[ -f $ZDOTDIR/functions/git/git_dynamic_aliases ]] && source $ZDOTDIR/functions/git/git_dynamic_aliases
+[[ -f $ZDOTDIR/plugins.zsh ]] && source $ZDOTDIR/plugins.zsh # Contiene ranger-cd y otros
+[[ -f $ZDOTDIR/keybindings.zsh ]] && source $ZDOTDIR/keybindings.zsh
+
+# 5. Cargar alias unificados
+[[ -f $ZDOTDIR/aliases.zsh ]] && source $ZDOTDIR/aliases.zsh
+
+# 6. Scripts ejecutables en PATH
+export PATH="$HOME/.config/zsh/git-scripts:$PATH"
+export PATH="$HOME/.config/zsh/scripts:$PATH"
 export PATH="/home/jmro/.local/bin:$PATH"
