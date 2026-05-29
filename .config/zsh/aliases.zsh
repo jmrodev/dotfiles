@@ -1,5 +1,5 @@
 # ==========================================
-# UNIFIED ALIASES (Dotfiles Managed)
+# UNIFIED ALIASES & FUNCTIONS (Repo SSoT)
 # ==========================================
 
 # --- SYSTEM & NAVIGATION ---
@@ -52,6 +52,9 @@ alias pacclean='sudo pacman -Rns $(pacman -Qdtq)'
 alias ysyu='yay -Syu --aur --noconfirm'
 alias clean='sudo pacman -Sc'
 alias updater='psyu && ysyu && flatup && flatclean && flatclear && sudo pacman -Scc && rm -rf ~/.cache/*'
+alias trim='trimhome && trimroot'
+alias trimhome='sudo fstrim -v /home'
+alias trimroot='sudo fstrim -v /'
 
 # --- TOOLS & APPS ---
 alias lg='lazygit'
@@ -120,26 +123,23 @@ alias fullpower="powerprofilesctl set balanced && kwriteconfig6 --file powerdevi
 alias infoi='inxi -b'
 alias freemem='sudo sysctl -w vm.drop_caches=3'
 alias libre='free -h && sudo sysctl -w vm.drop_caches=3 && free -h'
-alias trim='trimhome && trimroot'
-alias trimhome='sudo fstrim -v /home'
-alias trimroot='sudo fstrim -v /'
 alias topmem='ps aux --sort=-%mem | head -n 10'
 alias validarhtml='/home/jmro/.config/zsh/functions/validar.sh'
 alias enose='pdfunite *.pdf out.pdf'
 alias png2pdf='convert *.png out.pdf'
 
-# --- CUSTOM FUNCTIONS (MIGRATED FROM REPO) ---
+# ==========================================
+# ADVANCED FUNCTIONS (EXACT REPO LOGIC)
+# ==========================================
 
-# cd with prompt to create dir
-function cd() {
-  if [ -z "$1" ]; then
-    builtin cd
+# Custom cd function to create directory if it doesn't exist
+function _cd_with_prompt() {
+  if [ -z "$1" ]; then # Check if $1 is empty
+    builtin cd # Go to home directory if no argument
   elif [ -d "$1" ]; then
     builtin cd "$@"
   else
-    echo -n "Directory '$1' does not exist. Create it? (y/N) "
-    read -k 1 create_dir_response
-    echo
+    vared -p "Directory '$1' does not exist. Create it? (y/N) " -c create_dir_response
     if [[ "$create_dir_response" =~ ^[Yy]$ ]]; then
       mkdir -p "$1" && builtin cd "$@"
     else
@@ -148,48 +148,113 @@ function cd() {
   fi
 }
 
-# Trash Management (Safety first)
+# Wrapper for the cd command to use the custom prompt function
+function cd() {
+  _cd_with_prompt "$@"
+}
+
+# Function to move files to trash
 function trash() {
   if [ -z "$1" ]; then
     echo "Usage: trash <file_or_directory>..."
     return 1
   fi
+
   local trash_dir="$HOME/.local/share/Trash"
-  mkdir -p "$trash_dir"
-  for item in "$@"; do
+  mkdir -p "$trash_dir" # Ensure trash directory exists
+
+  local files_to_trash=()
+  local options=()
+
+  for arg in "$@"; do
+    if [[ "$arg" == -* ]]; then
+      options+=("$arg") # Collect options, though we won't use them for mv
+    else
+      files_to_trash+=("$arg")
+    fi
+  done
+
+  if [ ${#files_to_trash[@]} -eq 0 ]; then
+    echo "No files or directories specified to trash."
+    return 1
+  fi
+
+  for item in "${files_to_trash[@]}"; do
     if [ -e "$item" ]; then
       local base_name=$(basename "$item")
-      mv "$item" "$trash_dir/${base_name}_$(date +%Y%m%d%H%M%S)"
-      echo "Moved '$item' to trash."
+      local unique_name="${base_name}_$(date +%Y%m%d%H%M%S)"
+      mv "$item" "$trash_dir/$unique_name"
+      echo "Moved '$item' to trash as '$unique_name'"
+    else
+      echo "Error: '$item' not found."
     fi
   done
 }
+
+# Alias rm to use the trash function
 alias rm='trash'
 
+# Function to empty the trash
+function empty_trash() {
+  local trash_dir="$HOME/.local/share/Trash"
+  if [ -d "$trash_dir" ]; then
+    vared -p "Are you sure you want to permanently delete all items from the trash? (y/N) " -c confirm_empty_trash
+    if [[ "$confirm_empty_trash" =~ ^[Yy]$ ]]; then
+      rm -rf "$trash_dir"/* "$trash_dir"/.[!.]* # Delete all files and dotfiles
+      echo "Trash emptied."
+    else
+      echo "Trash not emptied."
+    fi
+  else
+    echo "Trash is already empty or does not exist."
+  fi
+}
+
+# Function to safely move files, trashing existing destination files
 function safe_mv() {
-  local destination="${@: -1}"
-  [ -e "$destination" ] && [ "$destination" != "$1" ] && trash "$destination"
+  local trash_dir="$HOME/.local/share/Trash"
+  mkdir -p "$trash_dir" # Ensure trash directory exists
+
+  local destination="${@: -1}" # Get the last argument as destination
+
+  # Check if destination exists and is not the source
+  if [ -e "$destination" ] && [ "$destination" != "$1" ]; then
+    echo "Moving existing destination '$destination' to trash before move."
+    trash "$destination"
+  fi
+
+  # Perform the actual move
   command mv "$@"
 }
-alias mv='safe_mv'
 
+# Function to safely copy files, trashing existing destination files
 function safe_cp() {
-  local destination="${@: -1}"
-  [ -e "$destination" ] && [ "$destination" != "$1" ] && trash "$destination"
+  local trash_dir="$HOME/.local/share/Trash"
+  mkdir -p "$trash_dir" # Ensure trash directory exists
+
+  local destination="${@: -1}" # Get the last argument as destination
+
+  # Check if destination exists and is not the source
+  if [ -e "$destination" ] && [ "$destination" != "$1" ]; then
+    echo "Moving existing destination '$destination' to trash before copy."
+    trash "$destination"
+  fi
+
+  # Perform the actual copy
   command cp "$@"
 }
+
+# Alias mv and cp to use the safe functions
+alias mv='safe_mv'
 alias cp='safe_cp'
 
+# Function to list files in the trash
 function list_trash() {
-  ls -l "$HOME/.local/share/Trash"
-}
-
-function empty_trash() {
-  echo -n "Permanently empty trash? (y/N) "
-  read -k 1 confirm
-  echo
-  if [[ "$confirm" =~ ^[Yy]$ ]]; then
-    rm -rf "$HOME/.local/share/Trash"/*
-    echo "Trash emptied."
+  local trash_dir="$HOME/.local/share/Trash"
+  if [ -d "$trash_dir" ]; then
+    echo "Files in trash ($trash_dir):"
+    ls -l "$trash_dir"
+  else
+    echo "Trash is empty or does not exist."
   fi
 }
