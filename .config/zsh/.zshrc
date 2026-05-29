@@ -1,5 +1,5 @@
 # ~/.config/zsh/.zshrc
-# Entry point modular gestionado por dotfiles
+# Entry point modular gestionado por dotfiles (SSoT)
 
 # --- FASTFETCH ---
 fastfetch
@@ -18,15 +18,37 @@ dotfiles() {
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="powerlevel10k/powerlevel10k"
 
-# Plugins de Oh My Zsh
+# Plugins de Oh My Zsh (Lista expandida sumando local + repo)
 plugins=(
-    git sudo z zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete archlinux extract web-search copyfile dirhistory
+    git 
+    sudo 
+    z 
+    zsh-autosuggestions 
+    fast-syntax-highlighting 
+    zsh-autocomplete 
+    archlinux 
+    extract 
+    web-search 
+    copyfile 
+    dirhistory
 )
 
 [[ -f "$ZSH/oh-my-zsh.sh" ]] && source "$ZSH/oh-my-zsh.sh"
 
 # --- CONFIGURACIÓN MODULAR ---
 ZDOTDIR=${ZDOTDIR:-$HOME/.config/zsh}
+
+# Limpieza de funciones para evitar errores en recarga (Copiado íntegro del repo)
+functions_to_undef=(
+  gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch
+  git_feature_start git_feature_finish dotfiles_add_select
+)
+for func in ${functions_to_undef[@]}; do
+  if typeset -f "$func" > /dev/null; then
+    unfunction "$func"
+  fi
+done
+unset functions_to_undef func
 
 # Carga de archivos en orden
 config_files=(
@@ -39,24 +61,40 @@ for config_file in "${config_files[@]}"; do
     [[ -f "$ZDOTDIR/$config_file" ]] && source "$ZDOTDIR/$config_file"
 done
 
-# Carga de alias (Repo manda)
-[[ -f "$ZDOTDIR/aliases.zsh" ]] && source "$ZDOTDIR/aliases.zsh"
+# --- INTEGRACIÓN CON MANJARO (Sumado del repo original) ---
+[[ -f /usr/share/zsh/manjaro-zsh-config ]] && source /usr/share/zsh/manjaro-zsh-config
+[[ -f /usr/share/zsh/manjaro-zsh-prompt ]] && source /usr/share/zsh/manjaro-zsh-prompt
 
-# Carga de scripts dinámicos
-[[ -f "$ZDOTDIR/functions/git/git_dynamic_aliases" ]] && source "$ZDOTDIR/functions/git/git_dynamic_aliases"
+# --- CARGA DE FUNCIONES (fpath y autoload) ---
+# Detección de OS para fpath
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    OS_ID=$ID
+fi
 
-# --- CARGA DE FUNCIONES (fpath) ---
 fpath=(
   ~/.config/zsh/functions/utils
   ~/.config/zsh/functions/git
   ~/.config/zsh/functions/fileops
-  ~/.config/zsh/functions/systemd
   $fpath
 )
+
+# Cargar sistema de servicios según el SO
+if [[ "$OS_ID" == "arch" || "$OS_ID" == "manjaro" || "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" ]]; then
+    fpath+=(~/.config/zsh/functions/systemd)
+elif [ "$OS_ID" = "void" ]; then
+    fpath+=(~/.config/zsh/functions/runit)
+fi
+
+# Lista completa de funciones para autoload (Sumatoria total)
 autoload -Uz calc ff top10 dirsize compress extract up urlencode title \
   swap lowercase start restart stop enable status disable \
   gup gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch \
   git_feature_start git_feature_finish dotfiles_add_select git-publish gsync gforce gpub gstart gupdate
+
+# --- SCRIPTS DINÁMICOS Y ALIAS ---
+[[ -f "$ZDOTDIR/functions/git/git_dynamic_aliases" ]] && source "$ZDOTDIR/functions/git/git_dynamic_aliases"
+[[ -f "$ZDOTDIR/aliases.zsh" ]] && source "$ZDOTDIR/aliases.zsh"
 
 # --- HERRAMIENTAS ---
 eval "$(zoxide init zsh)"
@@ -83,4 +121,4 @@ fi
 export PATH="$HOME/.config/zsh/git-scripts:$HOME/.config/zsh/scripts:$HOME/.local/bin:$PATH"
 
 # Cleanup
-unset config_files config_file
+unset config_files config_file OS_ID
