@@ -1,130 +1,98 @@
+# === CARGA DE FASTFETCH ===
+fastfetch
+
 # Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
 
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:$HOME/.local/bin:/usr/local/bin:$PATH
+# === CONFIGURACION BASE ZSH ===
+HISTFILE=~/.histfile
+HISTSIZE=50000
+SAVEHIST=50000
+# Evitar comandos duplicados en el historial
+setopt HIST_IGNORE_DUPS          # No guardar si es igual al anterior
+setopt HIST_IGNORE_ALL_DUPS      # Borrar duplicados previos
+setopt HIST_SAVE_NO_DUPS         # No guardar duplicados en el archivo
+setopt HIST_REDUCE_BLANKS        # Eliminar espacios sobrantes
+setopt INC_APPEND_HISTORY        # Actualizar historial inmediatamente
+setopt SHARE_HISTORY             # Compartir historial entre sesiones
+setopt EXTENDED_HISTORY          # Guardar timestamp del comando (cuándo se ejecutó)
+setopt HIST_FIND_NO_DUPS         # No mostrar duplicados al buscar hacia atrás
+setopt AUTO_PUSHD                # cd guarda en el stack (puedes usar cd -[TAB])
+setopt PUSHD_IGNORE_DUPS         # No duplicar directorios en el stack
+setopt autocd beep extendedglob nomatch notify
+bindkey -e
 
-# Path to your Oh My Zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
-
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time Oh My Zsh is loaded, in which case,
-# to know which specific one was loaded, run: echo $RANDOM_THEME
-# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 ZSH_THEME="powerlevel10k/powerlevel10k"
 
-# Set list of themes to pick from when loading at random
-# Setting this variable when ZSH_THEME=random will cause zsh to load
-# a theme from this variable instead of looking in $ZSH/themes/
-# If set to an empty array, this variable will have no effect.
-# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
-
-# Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
-
-# Uncomment the following line to use hyphen-insensitive completion.
-# Case-sensitive completion must be off. _ and - will be interchangeable.
-# HYPHEN_INSENSITIVE="true"
-
-# Uncomment one of the following lines to change the auto-update behavior
-# zstyle ':omz:update' mode disabled  # disable automatic updates
-# zstyle ':omz:update' mode auto      # update automatically without asking
-# zstyle ':omz:update' mode reminder  # just remind me to update when it's time
-
-# Uncomment the following line to change how often to auto-update (in days).
-# zstyle ':omz:update' frequency 13
-
-# Uncomment the following line if pasting URLs and other text is messed up.
-# DISABLE_MAGIC_FUNCTIONS="true"
-
-# Uncomment the following line to disable colors in ls.
-# DISABLE_LS_COLORS="true"
-
-# Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
-
-# Uncomment the following line to display red dots whilst waiting for completion.
-# You can also set it to another string to have that shown instead of the default red dots.
-# e.g. COMPLETION_WAITING_DOTS="%F{yellow}waiting...%f"
-# Caution: this setting can cause issues with multiline prompts in zsh < 5.7.1 (see #5765)
-# COMPLETION_WAITING_DOTS="true"
-
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
-
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# You can set one of the optional three formats:
-# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# or set a custom format using the strftime function format specifications,
-# see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
-
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
-
-# Which plugins would you like to load?
-# Standard plugins can be found in $ZSH/plugins/
-# Custom plugins may be added to $ZSH_CUSTOM/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
 plugins=(
-git
-zsh-autosuggestions
-zsh-syntax-highlighting
-zsh-navigation-tools
+  git sudo z zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete archlinux extract web-search copyfile dirhistory
 )
 
 source $ZSH/oh-my-zsh.sh
 
-# User configuration
+# === ALIAS Y ATAJOS ===
+[[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
 
-# export MANPATH="/usr/local/man:$MANPATH"
+# === FUNCIONES ===
+mkcd() {
+  mkdir -p "$1" && cd "$1"
+}
 
-[[ ! -f ~/.config/zsh/.zshrc ]] || source ~/.config/zsh/.zshrc
-# You may need to manually set your language environment
-# export LANG=en_US.UTF-8
+# === CONFIGURACION DE AUTOCOMPLETADO (IDE STYLE) ===
+# 1. Ajustes del plugin zsh-autocomplete
+zstyle ':autocomplete:*' delay 0.8
+zstyle ':autocomplete:*' list-lines 50
+zstyle ':autocomplete:tab:*' insert-unambiguous yes
 
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='nvim'
-# fi
+# 2. Habilitar Grupos y Títulos (Obligatorio para separar Alias de Comandos)
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format '%B%F{yellow}-- %d --%f%b'
 
-# Compilation flags
-# export ARCHFLAGS="-arch $(uname -m)"
+# 3. ORDEN DE PRIORIDAD (Aliases primero, luego funciones, luego comandos, luego rutas)
+zstyle ':completion:*' tag-order 'aliases' 'functions' 'commands' 'builtins' 'local-directories' 'directories' 'files'
+zstyle ':completion:*' group-order aliases functions commands builtins local-directories directories files
 
-# Set personal aliases, overriding those provided by Oh My Zsh libs,
-# plugins, and themes. Aliases can be placed here, though Oh My Zsh
-# users are encouraged to define aliases within a top-level file in
-# the $ZSH_CUSTOM folder, with .zsh extension. Examples:
-# - $ZSH_CUSTOM/aliases.zsh
-# - $ZSH_CUSTOM/macos.zsh
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+# 4. Estética General
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+zstyle ':completion:*' verbose yes
 
+# === BUSQUEDA CON FLECHAS ===
+autoload -U up-line-or-beginning-search
+autoload -U down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey "^[[A" up-line-or-beginning-search
+bindkey "^[[B" down-line-or-beginning-search
+
+# === HERRAMIENTAS ===
+eval "$(zoxide init zsh)"
+source <(fzf --zsh)
+
+[[ -f ~/.config/pnpm/env ]] && source ~/.config/pnpm/env
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-
-autoload n-aliases
-autoload n-list
 
 # pnpm
 export PNPM_HOME="/home/jmro/.local/share/pnpm"
 case ":$PATH:" in
-  *":$PNPM_HOME:"*) ;;
-  *) export PATH="$PNPM_HOME:$PATH" ;;
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
 esac
 # pnpm end
+alias npm="pnpm"
+alias npx="pnpm dlx"
+
+# === SECRETOS Y TOKENS ===
+[[ -f ~/.zsh_secrets ]] && source ~/.zsh_secrets
+
+# === INTEGRACIÓN CON DOTFILES MODULARES ===
+for func in ~/.config/zsh/functions/utils/*; do
+    [[ -f "$func" ]] && source "$func"
+done
+[[ -f ~/.config/zsh/aliases.zsh ]] && source ~/.config/zsh/aliases.zsh
+
+# Path
+export PATH="/home/jmro/.local/bin:$PATH"
