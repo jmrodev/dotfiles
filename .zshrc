@@ -33,12 +33,14 @@ plugins=(
 
 source $ZSH/oh-my-zsh.sh
 
-# === ALIAS Y ATAJOS ===
-[[ -f ~/.zsh_aliases ]] && source ~/.zsh_aliases
-
-# === FUNCIONES ===
+# === FUNCIONES SISTEMA ===
 mkcd() {
   mkdir -p "$1" && cd "$1"
+}
+
+# Conexiones persistentes (Anti-cortes Wi-Fi)
+ssh_tmux() {
+    ssh -t "$1" "tmux attach-session -t main || tmux new-session -s main"
 }
 
 # === CONFIGURACION DE AUTOCOMPLETADO (IDE STYLE) ===
@@ -89,9 +91,11 @@ alias npx="pnpm dlx"
 [[ -f ~/.zsh_secrets ]] && source ~/.zsh_secrets
 
 # === INTEGRACIÓN CON DOTFILES MODULARES ===
+# Carga de funciones del repositorio
 for func in ~/.config/zsh/functions/utils/*; do
     [[ -f "$func" ]] && source "$func"
 done
+# Carga de alias unificados (Repo manda)
 [[ -f ~/.config/zsh/aliases.zsh ]] && source ~/.config/zsh/aliases.zsh
 
 # Path
