@@ -84,7 +84,6 @@ alias rpi-ext='ssh_tmux rpi-ext'
 alias rpi='ssh_tmux rpi'
 
 # --- DOTFILES BARE REPO MANAGEMENT ---
-alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 alias da='dotfiles add'
 alias dc='dotfiles commit -m'
 alias ds='dotfiles status -s'

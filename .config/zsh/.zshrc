@@ -10,6 +10,7 @@ if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]
 fi
 
 # Definición de la función dotfiles
+unalias dotfiles 2>/dev/null
 dotfiles() {
     /usr/bin/git --git-dir=$HOME/.dotfiles --work-tree=$HOME "$@"
 }
