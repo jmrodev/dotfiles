@@ -315,3 +315,14 @@ function dot-help() {
     esac
     echo -e "\033[1;34m------------------------------------------\033[0m"
 }
+
+# Actualización rápida de Dotfiles (Sincronización Espejo)
+function dot-update() {
+    echo -e "\033[1;34m--- 🔄 SINCRONIZANDO CON GITHUB (MODO ESPEJO) ---\033[0m"
+    dotfiles fetch origin main
+    dotfiles read-tree --reset -u FETCH_HEAD
+    echo -e "\033[1;32m✅ Archivos de configuración actualizados.\033[0m"
+    echo -e "\033[0;33mRecargando terminal...\033[0m"
+    source ~/.zshrc
+    dot-help
+}
