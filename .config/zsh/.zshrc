@@ -25,17 +25,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 
 # Plugins de Oh My Zsh
 plugins=(
-    git 
-    sudo 
-    z 
-    zsh-autosuggestions 
-    fast-syntax-highlighting 
-    zsh-autocomplete 
-    archlinux 
-    extract 
-    web-search 
-    copyfile 
-    dirhistory
+    git sudo z zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete archlinux extract web-search copyfile dirhistory
 )
 
 [[ -f "$ZSH/oh-my-zsh.sh" ]] && source "$ZSH/oh-my-zsh.sh"
@@ -43,48 +33,14 @@ plugins=(
 # --- CONFIGURACIÓN MODULAR ---
 ZDOTDIR=${ZDOTDIR:-$HOME/.config/zsh}
 
-# Limpieza de funciones para evitar errores en recarga
-functions_to_undef=(
-  gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch
-  git_feature_start git_feature_finish dotfiles_add_select
-)
-for func in ${functions_to_undef[@]}; do
-  if typeset -f "$func" > /dev/null; then
-    unfunction "$func"
-  fi
-done
-unset functions_to_undef func
-
-# Carga de archivos en orden
-config_files=(
-    options.zsh
-    keybindings.zsh
-    plugins.zsh
-)
-
+# Carga de archivos modulares
+config_files=(options.zsh keybindings.zsh plugins.zsh)
 for config_file in "${config_files[@]}"; do
     [[ -f "$ZDOTDIR/$config_file" ]] && source "$ZDOTDIR/$config_file"
 done
 
-# --- CARGA DE FUNCIONES (fpath y autoload) ---
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    OS_ID=$ID
-fi
-
-fpath=(
-  ~/.config/zsh/functions/utils
-  ~/.config/zsh/functions/git
-  ~/.config/zsh/functions/fileops
-  $fpath
-)
-
-if [[ "$OS_ID" == "arch" || "$OS_ID" == "manjaro" || "$OS_ID" == "debian" || "$OS_ID" == "ubuntu" ]]; then
-    fpath+=(~/.config/zsh/functions/systemd)
-elif [ "$OS_ID" = "void" ]; then
-    fpath+=(~/.config/zsh/functions/runit)
-fi
-
+# --- CARGA DE FUNCIONES ---
+fpath=(~/.config/zsh/functions/utils ~/.config/zsh/functions/git ~/.config/zsh/functions/fileops ~/.config/zsh/functions/systemd $fpath)
 autoload -Uz calc ff top10 dirsize compress extract up urlencode title \
   swap lowercase start restart stop enable status disable \
   gup gupm gunwip gwip gcbp gdelb git_current_branch dotfiles_current_branch \
@@ -98,15 +54,9 @@ autoload -Uz calc ff top10 dirsize compress extract up urlencode title \
 eval "$(zoxide init zsh)"
 source <(fzf --zsh)
 
-# PNPM
+# PNPM & PYENV
 export PNPM_HOME="/home/jmro/.local/share/pnpm"
-case ":$PATH:" in
-  *":$PNPM_HOME/bin:"*) ;;
-  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
-esac
-
-# PYENV
-export PATH="$HOME/.pyenv/bin:$PATH"
+export PATH="$PNPM_HOME/bin:$HOME/.pyenv/bin:$PATH"
 if command -v pyenv &>/dev/null; then
     eval "$(pyenv init --path)"
     eval "$(pyenv virtualenv-init -)"
@@ -115,11 +65,11 @@ fi
 # --- SECRETOS ---
 [[ -f ~/.zsh_secrets ]] && source ~/.zsh_secrets
 
-# --- PATH FINAL ---
-export PATH="$HOME/.config/zsh/git-scripts:$HOME/.config/zsh/scripts:$HOME/.local/bin:$PATH"
+# --- PATH FINAL (SISTEMA PRIMERO PARA ESTABILIDAD) ---
+# Ponemos /usr/bin al principio para evitar que scripts locales rompan comandos base como curl
+export PATH="/usr/local/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$HOME/.config/zsh/git-scripts:$HOME/.config/zsh/scripts:$HOME/.local/bin:$PATH"
 
 # Mensaje de ayuda inicial
 echo -e "\033[0;33m💡 Tip: Escribe \033[1;32mdot-help\033[0;33m para ver tus comandos.\033[0m"
 
-# Cleanup
-unset config_files config_file OS_ID
+unset config_files config_file
