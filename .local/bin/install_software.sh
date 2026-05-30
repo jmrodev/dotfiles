@@ -264,33 +264,13 @@ echo "Configurando el repositorio de dotfiles para ignorar archivos no rastreado
 git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME config status.showUntrackedFiles no
 
 
-# 9. Instalar NvChad para Neovim (Común)
+# 9. Neovim (Configurado vía Dotfiles)
 # ---------------------------------------
 if command -v nvim &> /dev/null; then
-    echo "Instalando/Actualizando NvChad para Neovim..."
-    
-    # Hacer copia de seguridad de las configuraciones existentes
-    if [ -d "$HOME/.config/nvim" ]; then
-        echo "Haciendo copia de seguridad de la configuración de nvim existente en ~/.config/nvim.bak..."
-        mv "$HOME/.config/nvim" "$HOME/.config/nvim.bak"
-    fi
-    if [ -d "$HOME/.local/share/nvim" ]; then
-        echo "Haciendo copia de seguridad de los datos de nvim existentes en ~/.local/share/nvim.bak..."
-        mv "$HOME/.local/share/nvim" "$HOME/.local/share/nvim.bak"
-    fi
-    if [ -d "$HOME/.cache/nvim" ]; then
-        echo "Haciendo copia de seguridad de la caché de nvim existente en ~/.cache/nvim.bak..."
-        mv "$HOME/.cache/nvim" "$HOME/.cache/nvim.bak"
-    fi
-
-    # Clonar NvChad
-    echo "Clonando NvChad..."
-    git clone https://github.com/NvChad/starter ~/.config/nvim
-    
-    echo "NvChad se ha clonado en ~/.config/nvim."
-    echo "🔴 IMPORTANTE: Abre Neovim ('nvim') para completar la instalación de plugins."
+    echo "Neovim detectado. La configuración (LazyVim) se gestiona a través de tus dotfiles."
+    echo "🔴 IMPORTANTE: La primera vez que abras 'nvim', se descargarán los plugins automáticamente."
 else
-    echo "ADVERTENCIA: Neovim (nvim) no está instalado. Omitiendo la instalación de NvChad."
+    echo "ADVERTENCIA: Neovim (nvim) no está instalado."
 fi
 
 

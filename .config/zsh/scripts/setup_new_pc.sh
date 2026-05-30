@@ -77,6 +77,7 @@ if command -v pacman &>/dev/null; then
     PACKAGES=(
         "eza" "bat" "fzf" "neovim" "lazygit" "btop" "zoxide" "fastfetch" 
         "pnpm" "docker" "docker-compose" "gh" "trello-cli" "yt-dlp" "ranger"
+        "ripgrep" "fd" "unzip" "gcc" "make"
         "pipewire" "pipewire-pulse" "pipewire-alsa" "wireplumber"
         "p7zip" "unarchiver" "wget" "lsof" "flameshot" "google-chrome"
     )

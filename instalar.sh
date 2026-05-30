@@ -24,8 +24,8 @@ dotfiles_cmd remote set-url origin https://github.com/jmrodev/dotfiles.git
 dotfiles_cmd fetch origin main
 
 # 3. Limpiar terreno
-echo "Limpiando archivos de configuración básicos..."
-rm -f .zshrc .bashrc .gitconfig .p10k.zsh
+echo "Limpiando archivos de configuración básicos (ZSH, Git, Neovim)..."
+rm -rf .zshrc .bashrc .gitconfig .p10k.zsh .config/nvim .config/ranger
 
 # 4. FORZAR checkout desde origin/main
 echo "Extrayendo archivos del repositorio..."
