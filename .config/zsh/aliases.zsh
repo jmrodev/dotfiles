@@ -262,18 +262,56 @@ function list_trash() {
 # TERMINAL TIPS & HELP
 # ==========================================
 function dot-help() {
-    echo -e "\033[1;34m--- 🚀 DOTFILES MANAGEMENT CHEAT SHEET ---\033[0m"
-    echo -e "\033[1;32mds\033[0m          : Ver cambios locales (dotfiles status)"
-    echo -e "\033[1;32mda <archivo>\033[0m : Sumar archivos al repo (dotfiles add)"
-    echo -e "\033[1;32mdc \"msj\"\033[0m     : Guardar cambios localmente (dotfiles commit)"
-    echo -e "\033[1;32mdp\033[0m          : Subir todo a GitHub (dotfiles push)"
-    echo -e "\033[1;32mupzsh\033[0m       : Recargar configuración de la terminal"
-    echo -e ""
-    echo -e "\033[1;34m--- 🖥️ NUEVA PC (INSTALLER) ---\033[0m"
-    echo -e "curl -sSL https://raw.githubusercontent.com/jmrodev/dotfiles/main/instalar.sh | bash"
-    echo -e ""
-    echo -e "\033[1;34m--- 📂 NAVEGACIÓN PRO ---\033[0m"
-    echo -e "\033[1;32mcd -\033[0m + [TAB] : Ver lista de carpetas recientes"
-    echo -e "\033[1;32mr\033[0m            : Navegador visual Ranger"
+    local category=$1
+    case $category in
+        git)
+            echo -e "\033[1;34m--- 🌿 GIT PRO ALIASES ---\033[0m"
+            echo -e "\033[1;32mglg\033[0m     : Log visual (oneline + graph)"
+            echo -e "\033[1;32mgs\033[0m      : Git Status"
+            echo -e "\033[1;32mgp\033[0m      : Git Push"
+            echo -e "\033[1;32mgpull\033[0m   : Git Pull"
+            echo -e "\033[1;32mgco\033[0m     : Git Checkout"
+            echo -e "\033[1;32mgca\033[0m     : Git Commit All"
+            echo -e "\033[1;32mgrb\033[0m     : Git Rebase inteligente"
+            echo -e "\033[1;32mgpusho\033[0m  : Push y set-upstream a rama actual"
+            ;;
+        sys)
+            echo -e "\033[1;34m--- ⚙️ SYSTEM & MAINTENANCE ---\033[0m"
+            echo -e "\033[1;32mactualizar\033[0m : Actualización total del sistema"
+            echo -e "\033[1;32mpacclean\033[0m   : Limpiar paquetes huérfanos"
+            echo -e "\033[1;32mlibre\033[0m      : Liberar memoria RAM (cache)"
+            echo -e "\033[1;32mtrim\033[0m       : Optimizar SSD (fstrim)"
+            echo -e "\033[1;32mtopmem\033[0m     : Procesos que más RAM consumen"
+            echo -e "\033[1;32mbattery\033[0m    : Info detallada de batería"
+            echo -e "\033[1;32minfoi\033[0m      : Resumen de hardware"
+            ;;
+        apps)
+            echo -e "\033[1;34m--- 🚀 APPS & TOOLS ---\033[0m"
+            echo -e "\033[1;32mlg\033[0m        : Lazygit"
+            echo -e "\033[1;32mr\033[0m         : Ranger (Navegador visual)"
+            echo -e "\033[1;32myoutube\033[0m   : Descargar MP3 de Youtube"
+            echo -e "\033[1;32mweather\033[0m   : Clima en la terminal"
+            echo -e "\033[1;32mdoker\033[0m     : Iniciar motor Docker"
+            echo -e "\033[1;32mmyip\033[0m      : Ver tu IP pública"
+            echo -e "\033[1;32mserver\033[0m    : Crear servidor HTTP en carpeta actual"
+            ;;
+        *)
+            echo -e "\033[1;34m--- 🚀 DOTFILES MANAGEMENT CHEAT SHEET ---\033[0m"
+            echo -e "\033[1;32mds\033[0m          : Ver cambios locales (dotfiles status)"
+            echo -e "\033[1;32mda <archivo>\033[0m : Sumar archivos al repo (dotfiles add)"
+            echo -e "\033[1;32mdc \"msj\"\033[0m     : Guardar cambios localmente (dotfiles commit)"
+            echo -e "\033[1;32mdp\033[0m          : Subir todo a GitHub (dotfiles push)"
+            echo -e "\033[1;32mupzsh\033[0m       : Recargar configuración (source)"
+            echo -e ""
+            echo -e "\033[1;34m--- 📂 CATEGORÍAS DISPONIBLES ---\033[0m"
+            echo -e "Escribe \033[1;32mdot-help <categoría>\033[0m para ver alias de:"
+            echo -e "• \033[1;32mgit\033[0m   : Atajos de Git"
+            echo -e "• \033[1;32msys\033[0m   : Sistema y Mantenimiento"
+            echo -e "• \033[1;32mapps\033[0m  : Aplicaciones y Herramientas"
+            echo -e ""
+            echo -e "\033[1;34m--- 🖥️ NUEVA PC (INSTALLER) ---\033[0m"
+            echo -e "curl -sSL https://raw.githubusercontent.com/jmrodev/dotfiles/main/instalar.sh | bash"
+            ;;
+    esac
     echo -e "\033[1;34m------------------------------------------\033[0m"
 }
