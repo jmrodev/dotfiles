@@ -11,26 +11,28 @@ echo "--- Iniciando Instalación de Dotfiles ---"
 if [ ! -d "$HOME/.dotfiles" ]; then
     echo "Clonando repositorio bare..."
     git clone --bare https://github.com/jmrodev/dotfiles.git "$HOME/.dotfiles"
-else
-    echo "El repositorio .dotfiles ya existe. Asegurando origen correcto..."
-    /usr/bin/git --git-dir="$HOME/.dotfiles/" remote set-url origin https://github.com/jmrodev/dotfiles.git
 fi
 
-# 2. Función de ayuda
+# Función de ayuda para comandos git bare
 function dotfiles_cmd {
     /usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME" "$@"
 }
 
-# 3. Preparar checkout
-echo "Preparando el terreno (limpiando posibles conflictos)..."
-# Borramos archivos que suelen venir por defecto y bloquean el checkout
-rm -f .zshrc .bashrc .gitconfig .p10k.zsh .bash_history .bash_logout .profile
+# 2. ASEGURAR ÚLTIMA VERSIÓN DE GITHUB (Muy importante)
+echo "Trayendo cambios más recientes desde GitHub..."
+dotfiles_cmd remote set-url origin https://github.com/jmrodev/dotfiles.git
+dotfiles_cmd fetch origin main
 
-# 4. Aplicar checkout
-echo "Sincronizando archivos del repositorio..."
-if ! dotfiles_cmd checkout; then
-    echo "Conflicto detectado. Forzando checkout (Sobrescribiendo archivos locales)..."
-    dotfiles_cmd checkout -f
+# 3. Preparar checkout (Limpieza)
+echo "Limpiando posibles conflictos..."
+rm -f .zshrc .bashrc .gitconfig .p10k.zsh
+
+# 4. Aplicar checkout apuntando a origin/main
+echo "Sincronizando archivos (Checkout)..."
+# Forzamos el checkout para que los archivos aparezcan físicamente
+if ! dotfiles_cmd checkout -f main; then
+    echo "Fallo el checkout forzado. Intentando resetear el índice..."
+    dotfiles_cmd reset --hard origin/main
 fi
 
 # 5. Configuración de visibilidad
@@ -44,7 +46,14 @@ if [ -f "$SETUP_SCRIPT" ]; then
     bash "$SETUP_SCRIPT"
 else
     echo "ERROR CRÍTICO: No se encontró el script de setup en: $SETUP_SCRIPT"
-    echo "Contenido de ~/.config/zsh/scripts/:"
-    ls -F "$HOME/.config/zsh/scripts/" 2>/dev/null || echo "La carpeta no existe."
+    echo "Intentando buscarlo en el repositorio..."
+    if dotfiles_cmd ls-tree -r HEAD --name-only | grep -q "setup_new_pc.sh"; then
+        echo "El archivo existe en el repo pero no en el disco. Reintentando checkout quirúrgico..."
+        dotfiles_cmd checkout -f main -- .config/zsh/scripts/setup_new_pc.sh
+        if [ -f "$SETUP_SCRIPT" ]; then
+            bash "$SETUP_SCRIPT"
+            exit 0
+        fi
+    fi
     exit 1
 fi
