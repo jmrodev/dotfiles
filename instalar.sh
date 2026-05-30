@@ -5,7 +5,7 @@ set -e
 # Asegurar que estamos en el HOME
 cd "$HOME"
 
-echo "--- Iniciando Instalación de Dotfiles ---"
+echo "--- Iniciando Instalación de Dotfiles (Modo Ultra-Robusto) ---"
 
 # 1. Clonar el repositorio bare si no existe
 if [ ! -d "$HOME/.dotfiles" ]; then
@@ -18,42 +18,38 @@ function dotfiles_cmd {
     /usr/bin/git --git-dir="$HOME/.dotfiles/" --work-tree="$HOME" "$@"
 }
 
-# 2. ASEGURAR ÚLTIMA VERSIÓN DE GITHUB (Muy importante)
-echo "Trayendo cambios más recientes desde GitHub..."
+# 2. ASEGURAR ÚLTIMA VERSIÓN DE GITHUB
+echo "Sincronizando con GitHub..."
 dotfiles_cmd remote set-url origin https://github.com/jmrodev/dotfiles.git
 dotfiles_cmd fetch origin main
 
-# 3. Preparar checkout (Limpieza)
-echo "Limpiando posibles conflictos..."
+# 3. Limpiar terreno
+echo "Limpiando archivos de configuración básicos..."
 rm -f .zshrc .bashrc .gitconfig .p10k.zsh
 
-# 4. Aplicar checkout apuntando a origin/main
-echo "Sincronizando archivos (Checkout)..."
-# Forzamos el checkout para que los archivos aparezcan físicamente
-if ! dotfiles_cmd checkout -f main; then
-    echo "Fallo el checkout forzado. Intentando resetear el índice..."
-    dotfiles_cmd reset --hard origin/main
-fi
+# 4. FORZAR checkout desde origin/main
+echo "Extrayendo archivos del repositorio..."
+# Usamos read-tree y checkout-index para ser más agresivos que checkout -f
+dotfiles_cmd read-tree --reset -u FETCH_HEAD
 
 # 5. Configuración de visibilidad
 dotfiles_cmd config --local status.showUntrackedFiles no
 
 # 6. Lanzar el instalador pesado
 SETUP_SCRIPT="$HOME/.config/zsh/scripts/setup_new_pc.sh"
+
+# Verificación de emergencia: si no aparece, lo bajamos por curl
+if [ ! -f "$SETUP_SCRIPT" ]; then
+    echo "Aviso: El script no apareció tras el checkout. Descargando versión de emergencia..."
+    mkdir -p "$(dirname "$SETUP_SCRIPT")"
+    curl -sSL "https://raw.githubusercontent.com/jmrodev/dotfiles/main/.config/zsh/scripts/setup_new_pc.sh" -o "$SETUP_SCRIPT"
+fi
+
 if [ -f "$SETUP_SCRIPT" ]; then
     echo "Lanzando instalador de sistema..."
     chmod +x "$SETUP_SCRIPT"
     bash "$SETUP_SCRIPT"
 else
-    echo "ERROR CRÍTICO: No se encontró el script de setup en: $SETUP_SCRIPT"
-    echo "Intentando buscarlo en el repositorio..."
-    if dotfiles_cmd ls-tree -r HEAD --name-only | grep -q "setup_new_pc.sh"; then
-        echo "El archivo existe en el repo pero no en el disco. Reintentando checkout quirúrgico..."
-        dotfiles_cmd checkout -f main -- .config/zsh/scripts/setup_new_pc.sh
-        if [ -f "$SETUP_SCRIPT" ]; then
-            bash "$SETUP_SCRIPT"
-            exit 0
-        fi
-    fi
+    echo "ERROR: No se pudo obtener el script de setup."
     exit 1
 fi
