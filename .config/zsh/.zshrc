@@ -123,3 +123,6 @@ export PATH="$HOME/.config/zsh/git-scripts:$HOME/.config/zsh/scripts:$HOME/.loca
 
 # Cleanup
 unset config_files config_file OS_ID
+
+# Mensaje de ayuda inicial (Senior Tip)
+echo -e "\033[0;33m💡 Tip: Escribe \033[1;32mdot-help\033[0;33m para ver tus comandos de gestión de dotfiles.\033[0m"

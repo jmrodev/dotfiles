@@ -257,3 +257,23 @@ function list_trash() {
     echo "Trash is empty or does not exist."
   fi
 }
+
+# ==========================================
+# TERMINAL TIPS & HELP
+# ==========================================
+function dot-help() {
+    echo -e "\033[1;34m--- 🚀 DOTFILES MANAGEMENT CHEAT SHEET ---\033[0m"
+    echo -e "\033[1;32mds\033[0m          : Ver cambios locales (dotfiles status)"
+    echo -e "\033[1;32mda <archivo>\033[0m : Sumar archivos al repo (dotfiles add)"
+    echo -e "\033[1;32mdc \"msj\"\033[0m     : Guardar cambios localmente (dotfiles commit)"
+    echo -e "\033[1;32mdp\033[0m          : Subir todo a GitHub (dotfiles push)"
+    echo -e "\033[1;32mupzsh\033[0m       : Recargar configuración de la terminal"
+    echo -e ""
+    echo -e "\033[1;34m--- 🖥️ NUEVA PC (INSTALLER) ---\033[0m"
+    echo -e "curl -sSL https://raw.githubusercontent.com/jmrodev/dotfiles/main/instalar.sh | bash"
+    echo -e ""
+    echo -e "\033[1;34m--- 📂 NAVEGACIÓN PRO ---\033[0m"
+    echo -e "\033[1;32mcd -\033[0m + [TAB] : Ver lista de carpetas recientes"
+    echo -e "\033[1;32mr\033[0m            : Navegador visual Ranger"
+    echo -e "\033[1;34m------------------------------------------\033[0m"
+}
