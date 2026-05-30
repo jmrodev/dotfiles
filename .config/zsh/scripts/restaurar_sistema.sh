@@ -49,7 +49,7 @@ wifi.powersave = 2
 EOF
 
 echo "--- 2. Instalando Software Base y Pack Pro ---"
-sudo pacman -S --noconfirm \
+sudo pacman -S --needed --noconfirm \
     base-devel git curl wget zsh net-tools nmap wireguard-tools \
     nodejs-lts-jod npm yarn jdk-openjdk go dotnet-sdk \
     python python-pip \
@@ -71,7 +71,7 @@ else
 fi
 
 echo "--- 4. Software desde AUR (yay) ---"
-yay -S --noconfirm \
+yay -S --needed --noconfirm \
     google-chrome rustdesk-bin \
     antigravity \
     postman-bin \
@@ -104,101 +104,20 @@ ZSH_CUSTOM="$HOME/.oh-my-zsh/custom"
 
 echo "--- 7. Restaurando configuración .zshrc PERSONALIZADA ---"
 ZSHRC="$HOME/.zshrc"
-[ -f "$ZSHRC" ] && cp "$ZSHRC" "$ZSHRC.bak"
+
+if grep -q "source \"\$HOME/.config/zsh/.zshrc\"" "$ZSHRC" 2>/dev/null; then
+    echo "Tu .zshrc ya es modular. Saltando escritura para no romper la estructura del repo."
+else
+    [ -f "$ZSHRC" ] && cp "$ZSHRC" "$ZSHRC.bak"
 
 cat <<'EOT' > "$ZSHRC"
-# === CARGA DE FASTFETCH ===
-fastfetch
+# ~/.zshrc (Entry Point)
+# This file is managed by the dotfiles bare repository.
+# The actual configuration lives in ~/.config/zsh/.zshrc
 
-# Enable Powerlevel10k instant prompt.
-if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-  source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-fi
-
-# === CONFIGURACION BASE ZSH ===
-HISTFILE=~/.histfile
-HISTSIZE=50000
-SAVEHIST=50000
-setopt autocd beep extendedglob nomatch notify
-bindkey -e
-
-export ZSH="$HOME/.oh-my-zsh"
-ZSH_THEME="powerlevel10k/powerlevel10k"
-
-plugins=(
-  git sudo z zsh-autosuggestions fast-syntax-highlighting zsh-autocomplete archlinux extract web-search copyfile dirhistory
-)
-
-source $ZSH/oh-my-zsh.sh
-
-# === ALIAS DE SEGURIDAD ===
-alias cp='cp -i'
-alias mv='mv -i'
-alias rm='rm -i'
-
-# === ALIAS DE DESARROLLO ===
-alias v='nvim'
-alias vi='nvim'
-alias vim='nvim'
-alias edit='nvim'
-
-# === GESTION DE PAQUETES ===
-alias update='yay -Syyyu --noconfirm'
-alias actualizar='yay -Syyyu --noconfirm'
-alias install='yay -S'
-alias remove='yay -Rns'
-alias pacclean='sudo pacman -Rns $(pacman -Qdtq)'
-
-# === FUNCIONES ===
-mkcd() {
-  mkdir -p "$1" && cd "$1"
-}
-
-# === CONFIGURACION DE AUTOCOMPLETADO ===
-zstyle ':autocomplete:*' delay 0.8
-zstyle ':autocomplete:*' list-lines 10
-zstyle ':autocomplete:tab:*' insert-unambiguous yes
-zstyle ':completion:*' group-name ''
-zstyle ':completion:*:descriptions' format '%B%F{yellow}-- %d --%f%b'
-zstyle ':completion:*' tag-order 'aliases' 'functions' 'commands' 'builtins' 'local-directories' 'directories' 'files'
-zstyle ':completion:*' group-order aliases functions commands builtins local-directories directories files
-zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
-zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
-zstyle ':completion:*' verbose yes
-
-autoload -U up-line-or-beginning-search
-autoload -U down-line-or-beginning-search
-zle -N up-line-or-beginning-search
-zle -N down-line-or-beginning-search
-bindkey "^[[A" up-line-or-beginning-search
-bindkey "^[[B" down-line-or-beginning-search
-
-alias ls='eza --color=always --group-directories-first --icons'
-alias ll='eza -lah --color=always --group-directories-first --icons'
-alias la='eza -a --icons'
-alias lla='eza -la --icons --git'
-alias lt='eza --tree --level=2 --icons'
-alias cat='bat --paging=never --style=plain'
-alias top='btop'
-alias lg='lazygit'
-alias rpi='ssh rpi'
-alias rpi-ext='ssh rpi-ext'
-
-alias ..='cd ..'
-alias ...='cd ../..'
-alias ....='cd ../../..'
-alias .....='cd ../../../..'
-
-eval "$(zoxide init zsh)"
-source <(fzf --zsh)
-
-# === ALIAS DE RENDIMIENTO PERMANENTE ===
-# Configura el sistema para rendimiento máximo y asegura que la tapa sea ignorada sin cerrar sesión
-alias fullpower='sudo systemctl kill -s SIGHUP systemd-logind && sudo auto-cpufreq --stats && echo "Sistema optimizado por auto-cpufreq y Tapa Ignorada (SIGHUP enviado)."'
-
-[[ -f ~/.config/pnpm/env ]] && source ~/.config/pnpm/env
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+source "$HOME/.config/zsh/.zshrc"
 EOT
+fi
 
 echo "--- 8. Restaurando configuración VISUAL ACTUAL (.p10k.zsh) ---"
 # ... (resto del código de restauración visual igual hasta la sección 8.2)

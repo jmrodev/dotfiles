@@ -48,7 +48,7 @@ fi
 # --- 3. OPTIMIZACIÓN DE SISTEMA Y MEMORIA ---
 echo "--- Optimizando Sistema (ZRAM y Performance) ---"
 if command -v pacman &>/dev/null; then
-    sudo pacman -S --noconfirm zram-generator
+    sudo pacman -S --needed --noconfirm zram-generator
     cat <<EOF | sudo tee /etc/systemd/zram-generator.conf
 [zram0]
 zram-size = ram
@@ -80,7 +80,7 @@ if command -v pacman &>/dev/null; then
         "pipewire" "pipewire-pulse" "pipewire-alsa" "wireplumber"
         "p7zip" "unarchiver" "wget" "lsof" "flameshot" "google-chrome"
     )
-    yay -S --noconfirm "${PACKAGES[@]}"
+    yay -S --needed --noconfirm "${PACKAGES[@]}"
 fi
 
 # --- 5. CONFIGURACIONES FINALES ---
