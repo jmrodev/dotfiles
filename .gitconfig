@@ -15,3 +15,11 @@
 	sslCertPasswordProtected = false
 [core]
 	editor = nvim
+[pull]
+	rebase = true
+[push]
+	autoSetupRemote = true
+[column]
+	ui = auto
+[branch]
+	sort = -committerdate
