@@ -1,5 +1,5 @@
 -- Configuraciones del IDE Generadas por la Suite de Instaladores de jmro
--- Soporta de forma nativa e inteligente LazyVim y NvChad en caliente.
+-- Optimizada para Neovim v0.11+ (LazyVim Native Support)
 
 local is_nvchad = pcall(require, "nvconfig")
 
@@ -9,31 +9,31 @@ local plugins = {
     "williamboman/mason.nvim",
     opts = {
       ensure_installed = {
-        "stylua", "shfmt", "html-lsp", "css-lsp", "vtsls", "tailwindcss-language-server", "prettier", "pyright", "black", "intelephense", "php-cs-fixer", "bash-language-server", "gopls", "dockerfile-language-server"
+        "stylua", "shfmt", "html-lsp", "css-lsp", "vtsls", "tailwindcss-language-server", 
+        "prettier", "pyright", "black", "intelephense", "php-cs-fixer", 
+        "bash-language-server", "gopls", "dockerfile-language-server"
       },
     },
   },
 }
 
--- Inyectar tema visual si no es NvChad
+-- Inyectar tema visual si no es NvChad (Para LazyVim puro)
 if not is_nvchad then
-  if "gruvbox" ~= "" then
-    table.insert(plugins, { "ellisonleao/gruvbox.nvim", priority = 1000 })
-    table.insert(plugins, {
-      "LazyVim/LazyVim",
-      opts = {
-        colorscheme = "gruvbox",
-      },
-    })
-  end
+  table.insert(plugins, { "ellisonleao/gruvbox.nvim", priority = 1000 })
+  table.insert(plugins, {
+    "LazyVim/LazyVim",
+    opts = {
+      colorscheme = "gruvbox",
+    },
+  })
 end
 
--- 2. Configurar Servidores LSP e integrarlos con el autocompletado
+-- 2. Configurar Servidores LSP (Modern Way)
 table.insert(plugins, {
   "neovim/nvim-lspconfig",
   opts = {
     servers = {
-      vtsls = {}, -- Configuración para LazyVim (vtsls es mejor para Node/TS)
+      vtsls = {}, 
       html = {},
       cssls = {},
       tailwindcss = {},
@@ -45,12 +45,11 @@ table.insert(plugins, {
     },
   },
   config = function(_, opts)
-    local lspconfig = require("lspconfig")
-    
-    -- Si es NvChad, usar sus hooks específicos
+    -- Si es NvChad, mantener compatibilidad legacy
     if is_nvchad then
       local status, nv_lsp = pcall(require, "nvchad.configs.lspconfig")
       if status then
+        local lspconfig = require("lspconfig")
         for server, server_opts in pairs(opts.servers) do
           server_opts.on_attach = nv_lsp.on_attach
           server_opts.on_init = nv_lsp.on_init
@@ -59,8 +58,9 @@ table.insert(plugins, {
         end
       end
     else
-      -- Si es LazyVim, el plugin ya maneja el setup mediante 'opts.servers'
-      -- Pero podemos añadir personalizaciones aquí si fuera necesario
+      -- En LazyVim / Neovim 0.11+, el plugin ya maneja el setup.
+      -- No hacemos 'require("lspconfig")' global para evitar el aviso de deprecación.
+      -- LazyVim usará automáticamente 'opts.servers' para configurar todo.
     end
   end
 })
