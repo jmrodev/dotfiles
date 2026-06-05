@@ -1,6 +1,3 @@
-# Minimal Sway Config - Starting clean
-include ~/.config/sway/config.d/*.conf
-
 # Variables (Adopted from i3)
 set $mod Mod4
 set $swayconfigdir ~/.config/sway
@@ -13,16 +10,17 @@ set $ws3  "3"
 set $ws4  "4" 
 set $ws5  "5" 
 
+# Include modular configs (Must be after variables)
+include ~/.config/sway/config.d/*.conf
+
 # Basics
 floating_modifier $mod
-tiling_drag modifier titlebar
+tiling_drag disable
 
-# Input/Output configs can go here or in config.d/
+# Input/Output configs
 input * {
-    xkb_layout "es"
+    xkb_layout "latam"
 }
 
 # Start Waybar
-bar {
-    swaybar_command waybar -c ~/.config/waybar/config.jsonc -s ~/.config/waybar/style.css
-}
+exec_always pkill waybar; waybar
