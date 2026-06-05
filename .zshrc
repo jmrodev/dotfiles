@@ -24,5 +24,27 @@ case ":$PATH:" in
 *) export PATH="$PNPM_HOME/bin:$PATH" ;;
 esac
 
+# --- Custom Configurations ---
+ZSH_CONFIG_DIR="$HOME/.config/zsh"
+
+# Load modular configs
+[[ -f "$ZSH_CONFIG_DIR/options.zsh" ]] && source "$ZSH_CONFIG_DIR/options.zsh"
+[[ -f "$ZSH_CONFIG_DIR/aliases.zsh" ]] && source "$ZSH_CONFIG_DIR/aliases.zsh"
+[[ -f "$ZSH_CONFIG_DIR/keybindings.zsh" ]] && source "$ZSH_CONFIG_DIR/keybindings.zsh"
+
+# Load all functions
+if [[ -d "$ZSH_CONFIG_DIR/functions" ]]; then
+    for func in "$ZSH_CONFIG_DIR"/functions/**/*(N-.); do
+        source "$func"
+    done
+fi
+
+# Load Git scripts
+if [[ -d "$ZSH_CONFIG_DIR/git-scripts" ]]; then
+    for script in "$ZSH_CONFIG_DIR"/git-scripts/*.zsh(N-.); do
+        source "$script"
+    done
+fi
+
 # Dotfiles management
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
