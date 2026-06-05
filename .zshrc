@@ -53,3 +53,8 @@ esac
 
 # Dotfiles management
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
+
+# Welcome message (Adopted from i3wm)
+if [[ -n "$ZSH_VERSION" ]]; then
+    echo -e "\n\033[0;33m💡 Tip: Escribe \033[1;32mdot-help\033[0;33m para ver tus comandos y alias personalizados.\033[0m"
+fi
