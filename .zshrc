@@ -1,60 +1,58 @@
 # --- Manjaro ZSH Configuration ---
-# This file is sourced by Zsh. If sourced by others, it should stay silent.
-
 if [ -n "$ZSH_VERSION" ]; then
     # Source manjaro-zsh-configuration
     [[ -e /usr/share/zsh/manjaro-zsh-config ]] && source /usr/share/zsh/manjaro-zsh-config
     [[ -e /usr/share/zsh/manjaro-zsh-prompt ]] && source /usr/share/zsh/manjaro-zsh-prompt
 
     # Basic Options
-    HISTFILE=~/.histfile
-    HISTSIZE=10000
-    SAVEHIST=10000
     setopt autocd beep extendedglob nomatch notify
     bindkey -e
 
-    # --- Modular Custom Configurations ---
     ZSH_CONFIG_DIR="$HOME/.config/zsh"
 
-    # 1. Load Functions (Recursive)
+    # 1. Load Functions (Safe way for all parsers)
     if [ -d "$ZSH_CONFIG_DIR/functions" ]; then
-        # Use find to be compatible with basic shell parsing
-        # but source each file into the current Zsh session.
-        # We exclude .sh files (standalone scripts).
+        # Use a temporary file to avoid pipe subshells
+        _func_list=$(find "$ZSH_CONFIG_DIR/functions" -type f ! -name "*.sh")
         while read -r func; do
-            source "$func"
+            [ -f "$func" ] && source "$func"
         done <<EOF
-$(find "$ZSH_CONFIG_DIR/functions" -type f ! -name "*.sh")
+$_func_list
 EOF
+        unset _func_list
     fi
 
     # 2. Load Git Scripts
     if [ -d "$ZSH_CONFIG_DIR/git-scripts" ]; then
+        _script_list=$(find "$ZSH_CONFIG_DIR/git-scripts" -type f -name "*.zsh")
         while read -r script; do
-            source "$script"
+            [ -f "$script" ] && source "$script"
         done <<EOF
-$(find "$ZSH_CONFIG_DIR/git-scripts" -type f -name "*.zsh")
+$_script_list
 EOF
+        unset _script_list
     fi
 
-    # 3. Load Aliases and other modular files
+    # 3. Load Aliases and modular files
     [ -f "$ZSH_CONFIG_DIR/options.zsh" ] && source "$ZSH_CONFIG_DIR/options.zsh"
     [ -f "$ZSH_CONFIG_DIR/aliases.zsh" ] && source "$ZSH_CONFIG_DIR/aliases.zsh"
     [ -f "$ZSH_CONFIG_DIR/keybindings.zsh" ] && source "$ZSH_CONFIG_DIR/keybindings.zsh"
 
 fi
 
-# --- Global Environment (Safe for all shells) ---
+# --- Global Environment ---
 export PNPM_HOME="$HOME/.local/share/pnpm"
-case ":$PATH:" in 
-*":$PNPM_HOME/bin:"*) ;;
-*) export PATH="$PNPM_HOME/bin:$PATH" ;;
-esac
+export PATH="$PNPM_HOME/bin:$PATH"
 
-# Dotfiles management
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 
-# Welcome message (Adopted from i3wm)
-if [[ -n "$ZSH_VERSION" ]]; then
-    echo -e "\n\033[0;33m💡 Tip: Escribe \033[1;32mdot-help\033[0;33m para ver tus comandos y alias personalizados.\033[0m"
+# Welcome message
+if [ -n "$ZSH_VERSION" ]; then
+    if typeset -f dot-help > /dev/null; then
+        echo -e "\n\033[0;33m💡 Tip: Escribe \033[1;32mdot-help\033[0;33m para ver tus comandos.\033[0m"
+    else
+        # Final emergency source if everything else failed
+        [ -f "$HOME/.config/zsh/aliases.zsh" ] && source "$HOME/.config/zsh/aliases.zsh"
+        echo -e "\n\033[0;33m💡 Tip: Escribe \033[1;32mdot-help\033[0;33m para ver tus comandos.\033[0m"
+    fi
 fi
