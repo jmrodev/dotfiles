@@ -1,0 +1,83 @@
+#!/bin/bash
+set -euo pipefail
+
+# --- CONFIGURACIÓN ---
+LOG_FILE="/home/jmro/clipboard_url_saver.log"
+# 1 segundo de espera entre chequeos
+SLEEP_INTERVAL=1
+# Usaremos una expresión regular más simple y robusta
+URL_REGEX='^(https?|ftp)://.+$'
+# Variable para almacenar el contenido del portapapeles de la iteración anterior
+LAST_CLIPBOARD_CONTENT=""
+# ---------------------
+
+# Función para validar si una cadena es una URL (simple)
+is_url() {
+    echo "$1" | grep -Eiq "$URL_REGEX"
+}
+
+# Función para crear el contenido del archivo .desktop
+create_desktop_content() {
+    local url_content="$1"
+    # El heredoc NO lleva comillas en EOF para permitir la expansión de la variable
+    cat <<EOF_DESKTOP
+[Desktop Entry]
+Encoding=UTF-8
+Name=${url_content}
+Type=Link
+URL=${url_content}
+Icon=text-html
+EOF_DESKTOP
+}
+
+# Bucle principal de monitoreo
+while true; do
+    
+    # 1. Obtener contenido actual del portapapeles
+    # Usamos wl-paste -n para leer el contenido actual en Wayland (Sway)
+    # Capturamos el posible error al leer datos binarios, pero continuamos
+    # Almacenamos el contenido en una variable temporal para seguridad.
+    CURRENT_CONTENT=$(wl-paste -n 2>/dev/null || echo "")
+
+    # 2. Verificar si el contenido ha cambiado y no está vacío
+    if [[ "$CURRENT_CONTENT" != "$LAST_CLIPBOARD_CONTENT" ]] && [[ -n "$CURRENT_CONTENT" ]]; then
+        echo "$(date): Nuevo contenido capturado: '$CURRENT_CONTENT'" >> "$LOG_FILE"
+
+        # 3. Verificar si el nuevo contenido es una URL
+        if is_url "$CURRENT_CONTENT"; then
+            echo "$(date): Contenido es una URL. Solicitando directorio..." >> "$LOG_FILE"
+
+            # 4. Solicitar directorio al usuario
+            SAVE_DIR=$(zenity --file-selection --directory --title="Selecciona una carpeta para guardar el enlace URL" 2>> "$LOG_FILE")
+            
+            if [ -n "$SAVE_DIR" ]; then
+                
+                # 5. Sanitizar nombre de archivo
+                FILENAME=$(echo "$CURRENT_CONTENT" | sed -r 's/^(https?|ftp):\/\///' | sed -r 's/[\/\\?%*:|"<> ]/_/g' | cut -c1-50)
+                FILENAME="${FILENAME:-link}.desktop" # Usa 'link' si queda vacío
+                FILE_PATH="${SAVE_DIR}/${FILENAME}"
+
+                # 6. Crear el archivo .desktop (usando la función)
+                create_desktop_content "$CURRENT_CONTENT" > "$FILE_PATH"
+                chmod +x "$FILE_PATH"
+
+                zenity --info --text="Enlace URL guardado en: $FILE_PATH" --title="URL Guardada" 2>> "$LOG_FILE"
+                echo "$(date): Enlace URL guardado en: $FILE_PATH" >> "$LOG_FILE"
+            else
+                zenity --warning --text="No se seleccionó una carpeta. URL no guardada." --title="Operación Cancelada" 2>> "$LOG_FILE"
+                echo "$(date): No se seleccionó carpeta. URL no guardada." >> "$LOG_FILE"
+            fi
+            
+            # Actualizar la última URL procesada solo si fue una URL
+            LAST_CLIPBOARD_CONTENT="$CURRENT_CONTENT"
+
+        else
+            echo "$(date): Contenido no es una URL." >> "$LOG_FILE"
+            # Actualizar de todas formas para evitar que se procese el mismo texto no-URL varias veces
+            LAST_CLIPBOARD_CONTENT="$CURRENT_CONTENT"
+        fi
+    fi
+
+    # Pausar el script para reducir el uso de CPU
+    sleep "$SLEEP_INTERVAL"
+done
