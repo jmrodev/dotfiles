@@ -21,8 +21,8 @@
     ],
     "modules-center": [
         "custom/wf-recorder",
-        "sway/mode",
-        "custom/weather"
+        "sway/mode"
+        // "custom/weather"
     ],
     "modules-right": [
         // informational

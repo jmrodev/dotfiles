@@ -257,61 +257,77 @@ function list_trash() {
 }
 
 # ==========================================
-# TERMINAL TIPS & HELP
+# TERMINAL TIPS & HELP (PRO VERSION)
 # ==========================================
 function dot-help() {
     local category=$1
+    local cyan="\033[1;36m"
+    local green="\033[1;32m"
+    local yellow="\033[1;33m"
+    local blue="\033[1;34m"
+    local reset="\033[0m"
+
     case $category in
         git)
-            echo -e "\033[1;34m--- 🌿 GIT PRO ALIASES ---\033[0m"
-            echo -e "\033[1;32mglg\033[0m     : Log visual (oneline + graph)"
-            echo -e "\033[1;32mgs\033[0m      : Git Status"
-            echo -e "\033[1;32mgp\033[0m      : Git Push"
-            echo -e "\033[1;32mgpull\033[0m   : Git Pull"
-            echo -e "\033[1;32mgco\033[0m     : Git Checkout"
-            echo -e "\033[1;32mgca\033[0m     : Git Commit All"
-            echo -e "\033[1;32mgrb\033[0m     : Git Rebase inteligente"
-            echo -e "\033[1;32mgpusho\033[0m  : Push y set-upstream a rama actual"
+            echo -e "${blue}--- 🌿 GIT & VERSION CONTROL ---${reset}"
+            echo -e "${green}gs${reset}      : Status rápido del repositorio"
+            echo -e "${green}glg${reset}     : Log visual con gráfico de ramas"
+            echo -e "${green}gco${reset}     : Checkout (cambiar de rama/archivo)"
+            echo -e "${green}gp / gpull${reset}: Push y Pull con rebase automático"
+            echo -e "${green}gca${reset}     : Commit de todos los cambios con mensaje"
+            echo -e "${green}lg${reset}      : Lanzar Lazygit (TUI profesional)"
+            echo -e "${yellow}Submenú:${reset} Usa ${cyan}dot-help git-scripts${reset} para ver herramientas de GitHub."
+            ;;
+        git-scripts)
+            echo -e "${blue}--- 🐙 GITHUB AUTOMATION SCRIPTS ---${reset}"
+            echo -e "${green}gist_create${reset}: Crear un Gist desde un archivo"
+            echo -e "${green}issue_list${reset} : Ver issues del repo actual"
+            echo -e "${green}pr_create${reset}  : Crear Pull Request desde terminal"
+            echo -e "${green}repo_view${reset}  : Abrir el repositorio en el navegador"
+            echo -e "${cyan}Scripts en:${reset} ~/.config/zsh/git-scripts/"
             ;;
         sys)
-            echo -e "\033[1;34m--- ⚙️ SYSTEM & MAINTENANCE ---\033[0m"
-            echo -e "\033[1;32mactualizar\033[0m : Actualización total del sistema"
-            echo -e "\033[1;32mpacclean\033[0m   : Limpiar paquetes huérfanos"
-            echo -e "\033[1;32mlibre\033[0m      : Liberar memoria RAM (cache)"
-            echo -e "\033[1;32mtrim\033[0m       : Optimizar SSD (fstrim)"
-            echo -e "\033[1;32mtopmem\033[0m     : Procesos que más RAM consumen"
-            echo -e "\033[1;32mbattery\033[0m    : Info detallada de batería"
-            echo -e "\033[1;32minfoi\033[0m      : Resumen de hardware"
+            echo -e "${blue}--- ⚙️ SYSTEM & MAINTENANCE ---${reset}"
+            echo -e "${green}actualizar${reset}: Sincroniza espejos y actualiza Pacman + AUR (yay)"
+            echo -e "${green}libre${reset}     : Muestra memoria y limpia caché de la RAM"
+            echo -e "${green}pacclean${reset}  : Elimina paquetes huérfanos del sistema"
+            echo -e "${green}trim${reset}      : Ejecuta fstrim para optimizar tus discos SSD"
+            echo -e "${green}infoi${reset}     : Resumen técnico del hardware (inxi)"
             ;;
         apps)
-            echo -e "\033[1;34m--- 🚀 APPS & TOOLS ---\033[0m"
-            echo -e "\033[1;32mlg\033[0m        : Lazygit"
-            echo -e "\033[1;32mr\033[0m         : Ranger (Navegador visual)"
-            echo -e "\033[1;32myoutube\033[0m   : Descargar MP3 de Youtube"
-            echo -e "\033[1;32mweather\033[0m   : Clima en la terminal"
-            echo -e "\033[1;32mdoker\033[0m     : Iniciar motor Docker"
-            echo -e "\033[1;32mmyip\033[0m      : Ver tu IP pública"
-            echo -e "\033[1;32mserver\033[0m    : Crear servidor HTTP en carpeta actual"
+            echo -e "${blue}--- 🚀 APPLICATIONS & UTILS ---${reset}"
+            echo -e "${green}edit / v${reset}   : Abre Neovim (tu editor principal)"
+            echo -e "${green}r${reset}          : Ranger (Navegador de archivos en terminal)"
+            echo -e "${green}youtube${reset}    : Descarga audio de YouTube en MP3"
+            echo -e "${green}server${reset}     : Levanta un servidor web en la carpeta actual"
+            echo -e "${green}weather${reset}    : Pronóstico del tiempo detallado"
+            echo -e "${green}myip${reset}       : Muestra tu IP pública actual"
+            ;;
+        config)
+            echo -e "${blue}--- 🛠️ DOTFILES MANAGEMENT ---${reset}"
+            echo -e "${green}ds${reset}          : Estado de tus dotfiles (${cyan}config status${reset})"
+            echo -e "${green}da <file>${reset}  : Añadir archivo al repo (${cyan}config add${reset})"
+            echo -e "${green}dc \"msg\"${reset}   : Guardar cambios localmente (${cyan}config commit${reset})"
+            echo -e "${green}dp${reset}          : Subir cambios a GitHub (${cyan}config push${reset})"
+            echo -e "${green}upzsh${reset}       : Recargar toda la configuración de Zsh"
+            echo -e "${yellow}Tip:${reset} Tienes ramas ${cyan}sway${reset} e ${cyan}i3wm${reset} independientes."
             ;;
         *)
-            echo -e "\033[1;34m--- 🚀 DOTFILES MANAGEMENT CHEAT SHEET ---\033[0m"
-            echo -e "\033[1;32mds\033[0m          : Ver cambios locales (dotfiles status)"
-            echo -e "\033[1;32mda <archivo>\033[0m : Sumar archivos al repo (dotfiles add)"
-            echo -e "\033[1;32mdc \"msj\"\033[0m     : Guardar cambios localmente (dotfiles commit)"
-            echo -e "\033[1;32mdp\033[0m          : Subir todo a GitHub (dotfiles push)"
-            echo -e "\033[1;32mupzsh\033[0m       : Recargar configuración (source)"
+            echo -e "${yellow}==========================================${reset}"
+            echo -e "   🚀 ${blue}JMRO-DEV TERMINAL COMPANION${reset}   "
+            echo -e "${yellow}==========================================${reset}"
+            echo -e "Escribe ${green}dot-help <categoría>${reset} para ver detalles:"
             echo -e ""
-            echo -e "\033[1;34m--- 📂 CATEGORÍAS DISPONIBLES ---\033[0m"
-            echo -e "Escribe \033[1;32mdot-help <categoría>\033[0m para ver alias de:"
-            echo -e "• \033[1;32mgit\033[0m   : Atajos de Git"
-            echo -e "• \033[1;32msys\033[0m   : Sistema y Mantenimiento"
-            echo -e "• \033[1;32mapps\033[0m  : Aplicaciones y Herramientas"
+            echo -e "  ${cyan}git${reset}         : Gestión de código y ramas"
+            echo -e "  ${cyan}git-scripts${reset} : Automatización de GitHub (Gists, PRs)"
+            echo -e "  ${cyan}sys${reset}         : Mantenimiento y Hardware"
+            echo -e "  ${cyan}apps${reset}        : Aplicaciones, Web y Utilidades"
+            echo -e "  ${cyan}config${reset}      : Control de este repositorio (Dotfiles)"
             echo -e ""
-            echo -e "\033[1;34m--- 🖥️ NUEVA PC (INSTALLER) ---\033[0m"
-            echo -e "curl -sSL https://raw.githubusercontent.com/jmrodev/dotfiles/main/instalar.sh | bash"
+            echo -e "${blue}------------------------------------------${reset}"
+            echo -e "💡 ${yellow}Tip:${reset} Usa ${green}dot-help apps${reset} para ver cómo descargar música o lanzar servers."
             ;;
     esac
-    echo -e "\033[1;34m------------------------------------------\033[0m"
 }
 
 # Actualización rápida de Dotfiles (Sincronización Espejo)

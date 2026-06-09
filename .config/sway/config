@@ -23,4 +23,8 @@ input * {
 }
 
 # Start Waybar
-exec_always pkill waybar; waybar
+exec waybar
+exec_always killall -SIGUSR2 waybar
+
+# Start Bluetooth Applet
+exec blueman-applet

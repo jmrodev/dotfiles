@@ -57,7 +57,7 @@ set smarthome
 # CORREGIDO: 'smooth' no existe en versiones estándar de nano
 # set smooth # Comentado porque no está disponible
 
-set nobackup
+#set nobackup
 
 # Directorio para guardar los archivos de respaldo únicos.
 # Si no se especifica, se guardan en el mismo directorio que el original.
