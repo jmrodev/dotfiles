@@ -1,0 +1,1132 @@
+#!/usr/bin/env python3
+import os
+import sys
+import json
+import argparse
+from datetime import datetime
+
+DEFAULT_PHOTOS_DIR = '/run/media/jmro/home/jmro/Downloads/Takeout/Google Fotos'
+DEFAULT_REPORT_FILE = '/run/media/jmro/home/jmro/Downloads/galeria_fotos_filtradas.html'
+CACHE_DIR = os.path.expanduser('~/.cache/nsfw_scanners')
+CACHE_FILE = os.path.join(CACHE_DIR, 'takeout_scan_cache.json')
+
+if not os.path.exists(CACHE_DIR):
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+    except Exception:
+        pass
+
+def check_dependencies():
+    """Verifica e instala dependencias si no están presentes"""
+    missing = []
+    try:
+        import PIL
+    except ImportError:
+        missing.append("pillow")
+    try:
+        import onnxruntime
+    except ImportError:
+        missing.append("onnxruntime")
+    try:
+        import nudenet
+    except ImportError:
+        missing.append("nudenet")
+        
+    if missing:
+        print("Faltan dependencias necesarias para ejecutar el escáner.")
+        print(f"Instalando: {', '.join(missing)}...")
+        import subprocess
+        try:
+            subprocess.run([
+                sys.executable, "-m", "pip", "install", "--user", "--break-system-packages", 
+                *missing
+            ], check=True)
+            print("Instalación completada correctamente.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error al instalar dependencias: {e}")
+            print("Por favor, instala manualmente ejecutando:")
+            print(f"pip install --user --break-system-packages {' '.join(missing)}")
+            sys.exit(1)
+
+check_dependencies()
+
+from PIL import Image
+from nudenet import NudeDetector
+
+# Clases de NudeNet v3 que representan contenido verdaderamente explícito
+EXPOSED_CLASSES = {
+    'BUTTOCKS_EXPOSED': 'Glúteos Expuestos',
+    'FEMALE_BREAST_EXPOSED': 'Pechos Femeninos Expuestos',
+    'FEMALE_GENITALIA_EXPOSED': 'Genitales Femeninos Expuestos',
+    'MALE_GENITALIA_EXPOSED': 'Genitales Masculinos Expuestos',
+    'ANUS_EXPOSED': 'Ano Expuesto'
+}
+
+def load_cache():
+    """Carga los resultados de análisis guardados previamente"""
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Advertencia: No se pudo cargar el archivo de caché. Iniciando nuevo. ({e})")
+            return {}
+    return {}
+
+def save_cache(cache_data):
+    """Guarda la caché de forma atómica para evitar pérdidas de datos ante interrupciones"""
+    try:
+        temp_file = CACHE_FILE + '.tmp'
+        with open(temp_file, 'w', encoding='utf-8') as f:
+            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        os.replace(temp_file, CACHE_FILE)
+    except Exception as e:
+        print(f"Error al guardar caché: {e}")
+
+def resolve_target_path(folder_input):
+    """Resuelve la ruta de entrada para que funcione con rutas absolutas, relativas o subcarpetas"""
+    if os.path.isabs(folder_input) and os.path.exists(folder_input):
+        return folder_input
+        
+    normalized = folder_input.replace('\\', '/')
+    if normalized.startswith('Google Fotos/'):
+        folder_input = folder_input[len('Google Fotos/'):]
+    elif normalized.startswith('Google Fotos\\'):
+        folder_input = folder_input[len('Google Fotos\\'):]
+    elif 'Google Fotos/' in normalized:
+        parts = normalized.split('Google Fotos/', 1)
+        folder_input = parts[1]
+        
+    full_path = os.path.join(DEFAULT_PHOTOS_DIR, folder_input)
+    if os.path.exists(full_path):
+        return full_path
+        
+    current_path = os.path.abspath(folder_input)
+    if os.path.exists(current_path):
+        return current_path
+        
+    return full_path
+
+def debug_single_image(img_path):
+    """Escanea una sola imagen e imprime todas las detecciones brutas del modelo"""
+    resolved_path = img_path
+    if not os.path.exists(resolved_path):
+        test_path = os.path.join(DEFAULT_PHOTOS_DIR, img_path)
+        if os.path.exists(test_path):
+            resolved_path = test_path
+        else:
+            print(f"Error: El archivo '{img_path}' no existe.")
+            return
+
+    print("=" * 70)
+    print(f" ANÁLISIS DE DEPURACIÓN PARA LA IMAGEN:")
+    print(f" {resolved_path}")
+    print("=" * 70)
+    print("Inicializando detector...")
+    detector = NudeDetector()
+    try:
+        detections = detector.detect(resolved_path)
+        print(f"\nDetecciones brutas del modelo (total: {len(detections)}):")
+        print("-" * 70)
+        for idx, d in enumerate(detections, 1):
+            label = d.get('class') or d.get('label')
+            score = d.get('score', 0.0)
+            box = d.get('box', [])
+            is_exposed = label in EXPOSED_CLASSES
+            status = "SOSPECHOSO (En filtro)" if is_exposed else "Ignorado (Fuera del filtro adulto)"
+            print(f"[{idx}] Clase: {label}")
+            print(f"    Confianza: {score:.4f} ({score*100:.1f}%)")
+            print(f"    Caja: {box}")
+            print(f"    Estado: {status}")
+        print("-" * 70)
+    except Exception as e:
+        print(f"Error al analizar la imagen: {e}")
+
+def scan_folders(folders_list, threshold=0.25):
+    """Escanea múltiples carpetas usando NudeNet y aprovecha el sistema de caché"""
+    cache = load_cache()
+    print(f"Caché cargada: {len(cache)} imágenes ya procesadas anteriormente.")
+    
+    # Encontrar imágenes en todas las carpetas solicitadas
+    image_extensions = ('.jpg', '.jpeg', '.png', '.webp', '.bmp')
+    all_image_files = []
+    
+    for folder in folders_list:
+        full_path = resolve_target_path(folder)
+        if not os.path.exists(full_path):
+            print(f"Advertencia: La ruta '{full_path}' no existe. Saltando...")
+            continue
+            
+        for root, _, files in os.walk(full_path):
+            for file in files:
+                if file.lower().endswith(image_extensions):
+                    # Guardamos la tupla (ruta_archivo, nombre_carpeta_busqueda)
+                    all_image_files.append((os.path.join(root, file), folder))
+                    
+    total_files = len(all_image_files)
+    if total_files == 0:
+        print("No se encontraron imágenes para analizar.")
+        return [], []
+        
+    print(f"Se encontraron {total_files} imágenes totales para procesar.")
+    
+    detector = None
+    new_scans_count = 0
+    
+    detected_items = []
+    non_detected_items = []
+    
+    for idx, (img_path, folder_name) in enumerate(all_image_files, 1):
+        if idx % 50 == 0 or idx == total_files:
+            print(f"Progreso: {idx}/{total_files} analizadas (Sospechosas: {len(detected_items)})")
+            
+        try:
+            file_stat = os.stat(img_path)
+            mtime = file_stat.st_mtime
+            size_mb = file_stat.st_size / (1024 * 1024)
+            
+            mod_time = datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
+            filename = os.path.basename(img_path)
+            rel_path = os.path.relpath(img_path, DEFAULT_PHOTOS_DIR)
+            
+            # Obtener carpeta raíz relativa para filtro en la galería
+            path_parts = rel_path.split(os.sep)
+            root_folder = path_parts[0] if path_parts else folder_name
+            
+            cached_entry = cache.get(img_path)
+            
+            # Usar caché si mtime coincide
+            if cached_entry and cached_entry.get('mtime') == mtime:
+                relevant_detections = cached_entry.get('detections', [])
+                max_score = cached_entry.get('max_score', 0.0)
+            else:
+                if detector is None:
+                    print("Inicializando detector de desnudez...")
+                    detector = NudeDetector()
+                    
+                with Image.open(img_path) as img:
+                    img.verify()
+                    
+                detections = detector.detect(img_path)
+                
+                relevant_detections = []
+                max_score = 0.0
+                
+                for d in detections:
+                    label = d.get('class') or d.get('label')
+                    score = d.get('score', 0.0)
+                    
+                    if label in EXPOSED_CLASSES and score >= threshold:
+                        relevant_detections.append({
+                            'label': label,
+                            'pretty_label': EXPOSED_CLASSES[label],
+                            'score': float(score),
+                            'box': [int(x) for x in d.get('box', [])]
+                        })
+                        if score > max_score:
+                            max_score = score
+                            
+                # Actualizar caché
+                cache[img_path] = {
+                    'mtime': mtime,
+                    'detections': relevant_detections,
+                    'max_score': float(max_score),
+                    'date_modified': mod_time,
+                    'size_mb': round(size_mb, 2),
+                    'root_folder': root_folder,
+                    'filename': filename,
+                    'rel_path': rel_path
+                }
+                
+                new_scans_count += 1
+                # Guardar caché atómicamente cada 50 escaneos nuevos
+                if new_scans_count % 50 == 0:
+                    save_cache(cache)
+                    
+            item_data = {
+                'path': img_path,
+                'filename': filename,
+                'rel_path': rel_path,
+                'root_folder': root_folder,
+                'detections': relevant_detections,
+                'max_score': float(max_score),
+                'date_modified': mod_time,
+                'size_mb': round(size_mb, 2)
+            }
+            
+            if relevant_detections:
+                detected_items.append(item_data)
+            else:
+                non_detected_items.append(item_data)
+                
+        except Exception:
+            pass
+            
+    # Guardar caché final si hubo cambios
+    if new_scans_count > 0:
+        save_cache(cache)
+        print(f"Caché actualizada. Se analizaron {new_scans_count} nuevas imágenes.")
+        
+    return detected_items, non_detected_items
+
+def generate_html_report(detected_results, non_detected_results, target_name, output_path):
+    """Genera una galería privada interactiva Master con filtros de carpeta, búsqueda y umbral"""
+    
+    total_scanned = len(detected_results) + len(non_detected_results)
+    
+    # Agrupar estadísticas de detecciones en general
+    class_counts = {}
+    for item in detected_results:
+        for d in item['detections']:
+            label_name = d['pretty_label']
+            class_counts[label_name] = class_counts.get(label_name, 0) + 1
+
+    # Ordenar sospechosas por puntaje descendente
+    detected_results.sort(key=lambda x: x['max_score'], reverse=True)
+    
+    json_detected = json.dumps(detected_results, ensure_ascii=False)
+    json_non_detected = json.dumps(non_detected_results, ensure_ascii=False)
+
+    stats_html = ""
+    for label, count in sorted(class_counts.items(), key=lambda x: x[1], reverse=True):
+        stats_html += f"""
+        <div class="stat-row">
+            <span class="stat-name">{label}</span>
+            <span class="stat-count">{count}</span>
+        </div>
+        """
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería de Análisis de Fotos (Privada)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {{
+            --bg-color: #030712;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --sidebar-bg: rgba(17, 24, 39, 0.95);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-color: #ec4899;
+            --accent-purple: #8b5cf6;
+            --accent-glow: rgba(236, 72, 153, 0.2);
+            --border-color: rgba(255, 255, 255, 0.05);
+            --danger-color: #ef4444;
+            --tab-active: linear-gradient(135deg, #ec4899, #8b5cf6);
+        }}
+
+        * {{
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }}
+
+        body {{
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding: 40px 0;
+            display: flex;
+            justify-content: center;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(236, 72, 153, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.05) 0px, transparent 50%);
+        }}
+
+        .container {{
+            width: 92%;
+            max-width: 1750px;
+        }}
+
+        header {{
+            text-align: center;
+            margin-bottom: 35px;
+        }}
+
+        h1 {{
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f472b6, #ec4899, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }}
+
+        .subtitle {{
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }}
+
+        .layout {{
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }}
+
+        /* Sidebar */
+        aside {{
+            flex: 0 0 350px;
+            width: 350px;
+            background: var(--sidebar-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            position: sticky;
+            top: 20px;
+        }}
+
+        .stats-summary h3, .filter-section h3 {{
+            font-size: 1.1rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }}
+
+        .stat-row {{
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            margin: 4px 0;
+            color: var(--text-muted);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            user-select: none;
+        }}
+
+        .stat-row:hover {{
+            background: rgba(255, 255, 255, 0.04);
+            color: var(--text-color);
+        }}
+
+        .stat-row.active {{
+            background: rgba(236, 72, 153, 0.12);
+            border-color: rgba(236, 72, 153, 0.25);
+            color: #f472b6;
+            font-weight: 600;
+        }}
+
+        .stat-count {{
+            color: var(--accent-color);
+            font-weight: 700;
+        }}
+
+        .slider-container {{
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }}
+
+        input[type="range"] {{
+            width: 100%;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }}
+
+        .search-container input, select {{
+            width: 100%;
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+        }}
+
+        .search-container input:focus, select:focus {{
+            border-color: var(--accent-color);
+        }}
+
+        option {{
+            background-color: #0f172a;
+            color: var(--text-color);
+        }}
+
+        /* Tabs de navegación */
+        .tabs-header {{
+            display: flex;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-color);
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }}
+
+        .tab-btn {{
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+
+        .tab-btn:hover {{
+            color: var(--text-color);
+        }}
+
+        .tab-btn.active {{
+            background: var(--tab-active);
+            color: white;
+            box-shadow: 0 4px 15px rgba(236, 72, 153, 0.25);
+        }}
+
+        /* Grid de Fotos */
+        main {{
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }}
+
+        .gallery-grid {{
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 20px;
+        }}
+
+        .gallery-card {{
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            transition: transform 0.2s, border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+        }}
+
+        .gallery-card:hover {{
+            transform: translateY(-2px);
+            border-color: rgba(236, 72, 153, 0.3);
+        }}
+
+        .image-container {{
+            position: relative;
+            width: 100%;
+            height: 220px;
+            background: #000;
+            overflow: hidden;
+            cursor: pointer;
+        }}
+
+        .image-container img {{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }}
+
+        .image-container:hover img {{
+            transform: scale(1.04);
+        }}
+
+        .score-badge {{
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(239, 68, 68, 0.85);
+            color: #fff;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }}
+
+        .card-details {{
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex-grow: 1;
+        }}
+
+        .filename {{
+            font-size: 0.95rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }}
+
+        .meta-info {{
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }}
+
+        .tags {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 4px;
+        }}
+
+        .tag {{
+            background: rgba(236, 72, 153, 0.1);
+            border: 1px solid rgba(236, 72, 153, 0.2);
+            color: #f472b6;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }}
+
+        .btn-view {{
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            text-align: center;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            margin-top: auto;
+        }}
+
+        .btn-view:hover {{
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-glow);
+        }}
+
+        .no-results {{
+            text-align: center;
+            padding: 100px 20px;
+            color: var(--text-muted);
+            border: 1px dashed var(--border-color);
+            border-radius: 20px;
+            font-size: 1.2rem;
+            width: 100%;
+        }}
+
+        .load-more-container {{
+            display: flex;
+            justify-content: center;
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }}
+
+        .btn-load-more {{
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }}
+
+        .btn-load-more:hover {{
+            background: var(--accent-purple);
+            border-color: var(--accent-purple);
+            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+        }}
+
+        /* Lightbox modal */
+        .modal {{
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.96);
+            justify-content: center;
+            align-items: center;
+        }}
+
+        .modal-content {{
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 12px;
+            box-shadow: 0 0 35px rgba(236, 72, 153, 0.2);
+            object-fit: contain;
+        }}
+
+        .close-modal {{
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: #fff;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+        }}
+
+        @media (max-width: 992px) {{
+            .layout {{
+                flex-direction: column;
+            }}
+            aside {{
+                width: 100%;
+                flex: none;
+                position: relative;
+                top: 0;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Galería de Fotos Filtradas</h1>
+            <p class="subtitle">Resultados del análisis privado en '{target_name}'</p>
+        </header>
+
+        <div class="layout">
+            <aside>
+                <div class="stats-summary">
+                    <h3>Resumen del Escaneo</h3>
+                    <div class="stat-row">
+                        <span>Total Analizadas</span>
+                        <span class="stat-count" id="statTotal" style="color: var(--accent-purple);">{total_scanned}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Sospechosas</span>
+                        <span class="stat-count" id="statDetected">{len(detected_results)}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Sin Sospechas</span>
+                        <span class="stat-count" id="statSafe" style="color: #10b981;">{len(non_detected_results)}</span>
+                    </div>
+                    
+                    <div id="statsBreakdown" style="margin-top: 10px; border-top: 1px solid var(--border-color); padding-top: 10px;">
+                        {stats_html}
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <h3>Filtros y Búsqueda</h3>
+                    
+                    <div class="select-container" style="margin-bottom: 15px;">
+                        <label for="folderSelect" style="font-size: 0.9rem; margin-bottom: 6px; display: block;">Carpeta del Takeout:</label>
+                        <select id="folderSelect" onchange="handleFolderChange(this.value)">
+                            <option value="all">-- Todas las carpetas --</option>
+                        </select>
+                    </div>
+
+                    <div class="search-container" style="margin-bottom: 15px;">
+                        <label for="searchInput" style="font-size: 0.9rem; margin-bottom: 6px; display: block;">Buscar por nombre:</label>
+                        <input type="text" id="searchInput" placeholder="Buscar..." oninput="handleSearch(this.value)">
+                    </div>
+
+                    <div class="slider-container" id="sliderContainer">
+                        <label for="thresholdRange" style="font-size: 0.9rem; display: flex; justify-content: space-between;">
+                            <span>Confianza Mínima:</span>
+                            <span id="thresholdValue" style="color: var(--accent-color); font-weight: bold;">0.30</span>
+                        </label>
+                        <input type="range" id="thresholdRange" min="0.25" max="0.95" step="0.05" value="0.30" oninput="filterByThreshold(this.value)">
+                    </div>
+                </div>
+            </aside>
+
+            <main>
+                <div class="tabs-header">
+                    <button class="tab-btn active" id="tabDetected" onclick="switchTab('detected')">Sospechosas (<span id="tabDetectedCount">{len(detected_results)}</span>)</button>
+                    <button class="tab-btn" id="tabSafe" onclick="switchTab('safe')">Sin Detecciones (<span id="tabSafeCount">{len(non_detected_results)}</span>)</button>
+                </div>
+
+                <div class="gallery-grid" id="galleryGrid">
+                    <!-- Cards dinámicas -->
+                </div>
+                
+                <div class="no-results" id="noResults" style="display: none;">
+                    No se encontraron imágenes con los filtros actuales.
+                </div>
+
+                <div class="load-more-container" id="loadMoreContainer" style="display: none;">
+                    <button class="btn-load-more" onclick="loadMore()">Cargar más imágenes</button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Lightbox modal -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="modalImg" alt="Ampliada">
+    </div>
+
+    <script>
+        const detectedItems = {json_detected};
+        const safeItems = {json_non_detected};
+
+        // Estado global
+        let currentTab = 'detected';
+        let currentFolder = 'all';
+        let currentThreshold = 0.30;
+        let searchQuery = '';
+        let currentCategory = null;
+        
+        // Paginación para no-detectadas o listas masivas
+        let visibleCount = 60;
+        const pageSize = 60;
+
+        // Cargar lista única de carpetas en el select
+        populateFolderFilter();
+        
+        // Renderizado inicial
+        updateView();
+
+        function populateFolderFilter() {{
+            const select = document.getElementById('folderSelect');
+            const foldersSet = new Set();
+            detectedItems.forEach(item => foldersSet.add(item.root_folder));
+            safeItems.forEach(item => foldersSet.add(item.root_folder));
+            
+            const foldersList = Array.from(foldersSet).sort();
+            foldersList.forEach(folder => {{
+                const opt = document.createElement('option');
+                opt.value = folder;
+                opt.textContent = folder;
+                select.appendChild(opt);
+            }});
+        }}
+
+        function switchTab(tabName) {{
+            currentTab = tabName;
+            document.getElementById('tabDetected').classList.toggle('active', tabName === 'detected');
+            document.getElementById('tabSafe').classList.toggle('active', tabName === 'safe');
+            
+            const slider = document.getElementById('sliderContainer');
+            if (tabName === 'detected') {{
+                slider.style.opacity = '1';
+                slider.style.pointerEvents = 'auto';
+            }} else {{
+                slider.style.opacity = '0.4';
+                slider.style.pointerEvents = 'none';
+            }}
+            
+            visibleCount = pageSize;
+            updateView();
+        }}
+
+        function handleFolderChange(folderName) {{
+            currentFolder = folderName;
+            visibleCount = pageSize;
+            updateView();
+        }}
+
+        function handleSearch(query) {{
+            searchQuery = query.toLowerCase().trim();
+            visibleCount = pageSize;
+            updateView();
+        }}
+
+        function filterByThreshold(val) {{
+            currentThreshold = parseFloat(val);
+            document.getElementById('thresholdValue').innerText = currentThreshold.toFixed(2);
+            updateView();
+        }}
+
+        function updateView() {{
+            const grid = document.getElementById('galleryGrid');
+            const noResults = document.getElementById('noResults');
+            const loadMoreBtn = document.getElementById('loadMoreContainer');
+            
+            grid.innerHTML = '';
+            noResults.style.display = 'none';
+            loadMoreBtn.style.display = 'none';
+
+            // 1. Filtrar Sospechosas (sin filtro de categoría para las estadísticas de la barra lateral)
+            const filteredDetected = detectedItems.filter(item => {{
+                const matchesFolder = currentFolder === 'all' || item.root_folder === currentFolder;
+                const matchesThreshold = item.max_score >= currentThreshold;
+                const matchesSearch = item.filename.toLowerCase().includes(searchQuery);
+                return matchesFolder && matchesThreshold && matchesSearch;
+            }});
+
+            // 2. Filtrar Seguras
+            const filteredSafe = safeItems.filter(item => {{
+                const matchesFolder = currentFolder === 'all' || item.root_folder === currentFolder;
+                const matchesSearch = item.filename.toLowerCase().includes(searchQuery);
+                return matchesFolder && matchesSearch;
+            }});
+
+            // Actualizar contadores y breakdowns basándose en el filtro base
+            updateStatsAndDetectionsList(filteredDetected, filteredSafe);
+
+            let itemsToRender = [];
+            let isSuspectView = false;
+            
+            if (currentTab === 'detected') {{
+                // Aplicar el filtro de categoría seleccionada si existe
+                if (currentCategory) {{
+                    itemsToRender = filteredDetected.filter(item => {{
+                        return item.detections.some(d => d.pretty_label === currentCategory && d.score >= currentThreshold);
+                    }});
+                }} else {{
+                    itemsToRender = filteredDetected;
+                }}
+                isSuspectView = true;
+            }} else {{
+                itemsToRender = filteredSafe;
+                isSuspectView = false;
+            }}
+
+            // Paginar los elementos para renderizado rápido
+            const paginated = itemsToRender.slice(0, visibleCount);
+            renderItems(paginated, isSuspectView);
+            
+            if (itemsToRender.length > visibleCount) {{
+                loadMoreBtn.style.display = 'flex';
+            }}
+
+            if (itemsToRender.length === 0) {{
+                noResults.style.display = 'block';
+            }}
+        }}
+
+        function loadMore() {{
+            visibleCount += pageSize;
+            updateView();
+        }}
+
+        function updateStatsAndDetectionsList(filteredDetected, filteredSafe) {{
+            // Actualizar contadores globales y tabs
+            const totalScanned = filteredDetected.length + filteredSafe.length;
+            document.getElementById('statTotal').innerText = totalScanned;
+            document.getElementById('statDetected').innerText = filteredDetected.length;
+            document.getElementById('statSafe').innerText = filteredSafe.length;
+            
+            // Si hay una categoría seleccionada, mostrar el recuento de esa categoría en la pestaña
+            if (currentCategory) {{
+                const categoryCount = filteredDetected.filter(item => 
+                    item.detections.some(d => d.pretty_label === currentCategory && d.score >= currentThreshold)
+                ).length;
+                document.getElementById('tabDetectedCount').innerText = categoryCount;
+            }} else {{
+                document.getElementById('tabDetectedCount').innerText = filteredDetected.length;
+            }}
+            document.getElementById('tabSafeCount').innerText = filteredSafe.length;
+            
+            // Recalcular el desglose por categorías
+            const counts = {{}};
+            filteredDetected.forEach(item => {{
+                item.detections.forEach(d => {{
+                    if (d.score >= currentThreshold) {{
+                        counts[d.pretty_label] = (counts[d.pretty_label] || 0) + 1;
+                    }}
+                }});
+            }});
+            
+            const statsBreakdown = document.getElementById('statsBreakdown');
+            statsBreakdown.innerHTML = '';
+            
+            Object.entries(counts)
+                .sort((a, b) => b[1] - a[1])
+                .forEach(([label, count]) => {{
+                    const row = document.createElement('div');
+                    row.className = 'stat-row' + (currentCategory === label ? ' active' : '');
+                    row.innerHTML = `
+                        <span class="stat-name">${{escapeHtml(label)}}</span>
+                        <span class="stat-count">${{count}}</span>
+                    `;
+                    row.onclick = () => {{
+                        if (currentCategory === label) {{
+                            currentCategory = null; // Quitar filtro
+                        }} else {{
+                            currentCategory = label; // Aplicar filtro
+                        }}
+                        visibleCount = pageSize;
+                        updateView();
+                    }};
+                    statsBreakdown.appendChild(row);
+                }});
+        }}
+
+        function renderItems(items, showScore) {{
+            const grid = document.getElementById('galleryGrid');
+            let html = '';
+            
+            items.forEach(item => {{
+                let tagsHtml = '';
+                if (showScore) {{
+                    item.detections.forEach(d => {{
+                        if (d.score >= currentThreshold) {{
+                            tagsHtml += `<span class="tag">${{escapeHtml(d.pretty_label)}} (${{Math.round(d.score*100)}}%)</span>`;
+                        }}
+                    }});
+                }} else {{
+                    tagsHtml = '<span class="tag" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: #10b981;">Sin Detecciones</span>';
+                }}
+                
+                const fileUri = 'file://' + item.path;
+                const scoreBadge = showScore ? `<div class="score-badge">${{Math.round(item.max_score*100)}}%</div>` : '';
+                
+                html += `
+                <div class="gallery-card">
+                    <div class="image-container" onclick="openModal('${{fileUri}}')">
+                        <img src="${{fileUri}}" alt="${{escapeHtml(item.filename)}}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1594322436404-5a0526db4d13?w=500'; this.style.opacity=0.3;">
+                        ${{scoreBadge}}
+                    </div>
+                    <div class="card-details">
+                        <span class="filename" title="${{escapeHtml(item.filename)}}">${{escapeHtml(item.filename)}}</span>
+                        <div class="meta-info">
+                            <span>Modificado: ${{escapeHtml(item.date_modified)}}</span>
+                            <span>Tamaño: ${{item.size_mb}} MB</span>
+                            <span>Ruta: ${{escapeHtml(item.rel_path)}}</span>
+                        </div>
+                        <div class="tags">
+                            ${{tagsHtml}}
+                        </div>
+                        <a href="${{fileUri}}" target="_blank" class="btn-view">Abrir en pestaña</a>
+                    </div>
+                </div>
+                `;
+            }});
+            
+            grid.innerHTML = html;
+        }}
+
+        function escapeHtml(text) {{
+            if (!text) return '';
+            const map = {{
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }};
+            return text.replace(/[&<>"']/g, function(m) {{ return map[m]; }});
+        }}
+
+        function openModal(src) {{
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').style.display = "flex";
+        }}
+
+        function closeModal() {{
+            document.getElementById('imageModal').style.display = "none";
+        }}
+    </script>
+</body>
+</html>
+"""
+
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+        
+    print(f"Reporte HTML generado en {output_path}")
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="""MINI AYUDA:
+Escáner de fotos locales mediante Inteligencia Artificial (NudeNet v3).
+Analiza imágenes en busca de desnudez explícita y genera una galería HTML segura.
+
+Uso rápido:
+  scan_adult_photos "Fotos del 2026"
+  scan_adult_photos all --threshold 0.50""",
+        epilog="""MAN PAGE (MANUAL COMPLETO):
+---------------------------
+NOMBRE
+       scan_adult_photos - Detector IA de desnudez en galerías locales.
+
+SINOPSIS
+       scan_adult_photos [CARPETA] [--folder CARPETA] [--threshold N] [--output ARCHIVO]
+
+DESCRIPCIÓN
+       Utiliza el modelo NudeNet para escanear de forma local (sin internet) 
+       imágenes en el directorio indicado. Las clasifica y separa las "seguras" 
+       de las "explícitas". Crea un reporte interactivo con censura opcional.
+       Incluye un sistema de caché automático para no reescanear imágenes sin cambios.
+
+OPCIONES
+       CARPETA       Argumento posicional (Ej: "Fotos del 2023" o "all" para todo).
+       --threshold   Confianza mínima del detector (0.25 a 0.95). Defecto: 0.25.
+       --output      Ruta del archivo HTML donde guardar la galería filtrada.
+       --debug-image Analiza a fondo una sola imagen para ver las "cajas" del modelo.
+       -h, --help    Muestra este manual en la terminal.
+
+EJEMPLOS
+       scan_adult_photos all --output ~/escaneo_total.html
+       scan_adult_photos "Viaje" --threshold 0.60""",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    
+    parser.add_argument('folder_positional', type=str, nargs='?', default=None,
+                        help=argparse.SUPPRESS)
+    parser.add_argument('--folder', type=str, default=None, help=argparse.SUPPRESS)
+    parser.add_argument('--threshold', type=float, default=0.25, help="Nivel de confianza IA (0.25 - 0.95)")
+    parser.add_argument('--output', type=str, default=DEFAULT_REPORT_FILE, help="Destino del reporte HTML")
+    parser.add_argument('--debug-image', type=str, default=None, help="Escaneo profundo de 1 sola imagen")
+
+    args = parser.parse_args()
+    
+    if args.debug_image:
+        debug_single_image(args.debug_image)
+        return
+        
+    # Resolver carpeta a usar
+    target_folder = None
+    if args.folder:
+        target_folder = args.folder
+    elif args.folder_positional:
+        target_folder = args.folder_positional
+        
+    if not target_folder:
+        parser.print_help()
+        print("\nError: Debes especificar una carpeta para escanear (o 'all' para escanear todo).")
+        sys.exit(1)
+        
+    is_all = target_folder.lower() in ('all', '*', 'todos', 'todas')
+    
+    # Si se escanea todo el Takeout, ajustar el reporte de salida por defecto
+    if args.output == DEFAULT_REPORT_FILE and is_all:
+        args.output = '/run/media/jmro/home/jmro/Downloads/galeria_fotos_filtradas_completa.html'
+        
+    print("=" * 60)
+    print("      Detector de Nudidad y Contenido Adulto en Fotos")
+    print("=" * 60)
+    
+    if is_all:
+        print(f"Modo: ESCANEO DE TODAS LAS CARPETAS (Takeout Completo)")
+        folders_list = []
+        if os.path.exists(DEFAULT_PHOTOS_DIR):
+            for d in sorted(os.listdir(DEFAULT_PHOTOS_DIR)):
+                if os.path.isdir(os.path.join(DEFAULT_PHOTOS_DIR, d)):
+                    folders_list.append(d)
+        target_name = "Todas las carpetas de Google Fotos"
+    else:
+        folders_list = [target_folder]
+        target_name = f"Carpeta: {target_folder}"
+        
+    print(f"Límite de confianza base: {args.threshold}")
+    print(f"Reporte de destino: {args.output}")
+    print(f"Archivo de caché: {CACHE_FILE}")
+    print("-" * 60)
+
+    detected, non_detected = scan_folders(folders_list, args.threshold)
+    if detected is not None:
+        generate_html_report(detected, non_detected, target_name, args.output)
+        print("Escaneo completado. ¡Listo!")
+
+if __name__ == '__main__':
+    main()

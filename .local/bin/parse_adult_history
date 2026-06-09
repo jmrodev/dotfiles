@@ -1,0 +1,1058 @@
+import os
+import sys
+import re
+import html
+import json
+import argparse
+from datetime import datetime
+from urllib.parse import unquote
+
+parser = argparse.ArgumentParser(
+    description="""MINI AYUDA:
+Analizador de Historial Web (Google Takeout).
+Escanea tu historial de navegación, filtra contenido para adultos y genera un panel HTML con estadísticas.
+
+Uso rápido:
+  parse_adult_history
+  parse_adult_history --input /ruta/MiActividad --output reporte.html""",
+    epilog="""MAN PAGE (MANUAL COMPLETO):
+---------------------------
+NOMBRE
+       parse_adult_history - Auditor de historial web exportado de Google.
+
+SINOPSIS
+       parse_adult_history [-h] [-i RUTA_ENTRADA] [-o RUTA_SALIDA]
+
+DESCRIPCIÓN
+       Busca de forma recursiva archivos 'MiActividad.html' en la carpeta indicada.
+       Analiza fechas, URLs y palabras clave mediante expresiones regulares.
+       Finalmente, cruza los datos para generar estadísticas de tráfico por hora,
+       por día de la semana y frecuencia de palabras clave.
+
+OPCIONES
+       -i, --input   Directorio raíz de 'Mi actividad' (Extraído del ZIP de Google Takeout).
+       -o, --output  Archivo HTML destino donde se creará el Dashboard.
+       -h, --help    Muestra esta ayuda extendida.
+
+EJEMPLOS
+       parse_adult_history -i ~/Descargas/Takeout -o ~/reporte.html""",
+    formatter_class=argparse.RawTextHelpFormatter
+)
+parser.add_argument('--input', '-i', type=str, default='/run/media/jmro/home/jmro/Downloads/Takeout/Mi actividad',
+                    help='Ruta al directorio de "Mi actividad"')
+parser.add_argument('--output', '-o', type=str, default='/run/media/jmro/home/jmro/Downloads/analisis_adulto_takeout.html',
+                    help='Ruta del archivo HTML a generar')
+args = parser.parse_args()
+
+takeout_dir = args.input
+output_file = args.output
+
+if not os.path.exists(takeout_dir):
+    print(f"Error: No se encontró el directorio en '{takeout_dir}'")
+    print("Por favor, verifica la ruta o utiliza el parámetro --input para especificarla.")
+    parser.print_help()
+    sys.exit(1)
+
+try:
+    os.makedirs(os.path.dirname(os.path.abspath(output_file)), exist_ok=True)
+except Exception:
+    pass
+
+print("Escaneando el directorio de Google Takeout...")
+
+# Obtener todos los archivos MiActividad.html
+activity_files = []
+for root, dirs, files in os.walk(takeout_dir):
+    for file in files:
+        if file == 'MiActividad.html':
+            activity_files.append(os.path.join(root, file))
+
+print(f"Se encontraron {len(activity_files)} categorías de actividad para procesar.")
+
+# Mapeo de meses en español
+months = {
+    'ene': 1, 'feb': 2, 'mar': 3, 'abr': 4, 'may': 5, 'jun': 6,
+    'jul': 7, 'ago': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dic': 12
+}
+
+def parse_date(date_str):
+    try:
+        m = re.search(r'(\d+)\s+([a-zA-Záéíóú]+)\s+(\d{4}),\s+(\d+):(\d+):(\d+)', date_str)
+        if m:
+            day, month, year, hour, minute, second = m.groups()
+            month_num = months.get(month.lower()[:3], 1)
+            h = int(hour)
+            if 'p.m.' in date_str.lower() and h < 12:
+                h += 12
+            elif 'a.m.' in date_str.lower() and h == 12:
+                h = 0
+            return datetime(int(year), month_num, int(day), h, int(minute), int(second))
+    except Exception:
+        pass
+    return datetime(1970, 1, 1)
+
+# Patrón regex para extraer los bloques de historial
+pattern = re.compile(
+    r'<div class="outer-cell[^"]*">.*?<p class="mdl-typography--title">([^<]*?)<br></p>.*?'
+    r'<div class="content-cell[^"]*">([^<]*?)<a href="([^"]*?)">([^<]*?)</a><br>([^<]*?)<br>',
+    re.DOTALL
+)
+
+# Palabras clave de búsqueda y filtros
+KEYWORDS = [
+    "porno", "sado", "sexo", "lesbianas", "porn", "xxx", "sadomasoquismo", 
+    "erotico", "erotica", "hentai", "strip", "escort", "adulto", "adults", 
+    "redtube", "pornhub", "xnxx", "xvideos", "cam4", "chaturbate", "sensual", 
+    "sadomaso", "fetish", "fetiche", "bdsm", "onlyfans", "xhamster", "youporn"
+]
+
+all_items = []
+hourly_stats = [0] * 24
+weekly_stats = [0] * 7  # 0: Lunes, 6: Domingo
+keyword_counts = {kw: 0 for kw in KEYWORDS}
+category_counts = {}
+
+print("Procesando historial y filtrando contenido de adultos...")
+
+for filepath in activity_files:
+    category = os.path.basename(os.path.dirname(filepath))
+    
+    with open(filepath, 'r', encoding='utf-8') as f:
+        content = f.read()
+        
+    matches = pattern.findall(content)
+    
+    for domain, action, url, title, date_str in matches:
+        domain = domain.strip()
+        action = html.unescape(action.strip()).replace('\xa0', ' ')
+        url = html.unescape(url.strip())
+        title = html.unescape(title.strip())
+        date_str = html.unescape(date_str.strip()).replace('\xa0', ' ')
+        
+        # Limpiar redirecciones de Google
+        if "google.com/url?q=" in url:
+            match_url = re.search(r'q=([^&]+)', url)
+            if match_url:
+                url = unquote(match_url.group(1))
+        
+        # Unir todos los campos de texto para buscar palabras clave
+        search_target = f"{domain} {action} {url} {title}".lower()
+        
+        # Verificar si contiene alguna palabra clave
+        matched_keywords = []
+        for kw in KEYWORDS:
+            # Búsqueda exacta de palabra
+            if re.search(r'\b' + re.escape(kw) + r'\b', search_target) or (kw in ["xxx", "xnxx", "xvideos", "pornhub", "redtube", "youporn", "xhamster", "onlyfans"] and kw in search_target):
+                matched_keywords.append(kw)
+                keyword_counts[kw] += 1
+                
+        if not matched_keywords:
+            continue
+            
+        dt = parse_date(date_str)
+        timestamp = dt.timestamp()
+        
+        # Estadísticas de tiempo
+        hour = dt.hour
+        hourly_stats[hour] += 1
+        
+        # Día de la semana (0: Lunes, 6: Domingo)
+        day_of_week = dt.weekday()
+        weekly_stats[day_of_week] += 1
+        
+        category_counts[category] = category_counts.get(category, 0) + 1
+        
+        all_items.append({
+            'category': category,
+            'domain': domain,
+            'action': action,
+            'url': url,
+            'title': title if title else url,
+            'date': date_str,
+            'timestamp': timestamp,
+            'hour': hour,
+            'day_of_week': day_of_week,
+            'keywords': matched_keywords
+        })
+
+print(f"Filtrado completado. Se encontraron {len(all_items)} registros de contenido adulto.")
+
+# Ordenar por timestamp descendente
+all_items.sort(key=lambda x: x['timestamp'], reverse=True)
+
+# Ordenar las palabras clave más encontradas
+sorted_keywords = sorted(
+    [(k, v) for k, v in keyword_counts.items() if v > 0],
+    key=lambda x: x[1],
+    reverse=True
+)
+
+# Calcular horas pico y días pico
+peak_hour = hourly_stats.index(max(hourly_stats)) if sum(hourly_stats) > 0 else 0
+days_of_week_names = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+peak_day = days_of_week_names[weekly_stats.index(max(weekly_stats))] if sum(weekly_stats) > 0 else "N/A"
+top_keyword = sorted_keywords[0][0] if sorted_keywords else "N/A"
+
+# Convertir el dataset a JSON
+json_data = json.dumps(all_items, ensure_ascii=False)
+
+# Generar los filtros por categoría
+stats_html = ""
+sorted_categories = sorted(category_counts.items(), key=lambda x: x[1], reverse=True)
+for cat, count in sorted_categories:
+    stats_html += f"""
+    <button class="filter-btn active" data-category="{cat}" onclick="toggleCategory('{cat}')">
+        <span class="cat-name">{cat}</span>
+        <span class="badge">{count}</span>
+    </button>
+    """
+
+html_content = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Historial Adulto (Takeout)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {{
+            --bg-color: #05070c;
+            --card-bg: rgba(13, 17, 28, 0.75);
+            --text-color: #f1f5f9;
+            --text-muted: #64748b;
+            --accent-color: #ec4899;
+            --accent-color-rgb: 236, 72, 153;
+            --accent-glow: rgba(236, 72, 153, 0.15);
+            --border-color: rgba(255, 255, 255, 0.05);
+            --success-color: #10b981;
+            --purple-color: #8b5cf6;
+        }}
+
+        * {{
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }}
+
+        body {{
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 40px 0;
+            display: flex;
+            justify-content: center;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(236, 72, 153, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.06) 0px, transparent 50%);
+        }}
+
+        .container {{
+            width: 85%;
+            max-width: 1700px;
+        }}
+
+        header {{
+            text-align: center;
+            margin-bottom: 30px;
+        }}
+
+        h1 {{
+            font-size: 2.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f472b6, #ec4899, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }}
+
+        p.subtitle {{
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }}
+
+        /* Layout con Sidebar aside */
+        .layout-wrapper {{
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            margin-top: 20px;
+        }}
+
+        .sidebar {{
+            flex: 0 0 380px;
+            width: 380px;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 26px;
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+            overflow-y: auto;
+        }}
+
+        .sidebar::-webkit-scrollbar {{
+            width: 6px;
+        }}
+        .sidebar::-webkit-scrollbar-track {{
+            background: transparent;
+        }}
+        .sidebar::-webkit-scrollbar-thumb {{
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+        }}
+
+        .main-content {{
+            flex-grow: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }}
+
+        /* Tarjetas de Estadísticas Rápidas */
+        .stats-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }}
+
+        .stat-card {{
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }}
+
+        .stat-label {{
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }}
+
+        .stat-value {{
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--accent-color);
+        }}
+
+        .stat-desc {{
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }}
+
+        /* Panel de Gráficos */
+        .charts-panel {{
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }}
+
+        .chart-card {{
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 24px;
+            padding: 22px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }}
+
+        .chart-card h3 {{
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: var(--text-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding-bottom: 8px;
+        }}
+
+        .chart-container {{
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }}
+
+        /* Buscador */
+        .search-box {{
+            position: relative;
+            width: 100%;
+        }}
+
+        .search-box input {{
+            width: 100%;
+            padding: 14px 20px;
+            padding-right: 45px;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s;
+        }}
+
+        .search-box input:focus {{
+            border-color: var(--accent-color);
+            box-shadow: 0 0 15px var(--accent-glow);
+        }}
+
+        .clear-btn {{
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.25rem;
+            cursor: pointer;
+            display: none;
+        }}
+
+        /* Categorías y Filtros */
+        .filter-section-header {{
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }}
+
+        .filter-header-row {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            padding-bottom: 8px;
+        }}
+
+        .filter-actions {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+
+        .action-link-btn {{
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+        }}
+
+        .action-link-btn:hover {{
+            text-decoration: underline;
+        }}
+
+        .filter-group {{
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }}
+
+        .filter-btn {{
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }}
+
+        .filter-btn.active {{
+            background: rgba(236, 72, 153, 0.12);
+            border-color: var(--accent-color);
+            color: #f472b6;
+        }}
+
+        .cat-name {{
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }}
+
+        .badge {{
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-muted);
+            padding: 1px 6px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }}
+
+        .filter-btn.active .badge {{
+            background: rgba(236, 72, 153, 0.2);
+            color: #f472b6;
+        }}
+
+        /* Lista de Historial */
+        .history-list {{
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }}
+
+        .history-item {{
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 12px 18px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }}
+
+        .item-header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }}
+
+        .tags-container {{
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }}
+
+        .category-tag {{
+            background: rgba(236, 72, 153, 0.1);
+            border: 1px solid rgba(236, 72, 153, 0.2);
+            color: #f472b6;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }}
+
+        .keyword-tag {{
+            background: rgba(139, 92, 246, 0.1);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            color: #c084fc;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }}
+
+        .domain-tag {{
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            color: #cbd5e1;
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }}
+
+        .item-date {{
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }}
+
+        .item-title {{
+            font-size: 1.05rem;
+            font-weight: 500;
+            margin-top: 1px;
+            line-height: 1.35;
+        }}
+
+        .item-title a {{
+            color: var(--text-color);
+            text-decoration: none;
+            font-weight: 600;
+        }}
+
+        .item-title a:hover {{
+            color: var(--accent-color);
+            text-decoration: underline;
+        }}
+
+        .item-url-row {{
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }}
+
+        .action-text {{
+            font-size: 0.85rem;
+            color: var(--accent-color);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+
+        .item-url {{
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            word-break: break-all;
+            display: block;
+            text-decoration: none;
+        }}
+
+        .item-url:hover {{
+            color: var(--accent-color);
+            text-decoration: underline;
+        }}
+
+        .no-results {{
+            text-align: center;
+            padding: 60px;
+            color: var(--text-muted);
+            display: none;
+            font-size: 1.2rem;
+            border: 1px dashed var(--border-color);
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.01);
+        }}
+
+        .loading-sentinel {{
+            text-align: center;
+            padding: 30px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }}
+
+        mark.highlight {{
+            background: rgba(236, 72, 153, 0.3);
+            color: #fff;
+            padding: 0 2px;
+            border-radius: 4px;
+        }}
+
+        /* Responsive */
+        @media (max-width: 1200px) {{
+            .layout-wrapper {{
+                flex-direction: column;
+                align-items: stretch;
+            }}
+            .sidebar {{
+                width: 100%;
+                flex: none;
+                position: relative;
+                top: 0;
+                max-height: none;
+            }}
+            .filter-group {{
+                flex-direction: row;
+                flex-wrap: wrap;
+            }}
+            .filter-btn {{
+                width: auto;
+            }}
+            .stats-grid {{
+                grid-template-columns: repeat(2, 1fr);
+            }}
+            .charts-panel {{
+                grid-template-columns: 1fr;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Análisis de Historial Adulto</h1>
+            <p class="subtitle">Análisis estadístico y línea de tiempo de accesos y búsquedas con temáticas para adultos</p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-label">Accesos Totales</span>
+                <span class="stat-value">{len(all_items)}</span>
+                <span class="stat-desc">Registros filtrados</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Hora Pico</span>
+                <span class="stat-value">{peak_hour}:00 hs</span>
+                <span class="stat-desc">Mayor nivel de actividad</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Día Pico</span>
+                <span class="stat-value">{peak_day}</span>
+                <span class="stat-desc">Día semanal con más tráfico</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-label">Tema Principal</span>
+                <span class="stat-value" style="font-size: 1.5rem; line-height: 2.1rem;">{top_keyword.upper()}</span>
+                <span class="stat-desc">Palabra clave más buscada</span>
+            </div>
+        </div>
+
+        <div class="layout-wrapper">
+            <aside class="sidebar">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="Buscar en historial..." oninput="onSearchChange()">
+                    <button id="clearSearchBtn" class="clear-btn" onclick="clearSearch()">×</button>
+                </div>
+
+                <div class="filter-section-header">
+                    <div class="filter-header-row">
+                        <span>Filtrar por Categoría</span>
+                        <div class="filter-actions">
+                            <button class="action-link-btn" onclick="selectAllCategories()">Todas</button>
+                            <span class="divider">|</span>
+                            <button class="action-link-btn" onclick="selectNoCategories()">Ninguna</button>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-group">
+                        {stats_html}
+                    </div>
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <div class="charts-panel">
+                    <div class="chart-card">
+                        <h3>Actividad por Hora del Día</h3>
+                        <div class="chart-container">
+                            <canvas id="hourlyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>Distribución Semanal</h3>
+                        <div class="chart-container">
+                            <canvas id="weeklyChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-card" style="grid-column: span 2;">
+                        <h3>Palabras Clave más Frecuentes</h3>
+                        <div class="chart-container" style="height: 300px;">
+                            <canvas id="keywordChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="history-list" id="historyList">
+                    <!-- Registros dinámicos -->
+                </div>
+                
+                <div class="no-results" id="noResults">No se encontraron resultados.</div>
+                <div class="loading-sentinel" id="loadingSentinel">Cargando más registros...</div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const allItems = {json_data};
+        const activeCategories = new Set();
+        let filteredItems = [...allItems];
+        let itemsToShow = 100;
+        let searchTimeout = null;
+
+        document.querySelectorAll('.filter-btn').forEach(btn => {{
+            activeCategories.add(btn.getAttribute('data-category'));
+        }});
+
+        applyFilters();
+
+        window.addEventListener('scroll', () => {{
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 600) {{
+                if (itemsToShow < filteredItems.length) {{
+                    itemsToShow += 100;
+                    renderList();
+                }}
+            }}
+        }});
+
+        function toggleCategory(cat) {{
+            const btn = document.querySelector(`.filter-btn[data-category="${{cat}}"]`);
+            if (activeCategories.has(cat)) {{
+                activeCategories.delete(cat);
+                btn.classList.remove('active');
+            }} else {{
+                activeCategories.add(cat);
+                btn.classList.add('active');
+            }}
+            applyFilters();
+        }}
+
+        function selectAllCategories() {{
+            document.querySelectorAll('.filter-btn').forEach(btn => {{
+                const cat = btn.getAttribute('data-category');
+                activeCategories.add(cat);
+                btn.classList.add('active');
+            }});
+            applyFilters();
+        }}
+
+        function selectNoCategories() {{
+            document.querySelectorAll('.filter-btn').forEach(btn => {{
+                const cat = btn.getAttribute('data-category');
+                activeCategories.delete(cat);
+                btn.classList.remove('active');
+            }});
+            applyFilters();
+        }}
+
+        function clearSearch() {{
+            const input = document.getElementById('searchInput');
+            input.value = '';
+            document.getElementById('clearSearchBtn').style.display = 'none';
+            applyFilters();
+        }}
+
+        function onSearchChange() {{
+            const query = document.getElementById('searchInput').value;
+            document.getElementById('clearSearchBtn').style.display = query ? 'block' : 'none';
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(applyFilters, 200);
+        }}
+
+        function applyFilters() {{
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            filteredItems = allItems.filter(item => {{
+                const matchesCategory = activeCategories.has(item.category);
+                if (!matchesCategory) return false;
+                if (query === '') return true;
+                
+                return item.title.toLowerCase().includes(query) || 
+                       item.url.toLowerCase().includes(query) || 
+                       item.domain.toLowerCase().includes(query) || 
+                       item.date.toLowerCase().includes(query) ||
+                       item.action.toLowerCase().includes(query) ||
+                       item.keywords.some(kw => kw.toLowerCase().includes(query));
+            }});
+            itemsToShow = 100;
+            renderList();
+        }}
+
+        function escapeHtml(text) {{
+            if (!text) return '';
+            const map = {{
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }};
+            return text.replace(/[&<>"']/g, function(m) {{ return map[m]; }});
+        }}
+
+        function linkifyText(text, query) {{
+            const escapedText = escapeHtml(text);
+            const urlRegex = /(((https?:\\/\\/)|(www\\.))[^\\s]+)/g;
+            
+            let linkedText = escapedText.replace(urlRegex, function (url) {{
+                let href = url;
+                if (!href.match(/^https?:\\/\\//i)) {{
+                    href = 'https://' + href;
+                }}
+                return `<a href="${{href}}" target="_blank" rel="noopener noreferrer">${{url}}</a>`;
+            }});
+
+            if (!query) return linkedText;
+            const escapedQuery = escapeHtml(query);
+            try {{
+                const regex = new RegExp(`(${{escapedQuery.replace(/[-\\/\\\\^\\$\\*\\+\\?\\.\\(\\)|[\\]{{}}]/g, '\\\\$&')}})`, 'gi');
+                return linkedText.replace(regex, function(m, p1, offset, string) {{
+                    const before = string.slice(0, offset);
+                    const openTags = before.split('<').length - 1;
+                    const closeTags = before.split('>').length - 1;
+                    if (openTags > closeTags) return m;
+                    return `<mark class="highlight">${{m}}</mark>`;
+                }});
+            }} catch (e) {{
+                return linkedText;
+            }}
+        }}
+
+        function highlightText(text, query) {{
+            const escapedText = escapeHtml(text);
+            if (!query) return escapedText;
+            const escapedQuery = escapeHtml(query);
+            try {{
+                const regex = new RegExp(`(${{escapedQuery.replace(/[-\\/\\\\^\\$\\*\\+\\?\\.\\(\\)|[\\]{{}}]/g, '\\\\$&')}})`, 'gi');
+                return escapedText.replace(regex, '<mark class="highlight">$1</mark>');
+            }} catch (e) {{
+                return escapedText;
+            }}
+        }}
+
+        function renderList() {{
+            const listContainer = document.getElementById('historyList');
+            const noResults = document.getElementById('noResults');
+            const sentinel = document.getElementById('loadingSentinel');
+            const query = document.getElementById('searchInput').value.trim();
+            
+            if (filteredItems.length === 0) {{
+                listContainer.innerHTML = '';
+                noResults.style.display = 'block';
+                sentinel.style.display = 'none';
+                return;
+            }}
+            
+            noResults.style.display = 'none';
+            const limit = Math.min(itemsToShow, filteredItems.length);
+            sentinel.style.display = limit >= filteredItems.length ? 'none' : 'block';
+            
+            let html = '';
+            for (let i = 0; i < limit; i++) {{
+                const item = filteredItems[i];
+                
+                const isTitleUrl = /^(https?:\\/\\/|www\\.)/i.test(item.title);
+                let titleHtml = '';
+                if (isTitleUrl) {{
+                    titleHtml = linkifyText(item.title, query);
+                }} else {{
+                    const highlightedTitle = highlightText(item.title, query);
+                    titleHtml = `<a href="${{escapeHtml(item.url)}}" target="_blank">${{highlightedTitle}}</a>`;
+                }}
+
+                const highlightedUrl = highlightText(item.url, query);
+                const highlightedDomain = highlightText(item.domain, query);
+                const highlightedAction = linkifyText(item.action, query);
+                
+                // Generar tags para las palabras clave detectadas
+                let kwTagsHtml = '';
+                item.keywords.forEach(kw => {{
+                    kwTagsHtml += `<span class="keyword-tag">${{escapeHtml(kw)}}</span>`;
+                }});
+                
+                html += `
+                <div class="history-item">
+                    <div class="item-header">
+                        <div class="tags-container">
+                            <span class="category-tag">${{escapeHtml(item.category)}}</span>
+                            <span class="domain-tag">${{highlightedDomain}}</span>
+                            ${{kwTagsHtml}}
+                        </div>
+                        <span class="item-date">${{escapeHtml(item.date)}}</span>
+                    </div>
+                    <div class="item-title">
+                        ${{titleHtml}}
+                    </div>
+                    <div class="item-url-row">
+                        <span class="action-text">${{highlightedAction}}</span>
+                        <a href="${{escapeHtml(item.url)}}" class="item-url" target="_blank">${{highlightedUrl}}</a>
+                    </div>
+                </div>
+                `;
+            }}
+            listContainer.innerHTML = html;
+        }}
+
+        // Configuración de los gráficos interactivos
+        const ctxHourly = document.getElementById('hourlyChart').getContext('2d');
+        new Chart(ctxHourly, {{
+            type: 'line',
+            data: {{
+                labels: Array.from({{length: 24}}, (_, i) => `${{i}}:00`),
+                datasets: [{{
+                    label: 'Cantidad de Accesos',
+                    data: {hourly_stats},
+                    borderColor: 'rgb(236, 72, 153)',
+                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                    fill: true,
+                    tension: 0.3
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{ display: false }}
+                }},
+                scales: {{
+                    y: {{ grid: {{ color: 'rgba(255,255,255,0.05)' }}, ticks: {{ color: '#64748b' }} }},
+                    x: {{ grid: {{ display: false }}, ticks: {{ color: '#64748b' }} }}
+                }}
+            }}
+        }});
+
+        const ctxWeekly = document.getElementById('weeklyChart').getContext('2d');
+        new Chart(ctxWeekly, {{
+            type: 'bar',
+            data: {{
+                labels: {days_of_week_names},
+                datasets: [{{
+                    label: 'Accesos',
+                    data: {weekly_stats},
+                    backgroundColor: 'rgba(139, 92, 246, 0.65)',
+                    borderColor: 'rgb(139, 92, 246)',
+                    borderWidth: 1,
+                    borderRadius: 8
+                }}]
+            }},
+            options: {{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{ display: false }}
+                }},
+                scales: {{
+                    y: {{ grid: {{ color: 'rgba(255,255,255,0.05)' }}, ticks: {{ color: '#64748b' }} }},
+                    x: {{ grid: {{ display: false }}, ticks: {{ color: '#64748b' }} }}
+                }}
+            }}
+        }});
+
+        const ctxKeywords = document.getElementById('keywordChart').getContext('2d');
+        const sortedKeywordsData = {sorted_keywords[:15]}; // Top 15
+        new Chart(ctxKeywords, {{
+            type: 'bar',
+            data: {{
+                labels: sortedKeywordsData.map(x => x[0].toUpperCase()),
+                datasets: [{{
+                    label: 'Apariciones',
+                    data: sortedKeywordsData.map(x => x[1]),
+                    backgroundColor: 'rgba(236, 72, 153, 0.6)',
+                    borderColor: 'rgb(236, 72, 153)',
+                    borderWidth: 1,
+                    borderRadius: 6
+                }}]
+            }},
+            options: {{
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {{
+                    legend: {{ display: false }}
+                }},
+                scales: {{
+                    x: {{ grid: {{ color: 'rgba(255,255,255,0.05)' }}, ticks: {{ color: '#64748b' }} }},
+                    y: {{ grid: {{ display: false }}, ticks: {{ color: '#64748b' }} }}
+                }}
+            }}
+        }});
+    </script>
+</body>
+</html>
+"""
+
+with open(output_file, 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print(f"Reporte de análisis adulto generado en {output_file}")
+print("¡Listo!")

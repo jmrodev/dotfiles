@@ -1,0 +1,483 @@
+#!/usr/bin/env python3
+import os
+import sys
+import json
+import argparse
+from datetime import datetime
+
+DEFAULT_PHOTOS_DIR = '/run/media/jmro/home/jmro/Downloads/Takeout/Google Fotos'
+DEFAULT_REPORT_FILE = '/run/media/jmro/home/jmro/Downloads/galeria_fotos_filtradas.html'
+CACHE_DIR = os.path.expanduser('~/.cache/nsfw_scanners')
+CACHE_FILE = os.path.join(CACHE_DIR, 'takeout_hf_cache.json')
+
+if not os.path.exists(CACHE_DIR):
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+    except Exception:
+        pass
+
+def check_dependencies():
+    missing = []
+    try:
+        import PIL
+    except ImportError:
+        missing.append("pillow")
+    try:
+        import torch
+    except ImportError:
+        missing.append("torch")
+    try:
+        import transformers
+    except ImportError:
+        missing.append("transformers")
+        
+    if missing:
+        print("Faltan dependencias necesarias para ejecutar el escáner (HuggingFace).")
+        print(f"Instalando: {', '.join(missing)}...")
+        import subprocess
+        try:
+            subprocess.run([
+                sys.executable, "-m", "pip", "install", "--user", "--break-system-packages", 
+                *missing
+            ], check=True)
+            print("Instalación completada correctamente.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error al instalar dependencias: {e}")
+            sys.exit(1)
+
+check_dependencies()
+
+from PIL import Image
+from transformers import pipeline
+
+def load_cache():
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_cache(cache_data):
+    try:
+        temp_file = CACHE_FILE + '.tmp'
+        with open(temp_file, 'w', encoding='utf-8') as f:
+            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+        os.replace(temp_file, CACHE_FILE)
+    except Exception as e:
+        print(f"Error al guardar caché: {e}")
+
+def resolve_target_path(folder_input):
+    if os.path.isabs(folder_input) and os.path.exists(folder_input):
+        return folder_input
+    normalized = folder_input.replace('\\', '/')
+    if normalized.startswith('Google Fotos/'):
+        folder_input = folder_input[len('Google Fotos/'):]
+    elif 'Google Fotos/' in normalized:
+        parts = normalized.split('Google Fotos/', 1)
+        folder_input = parts[1]
+    full_path = os.path.join(DEFAULT_PHOTOS_DIR, folder_input)
+    if os.path.exists(full_path):
+        return full_path
+    current_path = os.path.abspath(folder_input)
+    if os.path.exists(current_path):
+        return current_path
+    return full_path
+
+def scan_folders(folders_list, threshold=0.50):
+    cache = load_cache()
+    print(f"Caché cargada: {len(cache)} imágenes ya procesadas.")
+    
+    image_extensions = ('.jpg', '.jpeg', '.png', '.webp', '.bmp')
+    all_image_files = []
+    
+    for folder in folders_list:
+        full_path = resolve_target_path(folder)
+        if not os.path.exists(full_path):
+            continue
+        for root, _, files in os.walk(full_path):
+            for file in files:
+                if file.lower().endswith(image_extensions):
+                    all_image_files.append((os.path.join(root, file), folder))
+                    
+    total_files = len(all_image_files)
+    if total_files == 0:
+        print("No se encontraron imágenes para analizar.")
+        return [], []
+        
+    print(f"Se encontraron {total_files} imágenes totales para procesar.")
+    
+    classifier = None
+    new_scans_count = 0
+    detected_items = []
+    non_detected_items = []
+    
+    for idx, (img_path, folder_name) in enumerate(all_image_files, 1):
+        if idx % 50 == 0 or idx == total_files:
+            print(f"Progreso: {idx}/{total_files} analizadas (Sospechosas: {len(detected_items)})")
+            
+        try:
+            file_stat = os.stat(img_path)
+            mtime = file_stat.st_mtime
+            size_mb = file_stat.st_size / (1024 * 1024)
+            mod_time = datetime.fromtimestamp(mtime).strftime('%Y-%m-%d %H:%M:%S')
+            filename = os.path.basename(img_path)
+            rel_path = os.path.relpath(img_path, DEFAULT_PHOTOS_DIR)
+            path_parts = rel_path.split(os.sep)
+            root_folder = path_parts[0] if path_parts else folder_name
+            
+            cached_entry = cache.get(img_path)
+            
+            if cached_entry and cached_entry.get('mtime') == mtime:
+                nsfw_score = cached_entry.get('nsfw_score', 0.0)
+            else:
+                if classifier is None:
+                    print("Inicializando modelo HuggingFace (Falconsai/nsfw_image_detection)...")
+                    # Usar device=0 si hay GPU, sino CPU
+                    import torch
+                    device = 0 if torch.cuda.is_available() else -1
+                    classifier = pipeline("image-classification", model="Falconsai/nsfw_image_detection", device=device)
+                    
+                with Image.open(img_path) as img:
+                    img = img.convert('RGB')
+                    result = classifier(img)
+                
+                # result is a list of dicts: [{'label': 'normal', 'score': 0.9}, {'label': 'nsfw', 'score': 0.1}]
+                nsfw_score = 0.0
+                for res in result:
+                    if res['label'] == 'nsfw':
+                        nsfw_score = res['score']
+                
+                cache[img_path] = {
+                    'mtime': mtime,
+                    'nsfw_score': float(nsfw_score),
+                    'date_modified': mod_time,
+                    'size_mb': round(size_mb, 2),
+                    'root_folder': root_folder,
+                    'filename': filename,
+                    'rel_path': rel_path
+                }
+                
+                new_scans_count += 1
+                if new_scans_count % 50 == 0:
+                    save_cache(cache)
+                    
+            item_data = {
+                'path': img_path,
+                'filename': filename,
+                'rel_path': rel_path,
+                'root_folder': root_folder,
+                'nsfw_score': float(nsfw_score),
+                'date_modified': mod_time,
+                'size_mb': round(size_mb, 2),
+                'max_score': float(nsfw_score) # For compatibility with HTML template
+            }
+            
+            if nsfw_score >= threshold:
+                item_data['detections'] = [{'pretty_label': 'Contenido Explícito (NSFW)', 'score': float(nsfw_score)}]
+                detected_items.append(item_data)
+            else:
+                item_data['detections'] = []
+                non_detected_items.append(item_data)
+                
+        except Exception as e:
+            pass
+            
+    if new_scans_count > 0:
+        save_cache(cache)
+        print(f"Caché actualizada. Se analizaron {new_scans_count} nuevas imágenes.")
+        
+    return detected_items, non_detected_items
+
+def generate_html_report(detected_results, non_detected_results, target_name, output_path):
+    total_scanned = len(detected_results) + len(non_detected_results)
+    
+    detected_results.sort(key=lambda x: x['nsfw_score'], reverse=True)
+    
+    json_detected = json.dumps(detected_results, ensure_ascii=False)
+    json_non_detected = json.dumps(non_detected_results, ensure_ascii=False)
+
+    html_content = f"""<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería NSFW - HuggingFace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {{
+            --bg-color: #030712;
+            --card-bg: rgba(17, 24, 39, 0.7);
+            --sidebar-bg: rgba(17, 24, 39, 0.95);
+            --text-color: #f3f4f6;
+            --text-muted: #9ca3af;
+            --accent-color: #ec4899;
+            --accent-purple: #8b5cf6;
+            --accent-glow: rgba(236, 72, 153, 0.2);
+            --border-color: rgba(255, 255, 255, 0.05);
+            --danger-color: #ef4444;
+            --tab-active: linear-gradient(135deg, #ec4899, #8b5cf6);
+        }}
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{
+            font-family: 'Outfit', sans-serif; background-color: var(--bg-color);
+            color: var(--text-color); padding: 40px 0; display: flex; justify-content: center;
+        }}
+        .container {{ width: 92%; max-width: 1750px; }}
+        header {{ text-align: center; margin-bottom: 35px; }}
+        h1 {{
+            font-size: 2.5rem; font-weight: 700;
+            background: linear-gradient(135deg, #f472b6, #ec4899, #a78bfa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 10px;
+        }}
+        .subtitle {{ color: var(--text-muted); font-size: 1.1rem; }}
+        .layout {{ display: flex; gap: 30px; align-items: flex-start; }}
+        aside {{
+            flex: 0 0 350px; width: 350px; background: var(--sidebar-bg);
+            border: 1px solid var(--border-color); border-radius: 20px; padding: 24px;
+            position: sticky; top: 20px;
+        }}
+        .stats-summary h3, .filter-section h3 {{
+            font-size: 1.1rem; border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px; margin-bottom: 12px; font-weight: 600;
+        }}
+        .stat-row {{ display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.9rem; }}
+        .stat-count {{ color: var(--accent-color); font-weight: 700; }}
+        input[type="range"] {{ width: 100%; accent-color: var(--accent-color); cursor: pointer; }}
+        .search-container input, select {{
+            width: 100%; padding: 10px 14px; border-radius: 10px; background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-color); color: var(--text-color); margin-bottom:15px; outline: none;
+        }}
+        .tabs-header {{ display: flex; gap:10px; margin-bottom: 25px; }}
+        .tab-btn {{
+            flex: 1; padding: 12px; background: rgba(255,255,255,0.05); border: none;
+            color: var(--text-muted); font-weight: 600; border-radius: 8px; cursor: pointer;
+        }}
+        .tab-btn.active {{ background: var(--tab-active); color: white; }}
+        main {{ flex-grow: 1; display: flex; flex-direction: column; }}
+        .gallery-grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 20px; }}
+        .gallery-card {{
+            background: var(--card-bg); border: 1px solid var(--border-color);
+            border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+        }}
+        .image-container {{ position: relative; width: 100%; height: 220px; background: #000; cursor: pointer; }}
+        .image-container img {{ width: 100%; height: 100%; object-fit: cover; }}
+        .score-badge {{
+            position: absolute; top: 10px; right: 10px; background: rgba(239, 68, 68, 0.85);
+            color: #fff; padding: 4px 8px; border-radius: 8px; font-weight: 700;
+        }}
+        .card-details {{ padding: 16px; display: flex; flex-direction: column; gap: 10px; flex-grow: 1; }}
+        .filename {{ font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }}
+        .meta-info {{ font-size: 0.8rem; color: var(--text-muted); display: flex; flex-direction: column; }}
+        .btn-view {{
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color);
+            color: var(--text-color); text-align: center; padding: 8px; border-radius: 8px;
+            text-decoration: none; margin-top: auto;
+        }}
+        .modal {{
+            display: none; position: fixed; z-index: 1000; top: 0; left: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.96); justify-content: center; align-items: center;
+        }}
+        .modal-content {{ max-width: 90%; max-height: 90%; border-radius: 12px; }}
+        .close-modal {{ position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; cursor: pointer; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Galería de Fotos - Detección Exacta HuggingFace</h1>
+            <p class="subtitle">Análisis contextual de fotos NSFW en '{target_name}'</p>
+        </header>
+        <div class="layout">
+            <aside>
+                <div class="stats-summary">
+                    <h3>Resumen</h3>
+                    <div class="stat-row"><span>Total Analizadas</span><span class="stat-count" style="color:var(--accent-purple);">{total_scanned}</span></div>
+                    <div class="stat-row"><span>Explícitas (NSFW)</span><span class="stat-count" id="statDetected">{len(detected_results)}</span></div>
+                    <div class="stat-row"><span>Normales</span><span class="stat-count" id="statSafe" style="color:#10b981;">{len(non_detected_results)}</span></div>
+                </div>
+                <div class="filter-section">
+                    <h3>Filtros</h3>
+                    <select id="folderSelect" onchange="updateView()"><option value="all">-- Todas las carpetas --</option></select>
+                    <input type="text" id="searchInput" placeholder="Buscar por nombre..." oninput="updateView()">
+                    <div style="margin-top:15px;">
+                        <label style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                            <span>Certeza mínima (NSFW):</span><span id="thresholdValue" style="color:var(--accent-color);font-weight:bold;">0.50</span>
+                        </label>
+                        <input type="range" id="thresholdRange" min="0.10" max="0.99" step="0.05" value="0.50" oninput="updateView()">
+                    </div>
+                </div>
+            </aside>
+            <main>
+                <div class="tabs-header">
+                    <button class="tab-btn active" id="tabDetected" onclick="switchTab('detected')">Explícitas (<span id="tabDetectedCount">{len(detected_results)}</span>)</button>
+                    <button class="tab-btn" id="tabSafe" onclick="switchTab('safe')">Normales (<span id="tabSafeCount">{len(non_detected_results)}</span>)</button>
+                </div>
+                <div class="gallery-grid" id="galleryGrid"></div>
+                <div id="noResults" style="display:none;text-align:center;padding:50px;color:var(--text-muted);">No hay resultados.</div>
+            </main>
+        </div>
+    </div>
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="modalImg">
+    </div>
+    <script>
+        const detectedItems = {json_detected};
+        const safeItems = {json_non_detected};
+        let currentTab = 'detected';
+        
+        // Populating folder select
+        const folders = new Set();
+        detectedItems.forEach(i => folders.add(i.root_folder));
+        safeItems.forEach(i => folders.add(i.root_folder));
+        folders.forEach(f => {{
+            const opt = document.createElement('option');
+            opt.value = opt.textContent = f;
+            document.getElementById('folderSelect').appendChild(opt);
+        }});
+        
+        function switchTab(tab) {{
+            currentTab = tab;
+            document.getElementById('tabDetected').classList.toggle('active', tab === 'detected');
+            document.getElementById('tabSafe').classList.toggle('active', tab === 'safe');
+            updateView();
+        }}
+        
+        function updateView() {{
+            const folder = document.getElementById('folderSelect').value;
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const threshold = parseFloat(document.getElementById('thresholdRange').value);
+            document.getElementById('thresholdValue').innerText = threshold.toFixed(2);
+            
+            const filteredDetected = detectedItems.filter(i => 
+                (folder === 'all' || i.root_folder === folder) && 
+                i.filename.toLowerCase().includes(search) &&
+                i.nsfw_score >= threshold
+            );
+            const filteredSafe = safeItems.filter(i => 
+                (folder === 'all' || i.root_folder === folder) && 
+                i.filename.toLowerCase().includes(search)
+            );
+            
+            document.getElementById('statDetected').innerText = document.getElementById('tabDetectedCount').innerText = filteredDetected.length;
+            document.getElementById('statSafe').innerText = document.getElementById('tabSafeCount').innerText = filteredSafe.length;
+            
+            const itemsToRender = currentTab === 'detected' ? filteredDetected : filteredSafe;
+            
+            const grid = document.getElementById('galleryGrid');
+            if (itemsToRender.length === 0) {{
+                grid.innerHTML = '';
+                document.getElementById('noResults').style.display = 'block';
+                return;
+            }}
+            document.getElementById('noResults').style.display = 'none';
+            
+            let html = '';
+            itemsToRender.slice(0, 100).forEach(item => {{
+                const uri = 'file://' + item.path;
+                const badge = currentTab === 'detected' ? `<div class="score-badge">${{Math.round(item.nsfw_score*100)}}%</div>` : '';
+                html += `
+                <div class="gallery-card">
+                    <div class="image-container" onclick="openModal('${{uri}}')">
+                        <img src="${{uri}}" loading="lazy">
+                        ${{badge}}
+                    </div>
+                    <div class="card-details">
+                        <span class="filename">${{item.filename}}</span>
+                        <div class="meta-info">
+                            <span>Ruta: ${{item.rel_path}}</span>
+                        </div>
+                        <a href="${{uri}}" target="_blank" class="btn-view">Abrir foto</a>
+                    </div>
+                </div>`;
+            }});
+            grid.innerHTML = html;
+        }}
+        
+        function openModal(src) {{
+            document.getElementById('modalImg').src = src;
+            document.getElementById('imageModal').style.display = "flex";
+        }}
+        function closeModal() {{
+            document.getElementById('imageModal').style.display = "none";
+        }}
+        
+        updateView();
+    </script>
+</body>
+</html>
+"""
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    print(f"Reporte HTML generado en {output_path}")
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="""MINI AYUDA:
+Escáner de imágenes locales con HuggingFace (Falconsai).
+Clasifica contenido explícito con redes neuronales avanzadas.
+
+Uso rápido:
+  scan_nsfw_hf "Viaje"
+  scan_nsfw_hf all --threshold 0.75""",
+        epilog="""MAN PAGE (MANUAL COMPLETO):
+---------------------------
+NOMBRE
+       scan_nsfw_hf - Clasificador IA basado en Transformers HuggingFace.
+
+SINOPSIS
+       scan_nsfw_hf [CARPETA] [--threshold N] [--output ARCHIVO]
+
+DESCRIPCIÓN
+       Usa la librería Transformers (pipeline image-classification) para 
+       detectar contenido NSFW. Automáticamente detecta si tienes GPU o CPU.
+       A diferencia de NudeNet, esta es una red de clasificación global de imagen.
+       Genera un reporte interactivo en HTML con puntuaciones de riesgo.
+
+OPCIONES
+       CARPETA       Carpeta relativa a Google Fotos o ruta absoluta ("all" para todo).
+       --threshold   Confianza mínima de NSFW (0.10 a 0.99). Defecto: 0.50.
+       --output      Destino del reporte HTML.
+       -h, --help    Muestra este manual en la terminal.
+
+EJEMPLOS
+       scan_nsfw_hf all --threshold 0.85
+       scan_nsfw_hf /home/jmro/Fotos""",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    parser.add_argument('folder_positional', type=str, nargs='?', default=None, help=argparse.SUPPRESS)
+    parser.add_argument('--folder', type=str, default=None, help=argparse.SUPPRESS)
+    parser.add_argument('--threshold', type=float, default=0.50, help="Límite de confianza (0.0 a 1.0)")
+    parser.add_argument('--output', type=str, default=DEFAULT_REPORT_FILE, help="Archivo HTML de salida")
+    args = parser.parse_args()
+    
+    target_folder = args.folder or args.folder_positional
+    if not target_folder:
+        parser.print_help()
+        print("\nError: Debes especificar una carpeta para escanear (o 'all' para todo).")
+        sys.exit(1)
+        
+    is_all = target_folder.lower() in ('all', '*', 'todos', 'todas')
+    
+    if args.output == DEFAULT_REPORT_FILE and is_all:
+        args.output = '/run/media/jmro/home/jmro/Downloads/galeria_fotos_filtradas_hf_completa.html'
+        
+    print("=" * 60)
+    print("   Detector de Contenido NSFW (HuggingFace Transformers)")
+    print("=" * 60)
+    
+    if is_all:
+        folders_list = [d for d in os.listdir(DEFAULT_PHOTOS_DIR) if os.path.isdir(os.path.join(DEFAULT_PHOTOS_DIR, d))] if os.path.exists(DEFAULT_PHOTOS_DIR) else []
+        target_name = "Todas las carpetas de Google Fotos"
+    else:
+        folders_list = [target_folder]
+        target_name = f"Carpeta: {target_folder}"
+
+    detected, non_detected = scan_folders(folders_list, args.threshold)
+    if detected is not None:
+        generate_html_report(detected, non_detected, target_name, args.output)
+
+if __name__ == '__main__':
+    main()
