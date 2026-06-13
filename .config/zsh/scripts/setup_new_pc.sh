@@ -80,6 +80,8 @@ if command -v pacman &>/dev/null; then
         "ripgrep" "fd" "unzip" "gcc" "make"
         "pipewire" "pipewire-pulse" "pipewire-alsa" "wireplumber"
         "p7zip" "unarchiver" "wget" "lsof" "flameshot" "google-chrome"
+        "sway" "foot" "waybar" "wofi" "swappy" "wl-clipboard" "cliphist" 
+        "wl-clip-persist" "brightnessctl" "pulsemixer" "grim" "slurp"
     )
     yay -S --needed --noconfirm "${PACKAGES[@]}"
 fi

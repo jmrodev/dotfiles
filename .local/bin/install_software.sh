@@ -58,6 +58,8 @@ ARCH_PACKAGES=(
     "gpg" "prism" "reflector" "protonvpn-cli" "hurl" "i3lock-color" "tera" "encfs" \
     "qalculate!" "qalculate-qt" "bc" "brave" "brave-bin" "kmag" "broadcom-bt-firmware-git" \
     "libreoffice" "konsole" "net-tools" "asciinema" "vlc" "flow" "git-flow" "gitflow-cjs"\
+    "sway" "foot" "waybar" "wofi" "swappy" "wl-clipboard" "cliphist" "wl-clip-persist" \
+    "brightnessctl" "pulsemixer" "grim" "slurp"\
 )
 
 # Paquetes para Void Linux
@@ -72,6 +74,8 @@ VOID_PACKAGES=(
     "typescript-language-server" "python-lsp-server" "lua-language-server"
     "bash-language-server" "gopls" "gnome-keyring" "NetworkManager-applet"
     "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver" "bat"
+    "sway" "foot" "waybar" "wofi" "swappy" "wl-clipboard" "cliphist" \
+    "brightnessctl" "grim" "slurp"\
 )
 
 # Paquetes para Debian/Ubuntu
@@ -85,6 +89,8 @@ DEBIAN_PACKAGES=(
     "default-jdk" "golang" "node-typescript" "python3-pylsp" "bash-language-server"
     "gnome-keyring" "network-manager-gnome" "volumeicon-alsa" "i3lock" "i3blocks"
     "fontconfig" "tree" "dbeaver" "bat"
+    "sway" "foot" "waybar" "wofi" "swappy" "wl-clipboard" "cliphist" \
+    "brightnessctl" "grim" "slurp"\
 )
 
 # Paquetes globales de NPM (comunes)

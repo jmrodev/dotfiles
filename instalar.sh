@@ -21,7 +21,7 @@ function dotfiles_cmd {
 # 2. ASEGURAR ÚLTIMA VERSIÓN DE GITHUB
 echo "Sincronizando con GitHub..."
 dotfiles_cmd remote set-url origin https://github.com/jmrodev/dotfiles.git
-dotfiles_cmd fetch origin main
+dotfiles_cmd fetch origin sway
 
 # 3. Limpiar terreno
 echo "Limpiando archivos de configuración básicos (ZSH, Git, Neovim)..."
@@ -42,7 +42,7 @@ SETUP_SCRIPT="$HOME/.config/zsh/scripts/setup_new_pc.sh"
 if [ ! -f "$SETUP_SCRIPT" ]; then
     echo "Aviso: El script no apareció tras el checkout. Descargando versión de emergencia..."
     mkdir -p "$(dirname "$SETUP_SCRIPT")"
-    curl -sSL "https://raw.githubusercontent.com/jmrodev/dotfiles/main/.config/zsh/scripts/setup_new_pc.sh" -o "$SETUP_SCRIPT"
+    curl -sSL "https://raw.githubusercontent.com/jmrodev/dotfiles/sway/.config/zsh/scripts/setup_new_pc.sh" -o "$SETUP_SCRIPT"
 fi
 
 if [ -f "$SETUP_SCRIPT" ]; then
