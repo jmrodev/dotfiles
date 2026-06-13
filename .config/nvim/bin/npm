@@ -1,0 +1,59 @@
+#!/bin/bash
+# Wrapper script to translate npm to pnpm for Mason
+
+case "$1" in
+  version)
+    node_ver=$(node -v | sed 's/v//')
+    echo "{\"npm\": \"10.8.2\", \"node\": \"$node_ver\"}"
+    exit 0
+    ;;
+  init)
+    pnpm init
+    # Remove packageManager and devEngines if they exist to prevent pnpm version switching errors
+    if [ -f package.json ]; then
+      node -e '
+        const fs = require("fs");
+        if (fs.existsSync("package.json")) {
+          const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+          delete pkg.packageManager;
+          delete pkg.devEngines;
+          fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2), "utf8");
+        }
+      '
+    fi
+    exit 0
+    ;;
+  install)
+    shift
+    args=()
+    # Always append --ignore-scripts to prevent build-script interactive block and increase security
+    args+=("--ignore-scripts")
+    for arg in "$@"; do
+      case "$arg" in
+        --save-dev)
+          args+=("-D")
+          ;;
+        --save-exact)
+          args+=("-E")
+          ;;
+        --save|--no-audit|--no-fund|--loglevel=silent|--prod|--production)
+          # Ignore npm-specific flags
+          ;;
+        *)
+          args+=("$arg")
+          ;;
+      esac
+    done
+    pnpm add "${args[@]}"
+    exit $?
+    ;;
+  uninstall)
+    shift
+    pnpm remove "$@"
+    exit $?
+    ;;
+  *)
+    pnpm "$@"
+    exit $?
+    ;;
+esac

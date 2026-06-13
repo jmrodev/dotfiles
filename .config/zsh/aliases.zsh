@@ -76,6 +76,7 @@ alias translate='trans -t es'
 alias metefrase='trans -t el'
 alias doker='sudo systemctl start docker'
 alias repo='sudo reflector --verbose -l 200 -p http --sort rate --save /etc/pacman.d/mirrorlist'
+alias feh='feh -. -Z'
 
 # --- SSH & REMOTE ---
 alias cima='ssh_tmux cima-ext'

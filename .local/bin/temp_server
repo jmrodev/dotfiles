@@ -1,12 +1,9 @@
 #!/bin/bash
 PORT=${1:-8080}
-DIR="$HOME/public_html"
-
-mkdir -p "$DIR"
-cd "$DIR"
+DIR="$(pwd)"
 
 echo -e "\e[1;32mIniciando servidor web temporal en:\e[0m http://localhost:$PORT"
-echo -e "\e[1;34mSirviendo archivos desde:\e[0m $DIR"
+echo -e "\e[1;34mSirviendo la carpeta actual:\e[0m $DIR"
 echo -e "\e[1;33mPresiona Ctrl+C para detener el servidor.\e[0m\n"
 
 python3 -m http.server "$PORT"

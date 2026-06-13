@@ -12,10 +12,12 @@ if [ -n "$ZSH_VERSION" ]; then
 fi
 
 # Global Environment
+export TERMINAL=foot
 export PNPM_HOME="$HOME/.local/share/pnpm"
 export PATH="$PNPM_HOME/bin:$PATH"
 
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
+alias dotfiles='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 
 # Welcome message
 if [ -n "$ZSH_VERSION" ]; then
@@ -27,4 +29,7 @@ fi
 export PATH="/home/jmro/.local/bin:$PATH"
 
 # Theme settings for Qt6 / Qt5 dark mode
-export QT_QPA_PLATFORMTHEME=qt6ct
+export QT_QPA_PLATFORMTHEME=qt5ct
+
+# Source local shell configurations (API keys, etc.)
+[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local

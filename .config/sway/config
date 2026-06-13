@@ -24,7 +24,8 @@ input * {
 
 # Start Waybar
 exec waybar
-exec_always killall -SIGUSR2 waybar
+#exec_always killall -SIGUSR2 waybar
 
 # Start Bluetooth Applet
 exec blueman-applet
+bindsym Print exec grim -g "$(slurp)" - | swappy -f -
