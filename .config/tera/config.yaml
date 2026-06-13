@@ -1,0 +1,63 @@
+# TERA v3 Configuration File
+# This file contains all application settings in one place
+#
+# To reset to defaults, delete this file and restart TERA
+#
+# Documentation: https://github.com/shinokada/tera
+#
+
+version: "3.0"
+player:
+    default_volume: 100
+    buffer_size_mb: 50
+ui:
+    theme:
+        name: default
+        colors:
+            error: "9"
+            highlight: "3"
+            muted: "8"
+            primary: "6"
+            secondary: "12"
+            success: "2"
+            text: "7"
+        padding:
+            page_horizontal: 2
+            page_vertical: 1
+            list_item_left: 2
+            box_horizontal: 2
+            box_vertical: 1
+    appearance:
+        header_mode: default
+        header_align: center
+        header_width: 50
+        custom_text: ""
+        ascii_art: ""
+        header_color: auto
+        header_bold: true
+        padding_top: 1
+        padding_bottom: 0
+    default_list: My-favorites
+network:
+    auto_reconnect: true
+    reconnect_delay: 5
+    buffer_size_mb: 50
+shuffle:
+    auto_advance: false
+    interval_minutes: 5
+    remember_history: true
+    max_history: 5
+blocklist:
+    show_blocked_in_search: false
+play_history:
+    enabled: true
+    size: 5
+    display_rows: 0
+    allow_duplicate: false
+play_options:
+    continue_on_navigate: false
+    default_volume: 80
+    confirm_stop: false
+    show_metadata: true
+    start_volume_mode: default
+    last_used_volume: 80
