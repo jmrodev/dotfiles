@@ -81,7 +81,7 @@ if command -v pacman &>/dev/null; then
         "pipewire" "pipewire-pulse" "pipewire-alsa" "wireplumber"
         "p7zip" "unarchiver" "wget" "lsof" "flameshot" "google-chrome"
         "sway" "foot" "waybar" "wofi" "swappy" "wl-clipboard" "cliphist" 
-        "wl-clip-persist" "brightnessctl" "pulsemixer" "grim" "slurp"
+        "wl-clip-persist" "brightnessctl" "pulsemixer" "grim" "slurp" "zathura-cb"
     )
     yay -S --needed --noconfirm "${PACKAGES[@]}"
 fi

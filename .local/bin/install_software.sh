@@ -59,7 +59,7 @@ ARCH_PACKAGES=(
     "qalculate!" "qalculate-qt" "bc" "brave" "brave-bin" "kmag" "broadcom-bt-firmware-git" \
     "libreoffice" "konsole" "net-tools" "asciinema" "vlc" "flow" "git-flow" "gitflow-cjs"\
     "sway" "foot" "waybar" "wofi" "swappy" "wl-clipboard" "cliphist" "wl-clip-persist" \
-    "brightnessctl" "pulsemixer" "grim" "slurp"\
+    "brightnessctl" "pulsemixer" "grim" "slurp" "zathura-cb"\
 )
 
 # Paquetes para Void Linux
@@ -75,7 +75,7 @@ VOID_PACKAGES=(
     "bash-language-server" "gopls" "gnome-keyring" "NetworkManager-applet"
     "volumeicon" "i3lock" "i3blocks" "tree" "dbeaver" "bat"
     "sway" "foot" "waybar" "wofi" "swappy" "wl-clipboard" "cliphist" \
-    "brightnessctl" "grim" "slurp"\
+    "brightnessctl" "grim" "slurp" "zathura-cb"\
 )
 
 # Paquetes para Debian/Ubuntu
@@ -90,7 +90,7 @@ DEBIAN_PACKAGES=(
     "gnome-keyring" "network-manager-gnome" "volumeicon-alsa" "i3lock" "i3blocks"
     "fontconfig" "tree" "dbeaver" "bat"
     "sway" "foot" "waybar" "wofi" "swappy" "wl-clipboard" "cliphist" \
-    "brightnessctl" "grim" "slurp"\
+    "brightnessctl" "grim" "slurp" "zathura-cb"\
 )
 
 # Paquetes globales de NPM (comunes)
