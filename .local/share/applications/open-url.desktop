@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Open Windows URL
+Comment=Abre enlaces de internet en archivos .url
+Exec=/home/jmro/.local/bin/open-url %f
+Icon=internet-web-browser
+MimeType=application/x-mswinurl;
+Terminal=false
+NoDisplay=true

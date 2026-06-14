@@ -1,0 +1,21 @@
+#!/bin/bash
+# ==============================================================================
+# Windows .url File Handler for Linux
+# Extrae la URL de un archivo de acceso directo de Windows y la abre en el navegador.
+# ==============================================================================
+
+if [ -z "$1" ]; then
+    echo "Uso: $0 <archivo.url>"
+    exit 1
+fi
+
+# Extraer el valor de URL= del archivo, removiendo retornos de carro de Windows (\r)
+URL=$(grep -m 1 -i '^URL=' "$1" | cut -d '=' -f 2- | tr -d '\r')
+
+if [ -n "$URL" ]; then
+    echo "Abriendo URL: $URL"
+    xdg-open "$URL"
+else
+    echo "No se encontró una URL válida en el archivo. Abriendo con Mousepad..."
+    mousepad "$1"
+fi
