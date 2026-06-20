@@ -166,7 +166,7 @@
         },
         "tooltip-format": "Dispositivo: {desc}\nVolumen: {icon} {volume}% {format_source}",
         "on-click": "swaymsg exec \\$pulseaudio",
-        "on-click-right": "swaymsg exec /home/jmro/scripts/audio_selector.py",
+        "on-click-right": "swaymsg exec /home/jmro/.config/sway/scripts/audio_selector.py",
         "on-click-middle": "swaymsg exec \\$volume_mute",
         "on-scroll-up": "swaymsg exec \\$volume_up",
         "on-scroll-down": "swaymsg exec \\$volume_down"
@@ -192,8 +192,8 @@
         "format": "󰀼 {}",
         "interval": 3600,
         "return-type": "json",
-        "exec": "/home/jmro/scripts/checkupdates.sh status",
-        "on-click": "/home/jmro/scripts/checkupdates.sh upgrade",
+        "exec": "/home/jmro/.config/sway/scripts/checkupdates.sh status",
+        "on-click": "/home/jmro/.config/sway/scripts/checkupdates.sh upgrade",
         "on-click-middle": "waybar-signal pacman",
         "signal": 14
     },
@@ -279,7 +279,7 @@
         "tooltip": true,
         "return-type": "json",
         "format": " {}",
-        "exec": "/home/jmro/scripts/gh_notifications.sh",
+        "exec": "/home/jmro/.config/sway/scripts/gh_notifications.sh",
         "exec-if": "[ -x \"$(command -v gh)\" ]",
         "on-click": "xdg-open https://github.com/notifications && sleep 30 && waybar-signal github",
         "on-click-right": "waybar-signal github",
@@ -390,8 +390,8 @@
             "off": "󰒲"
         },
         "exec": "inhibit-idle",
-        "on-click": "/home/jmro/scripts/inhibit_toggle.sh",
-        "on-click-middle": "/home/jmro/scripts/inhibit_toggle.sh",
+        "on-click": "/home/jmro/.config/sway/scripts/inhibit_toggle.sh",
+        "on-click-middle": "/home/jmro/.config/sway/scripts/inhibit_toggle.sh",
         "signal": 15
     },
     "custom/separator": {
