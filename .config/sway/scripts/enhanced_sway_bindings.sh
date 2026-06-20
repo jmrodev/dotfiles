@@ -283,9 +283,9 @@ show_bindings() {
         fi
         
         if [ "$mode" = "Default" ]; then
-            formatted_line="$status $type $key → $command"
+            formatted_line="$status $type $key -> $command"
         else
-            formatted_line="$status $type [$mode] $key → $command"
+            formatted_line="$status $type [$mode] $key -> $command"
         fi
         
         if [ -z "$filtered_content" ]; then
