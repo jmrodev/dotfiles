@@ -306,26 +306,47 @@ show_bindings() {
         -kb-cancel "Escape,Control+g,Control+c" \
         -theme-str '
             window {
-                width: 80%;
-                height: 70%;
+                width: 65%;
+                height: 60%;
+                border: 2px;
+                border-color: #16a085;
+                background-color: #1e1e2e;
                 border-radius: 8px;
             }
+            mainbox {
+                background-color: transparent;
+                children: [ inputbar, listview ];
+            }
+            inputbar {
+                background-color: transparent;
+                padding: 8px;
+            }
             listview {
+                background-color: transparent;
                 columns: 1;
-                layout: vertical;
-                lines: 20;
-                scrollbar: true;
-                dynamic: true;
+                lines: 15;
+                scrollbar: false;
+                border: 0px;
+                spacing: 2px;
             }
             element {
-                orientation: horizontal;
-                padding: 6px;
+                background-color: transparent;
+                text-color: #cdd6f4;
+                padding: 4px 8px;
+                border: 0px;
+            }
+            element selected {
+                background-color: #16a085;
+                text-color: #ffffff;
+                border-radius: 4px;
             }
             element-icon {
                 size: 0px;
             }
             element-text {
-                highlight: bold;
+                background-color: transparent;
+                text-color: inherit;
+                font: "monospace 10";
             }
             inputbar {
                 children: [prompt, entry];
