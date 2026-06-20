@@ -104,6 +104,8 @@ process_config_file() {
     
     while read -r include_line; do
         include_path=$(echo "$include_line" | sed -E 's/^\s*include\s+//' | sed -E 's/"//g' | sed -E "s/'//g")
+        # Expand ~ to $HOME
+        include_path="${include_path/#\~/$HOME}"
         
         if [[ "$include_path" == /* ]]; then
             for expanded_path in $include_path; do
@@ -117,7 +119,8 @@ process_config_file() {
             done
         else
             dir=$(dirname "$file")
-            for expanded_path in "$dir/$include_path"; do
+            # Allow globbing for relative path matching
+            for expanded_path in $dir/$include_path; do
                 if [ -f "$expanded_path" ]; then
                     local new_vars=$(extract_variables "$expanded_path")
                     if [ -n "$new_vars" ]; then
