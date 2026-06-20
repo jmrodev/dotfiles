@@ -333,8 +333,19 @@ show_bindings() {
     exit_code=$?
     if [ $exit_code -eq 10 ]; then
         show_rofi_menu
-    elif [ $exit_code -eq 0 ]; then
-        show_bindings
+    elif [ $exit_code -eq 0 ] && [ -n "$selected_binding" ] && [ "$selected_binding" != "No se encontraron atajos con los filtros actuales" ]; then
+        # Copiar al portapapeles usando wl-copy (Wayland) o xclip (X11)
+        if command -v wl-copy &> /dev/null; then
+            echo -n "$selected_binding" | wl-copy
+        elif command -v xclip &> /dev/null; then
+            echo -n "$selected_binding" | xclip -selection clipboard
+        fi
+        
+        # Enviar notificación de escritorio
+        if command -v notify-send &> /dev/null; then
+            notify-send "Atajo de teclado copiado" "$selected_binding" -i dialog-information
+        fi
+        exit 0
     fi
 }
 
