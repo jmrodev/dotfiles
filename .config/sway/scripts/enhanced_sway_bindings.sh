@@ -311,12 +311,18 @@ show_bindings() {
                 border-radius: 8px;
             }
             listview {
+                columns: 1;
+                layout: vertical;
                 lines: 20;
                 scrollbar: true;
                 dynamic: true;
             }
             element {
-                padding: 4px;
+                orientation: horizontal;
+                padding: 6px;
+            }
+            element-icon {
+                size: 0px;
             }
             element-text {
                 highlight: bold;
