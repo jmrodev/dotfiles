@@ -303,6 +303,7 @@ show_bindings() {
         -mesg "Categoría: $CATEGORY_FILTER | Modo: $MODE_FILTER | Comentados: $SHOW_COMMENTED | F1: Menú | Ctrl+c: Copiar | ESC: Salir" \
         -kb-custom-1 "F1" \
         -kb-custom-2 "Control+c" \
+        -kb-secondary-copy "" \
         -kb-cancel "Escape,Control+g" \
         -theme-str '
             window {
