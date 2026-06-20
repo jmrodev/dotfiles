@@ -300,11 +300,9 @@ show_bindings() {
     fi
     
     selected_binding=$(echo -e "$filtered_content" | rofi -dmenu -i -p "Atajos Sway" \
-        -mesg "Categoría: $CATEGORY_FILTER | Modo: $MODE_FILTER | Comentados: $SHOW_COMMENTED | F1: Menú | Ctrl+c: Copiar | ESC: Salir" \
+        -mesg "Categoría: $CATEGORY_FILTER | Modo: $MODE_FILTER | Comentados: $SHOW_COMMENTED | F1: Menú | ESC: Salir" \
         -kb-custom-1 "F1" \
-        -kb-custom-2 "Control+c" \
-        -kb-secondary-copy "" \
-        -kb-cancel "Escape,Control+g" \
+        -kb-cancel "Escape,Control+g,Control+c" \
         -theme-str '
             window {
                 width: 80%;
@@ -335,7 +333,7 @@ show_bindings() {
     exit_code=$?
     if [ $exit_code -eq 10 ]; then
         show_rofi_menu
-    elif [[ ( $exit_code -eq 0 || $exit_code -eq 11 ) && -n "$selected_binding" && "$selected_binding" != "No se encontraron atajos con los filtros actuales" ]]; then
+    elif [ $exit_code -eq 0 ] && [ -n "$selected_binding" ] && [ "$selected_binding" != "No se encontraron atajos con los filtros actuales" ]; then
         # Copiar al portapapeles usando wl-copy (Wayland) o xclip (X11)
         if command -v wl-copy &> /dev/null; then
             echo -n "$selected_binding" | wl-copy
