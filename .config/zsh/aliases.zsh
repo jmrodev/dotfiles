@@ -3,6 +3,7 @@
 # ==========================================
 
 # --- SYSTEM & NAVIGATION ---
+alias y='yazi'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias ....='cd ../../..'
@@ -57,6 +58,7 @@ alias trimhome='sudo fstrim -v /home'
 alias trimroot='sudo fstrim -v /'
 
 # --- TOOLS & APPS ---
+alias code="code-insiders"
 alias lg='lazygit'
 alias pt="env XDG_CURRENT_DESKTOP=GNOME /usr/lib/packettracer/packettracer.AppImage"
 alias npm='pnpm'
@@ -77,6 +79,23 @@ alias metefrase='trans -t el'
 alias doker='sudo systemctl start docker'
 alias repo='sudo reflector --verbose -l 200 -p http --sort rate --save /etc/pacman.d/mirrorlist'
 alias feh='feh -. -Z'
+
+# Convert files to markdown with optimal configurations
+function tomd() {
+    if [ $# -eq 0 ]; then
+        markitdown --help
+        return 0
+    fi
+
+    if [ $# -eq 1 ] && [ -f "$1" ]; then
+        local input_file="$1"
+        local output_file="${input_file%.*}.md"
+        echo "Converting '$input_file' to '$output_file'..."
+        markitdown --use-plugins --keep-data-uris "$input_file" -o "$output_file"
+    else
+        markitdown --use-plugins --keep-data-uris "$@"
+    fi
+}
 
 # --- SSH & REMOTE ---
 alias cima='ssh_tmux cima-ext'

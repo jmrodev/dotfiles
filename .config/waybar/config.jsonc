@@ -25,30 +25,34 @@
         // "custom/weather"
     ],
     "modules-right": [
-        // informational
-        "sway/language",
-        "custom/github",
-        "custom/clipboard",
-        "custom/zeit",
-        "cpu",
-        // "temperature",
-        // "memory",
-        "battery",
-        // connecting
+        // conectividad
         "network",
-        "bluetooth",
         "custom/valent",
-        // media
+        "custom/separator",
+        // multimedia y controles
         "custom/playerctl",
-        "custom/idle_inhibitor",
-        "custom/dnd",
         "pulseaudio",
         "backlight",
-        // system
-        "custom/theme",
-        "custom/adaptive-light",
+        "custom/separator",
+        // métricas del sistema
+        "cpu",
+        "memory",
+        "temperature",
+        "battery",
+        "custom/separator",
+        // utilidades / interruptores
+        "custom/idle_inhibitor",
+        "custom/dnd",
         "custom/sunset",
+        "custom/adaptive-light",
+        "custom/theme",
+        "custom/clipboard",
         "custom/pacman",
+        "custom/github",
+        "custom/zeit",
+        "custom/separator",
+        // sistema y hora
+        "sway/language",
         "tray",
         "clock"
     ],
@@ -75,7 +79,9 @@
             "󰂂",
             "󰁹"
         ],
-        "tooltip": true
+        "tooltip": true,
+        "tooltip-format": "Batería: {capacity}%\nTiempo restante: {timeTo}",
+        "on-click": "notify-send 'Estado de Batería' \"$(upower -i /org/freedesktop/UPower/devices/battery_BAT0 | grep -E 'state|time to|percentage|capacity|technology|energy-rate')\""
     },
     "clock": {
         "interval": 60,
@@ -86,27 +92,29 @@
     },
     "cpu": {
         "interval": 10,
-        "format": "󰘚",
+        "format": "󰘚 {usage}%",
         "states": {
             "warning": 70,
             "critical": 90
         },
         "on-click": "swaymsg exec \\$task_manager",
-        "tooltip": true
+        "tooltip": true,
+        "tooltip-format": "Uso de CPU: {usage}%"
     },
     "memory": {
         "interval": 10,
-        "format": "󰍛",
+        "format": "󰍛 {percentage}%",
         "states": {
             "warning": 70,
             "critical": 90
         },
         "on-click": "swaymsg exec \\$task_manager",
-        "tooltip": true
+        "tooltip": true,
+        "tooltip-format": "Memoria: {used:0.1f}GB / {total:0.1f}GB ({percentage}%)"
     },
     "network": {
         "interval": 5,
-        "format-wifi": "{icon}",
+        "format-wifi": "{icon} {essid}",
         "format-ethernet": "󰈀",
         "format-disconnected": "󰖪",
         "format-disabled": "󰀝",
@@ -119,9 +127,9 @@
         ],
         "tooltip-format": "{icon} {ifname}: {ipaddr}",
         "tooltip-format-ethernet": "{icon} {ifname}: {ipaddr}",
-        "tooltip-format-wifi": "{icon} {ifname} ({essid}): {ipaddr}",
-        "tooltip-format-disconnected": "{icon} disconnected",
-        "tooltip-format-disabled": "{icon} disabled",
+        "tooltip-format-wifi": "{icon} {ifname} ({essid}): {ipaddr}\nSeñal: {signalStrength}%",
+        "tooltip-format-disconnected": "{icon} Desconectado",
+        "tooltip-format-disabled": "{icon} Deshabilitado",
         "on-click": "swaymsg exec \\$once \\$term_float nmtui connect"
     },
     "sway/mode": {
@@ -135,6 +143,9 @@
             "󰃟",
             "󰃠"
         ],
+        "tooltip": true,
+        "tooltip-format": "Brillo de pantalla: {percent}%",
+        "on-click": "/usr/share/sway/scripts/wluma.sh toggle",
         "on-scroll-up": "swaymsg exec \\$brightness_up",
         "on-scroll-down": "swaymsg exec \\$brightness_down"
     },
@@ -153,8 +164,9 @@
                 "󰕾"
             ]
         },
-        "tooltip-format": "{icon}  {volume}% {format_source}",
+        "tooltip-format": "Dispositivo: {desc}\nVolumen: {icon} {volume}% {format_source}",
         "on-click": "swaymsg exec \\$pulseaudio",
+        "on-click-right": "swaymsg exec /home/jmro/scripts/audio_selector.py",
         "on-click-middle": "swaymsg exec \\$volume_mute",
         "on-scroll-up": "swaymsg exec \\$volume_up",
         "on-scroll-down": "swaymsg exec \\$volume_down"
@@ -162,8 +174,8 @@
     "temperature": {
         "critical-threshold": 90,
         "interval": 5,
-        "format": "{icon}",
-        "tooltip-format": "{temperatureC}°C",
+        "format": "{icon} {temperatureC}°C",
+        "tooltip-format": "Temperatura: {temperatureC}°C",
         "format-icons": [
             "",
             "",
@@ -180,28 +192,34 @@
         "format": "󰀼 {}",
         "interval": 3600,
         "return-type": "json",
-        "exec-if": "/usr/share/sway/scripts/checkupdates.sh check",
-        "exec": "/usr/share/sway/scripts/checkupdates.sh status",
-        "on-click": "swaymsg exec \\$update_manager",
+        "exec": "/home/jmro/scripts/checkupdates.sh status",
+        "on-click": "/home/jmro/scripts/checkupdates.sh upgrade",
         "on-click-middle": "waybar-signal pacman",
         "signal": 14
     },
     "custom/menu": {
         "format": "",
         "on-click": "swaymsg exec \\$menu",
-        "tooltip": false
+        "tooltip": true,
+        "tooltip-format": "Menú de Aplicaciones (Wofi)"
     },
     "bluetooth": {
         "format": "󰂯",
         "format-disabled": "󰂲",
+        "format-connected": "󰂱 {num_connections}",
+        "format-connected-battery": "󰂱 {device_alias} {device_battery_percent}%",
+        "tooltip-format": "Adaptador: {controller_alias}\nDirección: {controller_address}",
+        "tooltip-format-connected": "Adaptador: {controller_alias}\nDispositivos Conectados:\n{device_enumerate}",
+        "tooltip-format-enumerate-connected": "• {device_alias} ({device_address})",
+        "tooltip-format-enumerate-connected-battery": "• {device_alias} ({device_address}) | 🔋 {device_battery_percent}%",
         "on-click": "swaymsg exec \\$bluetooth",
-        "on-click-right": "rfkill toggle bluetooth",
-        "tooltip-format": "{}"
+        "on-click-right": "rfkill toggle bluetooth"
     },
     "sway/language": {
         "format": " {}",
         "min-length": 5,
-        "tooltip": false,
+        "tooltip": true,
+        "tooltip-format": "Teclado: {long}\n(Clic para cambiar distribución)",
         "on-click": "swaymsg input type:keyboard xkb_switch_layout next"
     },
     "custom/scratchpad": {
@@ -261,8 +279,8 @@
         "tooltip": true,
         "return-type": "json",
         "format": " {}",
-        "exec": "/usr/share/sway/scripts/gh-notifications.sh",
-        "exec-if": "[ -x \"$(command -v gh)\" ] && gh auth status 2>&1 | grep -q -m 1 'Logged in'",
+        "exec": "/home/jmro/scripts/gh_notifications.sh",
+        "exec-if": "[ -x \"$(command -v gh)\" ]",
         "on-click": "xdg-open https://github.com/notifications && sleep 30 && waybar-signal github",
         "on-click-right": "waybar-signal github",
         "signal": 4
@@ -291,7 +309,7 @@
         "on-click-right": "swaymsg -q exec '$clipboard-del'; waybar-signal clipboard",
         "on-click-middle": "rm -f ~/.cache/cliphist/db; waybar-signal clipboard",
         "exec": "printf '{\"tooltip\":\"%s\"}' $(cliphist list | wc -l)' item(s) in the clipboard\r(Mid click to clear)'",
-        "exec-if": "[ -x \"$(command -v cliphist)\" ] && [ $(cliphist list | wc -l) -gt 0 ]",
+        "exec-if": "[ -x \"$(command -v cliphist)\" ]",
         "signal": 9
     },
     "custom/weather": {
@@ -372,8 +390,13 @@
             "off": "󰒲"
         },
         "exec": "inhibit-idle",
-        "on-click": "inhibit-idle off; inhibit-idle interactive",
-        "on-click-middle": "inhibit-idle off",
+        "on-click": "/home/jmro/scripts/inhibit_toggle.sh",
+        "on-click-middle": "/home/jmro/scripts/inhibit_toggle.sh",
         "signal": 15
+    },
+    "custom/separator": {
+        "format": "|",
+        "interval": "once",
+        "tooltip": false
     }
 }

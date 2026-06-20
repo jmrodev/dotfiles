@@ -25,14 +25,14 @@ window#waybar {
 }
 
 /* Modulos Generales */
-#custom-menu, #workspaces, #clock, #pulseaudio, #network, #cpu, #memory, #battery, #backlight, #tray, #custom-clipboard, #custom-pacman {
-    padding: 0 10px;
+#custom-menu, #workspaces, #clock, #pulseaudio, #network, #cpu, #memory, #battery, #backlight, #tray, #custom-clipboard, #custom-pacman, #bluetooth, #custom-valent, #custom-playerctl, #custom-idle_inhibitor, #custom-dnd, #custom-sunset, #custom-adaptive-light, #custom-theme, #custom-github, #custom-zeit, #language, #temperature, #custom-separator {
+    padding: 0 8px;
     margin: 4px 2px;
     transition: all 0.3s ease;
 }
 
 /* Hover effects for interactivity feedback */
-#custom-menu:hover, #clock:hover, #pulseaudio:hover, #network:hover, #battery:hover, #custom-clipboard:hover {
+#custom-menu:hover, #clock:hover, #pulseaudio:hover, #network:hover, #battery:hover, #custom-clipboard:hover, #bluetooth:hover, #custom-valent:hover, #custom-playerctl:hover, #custom-idle_inhibitor:hover, #custom-dnd:hover, #custom-sunset:hover, #custom-adaptive-light:hover, #custom-theme:hover, #custom-github:hover, #custom-zeit:hover, #language:hover, #temperature:hover {
     background: rgba(22, 160, 133, 0.2);
     border-radius: 4px;
 }
@@ -92,4 +92,10 @@ window#waybar {
 
 #custom-pacman {
     color: #3498db;
+}
+
+#custom-separator {
+    color: rgba(238, 238, 238, 0.25);
+    font-size: 14px;
+    padding: 0 4px;
 }
