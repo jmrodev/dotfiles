@@ -302,6 +302,7 @@ show_bindings() {
     selected_binding=$(echo -e "$filtered_content" | rofi -dmenu -i -p "Atajos Sway" \
         -mesg "Categoría: $CATEGORY_FILTER | Modo: $MODE_FILTER | Comentados: $SHOW_COMMENTED | F1: Menú | ESC: Salir" \
         -kb-custom-1 "F1" \
+        -kb-secondary-copy "" \
         -kb-cancel "Escape,Control+g,Control+c" \
         -theme-str '
             window {
