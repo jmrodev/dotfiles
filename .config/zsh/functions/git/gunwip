@@ -1,3 +1,0 @@
-gunwip() {
-    git reset HEAD~
-}

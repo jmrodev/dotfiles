@@ -1,3 +1,0 @@
-gpull() {
-    git pull --rebase
-}

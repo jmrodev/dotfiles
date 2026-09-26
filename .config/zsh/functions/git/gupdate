@@ -1,3 +1,0 @@
-gupdate() {
-    git pull --rebase
-}

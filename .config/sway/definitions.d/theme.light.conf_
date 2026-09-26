@@ -1,0 +1,43 @@
+# based on Base16 Seti UI (Light)
+# Author: Appelgriebsch
+
+# some global theme specific variables
+set $gtk-theme Matcha-light-pueril
+set $icon-theme Papirus-Light-Maia
+set $cursor-theme phinger-cursors-light
+set $gui-font Roboto 11
+set $term-font JetBrainsMono NF
+set $gtk-color-scheme prefer-light
+set $kvantum-theme Matcha-Light
+set $vscode-theme "Noctis Lux"
+
+set $color0  #f5f6f7
+set $color1  #e4e6e8
+set $color2  #d0d3d6
+set $color3  #7d858c
+set $color4  #2980b9
+set $color5  #4a5054
+set $color6  #24292e
+set $color7  #141a1b
+set $color8  #cd3f45
+set $color9  #db7b55
+set $color10 #e6cd69
+set $color11 #88ad62
+set $color12 #16a085
+set $color13 #3b758c
+set $color14 #a074c4
+set $color15 #41535b
+
+set $background-color $color0
+set $text-color $color6
+set $selection-color $color1
+set $accent-color $color11
+
+# Basic color configuration using the Base16 variables for windows and borders.
+# Property Name         Border   BG       Text    Indicator Child Border
+client.focused          $color11 $color11 $color0 $color6   $color11
+client.focused_inactive $color1  $color1  $color5 $color3   $color1
+client.unfocused        $color1  $color0  $color5 $color6   $color1
+client.urgent           $color8  $color8  $color0 $color9   $color8
+client.placeholder      $color0  $color0  $color5 $color0   $color0
+client.background       $color7

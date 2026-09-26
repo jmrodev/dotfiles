@@ -1,3 +1,0 @@
-restart() {
-    sudo sv restart $1
-}

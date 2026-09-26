@@ -1,3 +1,0 @@
-start() {
-    sudo sv up $1
-}

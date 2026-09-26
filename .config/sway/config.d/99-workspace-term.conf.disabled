@@ -1,0 +1,27 @@
+# 99-workspace-term.conf — Win+number goes to workspace, opens kitty if empty.
+#
+# The stock bindings in /etc/sway/modes/default map $mod+1..0 to plain
+# `workspace $wsN`. We unbind those and rebind to a helper script that
+# switches and spawns a terminal only when the workspace has no windows.
+# $mod+Shift+1..0 (move container) bindings are intentionally untouched.
+
+$unbindsym $mod+1
+$bindsym $mod+1 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws1"
+$unbindsym $mod+2
+$bindsym $mod+2 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws2"
+$unbindsym $mod+3
+$bindsym $mod+3 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws3"
+$unbindsym $mod+4
+$bindsym $mod+4 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws4"
+$unbindsym $mod+5
+$bindsym $mod+5 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws5"
+$unbindsym $mod+6
+$bindsym $mod+6 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws6"
+$unbindsym $mod+7
+$bindsym $mod+7 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws7"
+$unbindsym $mod+8
+$bindsym $mod+8 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws8"
+$unbindsym $mod+9
+$bindsym $mod+9 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws9"
+$unbindsym $mod+0
+$bindsym $mod+0 exec /home/jmro/.config/sway/scripts/goto-workspace-term.sh "$ws10"

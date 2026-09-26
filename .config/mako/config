@@ -1,0 +1,14 @@
+font=JetBrainsMono NF
+text-color=#eeeeee
+border-color=#88ad62
+background-color=#141a1b
+border-size=3
+width=400
+height=200
+padding=20
+margin=20
+default-timeout=15000
+layer=overlay
+
+[mode=do-not-disturb]
+invisible=1

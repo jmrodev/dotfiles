@@ -1,6 +1,0 @@
-# ~/.config/zsh/functions/up.zsh
-
-# Navegar hacia arriba múltiples directorios
-up() {
-    cd $(printf '../%.0s' {1..${1:-1}})
-}

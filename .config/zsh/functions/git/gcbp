@@ -1,3 +1,0 @@
-gcbp() {
-    git checkout -b $(git_current_branch)-patch
-}

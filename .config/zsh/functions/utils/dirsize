@@ -1,6 +1,0 @@
-# ~/.config/zsh/functions/dirsize.zsh
-
-# Ver tamaños de directorios
-function dirsize() {
-    du -sh "$@"
-}

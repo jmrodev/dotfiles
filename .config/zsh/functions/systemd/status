@@ -1,3 +1,0 @@
-status() {
-    sudo systemctl status $1.service
-} 

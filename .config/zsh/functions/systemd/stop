@@ -1,3 +1,0 @@
-stop() {
-    sudo systemctl stop $1.service
-} 

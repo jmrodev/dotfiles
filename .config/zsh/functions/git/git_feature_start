@@ -1,3 +1,0 @@
-git_feature_start() {
-    git flow feature start $1
-}

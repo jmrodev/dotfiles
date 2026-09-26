@@ -1,0 +1,78 @@
+# "Wow" config para Starship
+
+format = """
+[╭─](#9A348E)\
+$os\
+$username\
+$hostname\
+$directory\
+$git_branch\
+$git_status\
+$nodejs\
+$rust\
+$golang\
+$python\
+$docker_context\
+$time\
+$line_break\
+[╰─](#9A348E)$character"""
+
+[os]
+disabled = false
+style = "bg:#9A348E fg:#FFFFFF"
+
+[os.symbols]
+Manjaro = " "
+Linux = " "
+
+[username]
+show_always = true
+style_user = "bg:#9A348E fg:#FFFFFF"
+style_root = "bg:#9A348E fg:#ff0000"
+format = ' [$user ]($style)'
+
+[directory]
+style = "bg:#DA627D fg:#FFFFFF"
+format = "[ ](fg:#9A348E bg:#DA627D)[$path ]($style)"
+truncation_length = 3
+truncation_symbol = "…/"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+[git_branch]
+symbol = ""
+style = "bg:#FCA17D fg:#000000"
+format = '[ ](fg:#DA627D bg:#FCA17D)[$symbol $branch ]($style)'
+
+[git_status]
+style = "bg:#FCA17D fg:#000000"
+format = '[$all_status$ahead_behind ]($style)'
+
+[nodejs]
+symbol = ""
+style = "bg:#86BBD8 fg:#000000"
+format = '[ ](fg:#FCA17D bg:#86BBD8)[$symbol ($version) ]($style)'
+
+[rust]
+symbol = ""
+style = "bg:#86BBD8 fg:#000000"
+format = '[ ](fg:#FCA17D bg:#86BBD8)[$symbol ($version) ]($style)'
+
+[python]
+symbol = ""
+style = "bg:#86BBD8 fg:#000000"
+format = '[ ](fg:#FCA17D bg:#86BBD8)[$symbol ($version) ]($style)'
+
+[time]
+disabled = false
+time_format = "%T" # Hora con segundos
+style = "bg:#33658A fg:#FFFFFF"
+format = '[ ](fg:#86BBD8 bg:#33658A)[  $time ]($style)[](fg:#33658A)'
+
+[character]
+success_symbol = "[ ❯](bold green)"
+error_symbol = "[ ✗](bold red)"

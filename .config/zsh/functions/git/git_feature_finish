@@ -1,3 +1,0 @@
-git_feature_finish() {
-    git flow feature finish $(git_current_branch)
-}
