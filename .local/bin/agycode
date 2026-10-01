@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# agycode: Entorno Antigravity especializado en desarrollo de código y colaboración con OpenCode
+export AGENT_COLLAB_MODE="opencode"
+exec agy "$@"
