@@ -45,6 +45,10 @@ function limpieza --description "Limpia paquetes huérfanos, cachés y archivos 
     rm -rf ~/.config/Slack/Cache 2>/dev/null
     rm -rf ~/.config/Slack/Service\ Worker/CacheStorage 2>/dev/null
     rm -rf ~/.config/Slack/Code\ Cache 2>/dev/null
+
+    # 6.5. Stremio
+    echo "=> 🎬 Vaciando caché de Stremio..."
+    rm -rf ~/.var/app/com.stremio.Stremio/.stremio-server/stremio-cache/* 2>/dev/null
     
     # 7. Cálculo
     set -l after_kb (df -k / | awk 'NR==2 {print $3}')
