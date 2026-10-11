@@ -38,6 +38,13 @@ output eDP-1 scale 1.25
 output HDMI-A-1 resolution 1920x1080
 
 for_window [app_id="jetbrains-(.*)" title="^((?!IntelliJ IDEA).)*$"] floating enable
+for_window [app_id="gns3-terminal"] floating enable, resize set 850 550
+
+# Clipboard history menu (replaces default splitv)
+$unbindsym $mod+v
+$bindsym $mod+v exec cliphist list | rofi -dmenu -p "Clipboard" | cliphist decode | wl-copy
 
 # KDE Connect indicator
 exec_always --no-startup-id kdeconnect-indicator
+
+
