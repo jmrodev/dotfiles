@@ -19,5 +19,4 @@ ZSH_HIGHLIGHT_STYLES[comment]='fg=blue'
 alias ssh="TERM=xterm-256color ssh"
 source ~/.config/user-dirs.dirs
 
-# opencode
-export PATH=/home/jmro/.opencode/bin:$PATH
+export PATH="$HOME/.opencode/bin:$PATH"
