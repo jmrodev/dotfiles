@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+# Si se le pasa un argumento, usa eso. Si no, busca en directorios de proyectos configurables
+if [[ $# -eq 1 ]]; then
+    selected=$1
+else
+    # Buscar en directorios candidatos según entorno (respetando orden de preferencia)
+    search_dirs=()
+    for d in "${PROJECTS_DIR:-}" "$HOME/Documents/Proyectos" "$HOME/Proyectos" "$HOME/projects" "$HOME/src"; do
+        if [[ -n "$d" && -d "$d" ]]; then
+            search_dirs+=("$d")
+        fi
+    done
+
+    if [[ ${#search_dirs[@]} -eq 0 ]]; then
+        search_dirs=("$HOME")
+    fi
+
+    selected=$(find "${search_dirs[@]}" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | fzf)
+fi
+
+if [[ -z $selected ]]; then
+    exit 0
+fi
+
+# Copiar la ruta seleccionada al portapapeles de Wayland
+echo -n "$selected" | wl-copy
+
+# Sanitiza el nombre de la carpeta para que sea un nombre válido de sesión en Tmux
+selected_name=$(basename "$selected" | tr . _)
+tmux_running=$(pgrep tmux)
+
+# Si Tmux no está corriendo para nada, crea la sesión y adjunta
+if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
+    tmux new-session -s $selected_name -c $selected
+    exit 0
+fi
+
+# Si la sesión no existe, la crea en background (detached)
+if ! tmux has-session -t=$selected_name 2> /dev/null; then
+    # El truco: TMUX= vacía la variable temporalmente para que Tmux no crea 
+    # que estamos intentando anidar una sesión adentro de la ventana flotante
+    TMUX= tmux new-session -ds $selected_name -c $selected
+fi
+
+# Le dice al servidor de Tmux que cambie el cliente actual a esa sesión
+tmux switch-client -t $selected_name

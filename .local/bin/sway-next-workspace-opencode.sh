@@ -2,7 +2,7 @@
 
 # Detectar socket activo de Sway
 if [[ -z "$SWAYSOCK" ]]; then
-    export SWAYSOCK=$(ls /run/user/1000/sway-ipc.*.sock 2>/dev/null | head -n 1)
+    export SWAYSOCK=$(ls /run/user/$(id -u)/sway-ipc.*.sock 2>/dev/null | head -n 1)
 fi
 
 # 1. Verificar si ya existe una ventana de Kitty en Sway
