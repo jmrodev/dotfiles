@@ -206,3 +206,28 @@ A continuación se detalla la transcripción completa e íntegra del ticket de a
   3. Mantener presionado el botón de **Paper Feed** mientras se restablece la alimentación.
   4. La impresora emitirá un ticket con el menú interactivo para ajustar parámetros de comunicación, emulación y densidades.
 
+---
+
+## 8. Gestión de Imágenes y Memoria Flash de Logos (320 KB)
+
+### A. Diferencia entre Firmware Completo y Almacenamiento NV de Logos
+* **Actualización de Firmware:** Reprograma la memoria principal del microcontrolador de la placa (`Boot V02.04` / `Flash V02.44`). Si falla o se corta la alimentación, la placa queda inaccesible (brick). Solo se realiza con binarios oficiales del fabricante y ante problemas críticos de compatibilidad.
+* **NV Bit Image / Flash de Logos (320 KB):** La NCR 7197 dispone de **320 Kbytes** de almacenamiento no volátil dedicados para guardar imágenes/logos monocromáticos. No conlleva riesgo de dañar la impresora y permite imprimir imágenes instantáneamente mediante comandos ESC/POS (`FS p n m`) sin transferir mapas de bits pesados por el bus USB en cada impresión.
+
+### B. Herramienta CLI de Flasheo de Logos (`ncr-flash-logo`)
+Se incluye la utilidad [ncr-flash-logo](file:///home/jmro/.local/bin/ncr-flash-logo):
+
+1. **Grabar imagen en la memoria NV:**
+   ```bash
+   ncr-flash-logo flash /ruta/a/mi_logo.png --logo-num 1
+   ```
+   * Convierte automáticamente cualquier imagen (PNG, JPG, BMP) a mapa de bits monocromático (1-bpp) ajustado al cabezal térmico de 80 mm (máx. 512 px).
+   * Genera la estructura de cabecera ESC/POS `FS q` y la escribe en el chip de la impresora.
+
+2. **Probar impresión de logo almacenado:**
+   ```bash
+   ncr-flash-logo print --logo-num 1
+   ```
+   * Ejecuta `FS p 1 0` más avance y corte automático.
+
+

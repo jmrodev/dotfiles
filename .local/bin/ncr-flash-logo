@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# ncr-flash-logo: Herramienta para flashear y probar logos en la NV Flash de la NCR 7197
+# ==============================================================================
+
+PYTHON_BIN="python3"
+if [ -x "$HOME/.venv/ncr/bin/python3" ]; then
+    PYTHON_BIN="$HOME/.venv/ncr/bin/python3"
+fi
+
+exec "$PYTHON_BIN" - "$@" << 'EOF'
+import sys
+import os
+import argparse
+import serial
+from PIL import Image
+
+def get_serial_port():
+    by_id = "/dev/serial/by-id/usb-NCR_7401-K59X-if00-port0"
+    if os.path.exists(by_id):
+        return by_id
+    if os.path.exists("/dev/ttyUSB0"):
+        return "/dev/ttyUSB0"
+    return None
+
+def send_payload(payload):
+    port = get_serial_port()
+    if not port:
+        print("❌ Error: No se detectó puerto serie/USB de la NCR 7197 (/dev/ttyUSB0).", file=sys.stderr)
+        sys.exit(1)
+    try:
+        ser = serial.Serial(port, 115200, timeout=3)
+        ser.dtr = True
+        ser.rts = True
+        ser.write(payload)
+        ser.flush()
+        ser.close()
+    except Exception as e:
+        print(f"❌ Error de comunicación con la impresora: {e}", file=sys.stderr)
+        sys.exit(1)
+
+def image_to_nv_bytes(img_path, max_width=512):
+    """
+    Convierte una imagen a formato de bits 1-bpp para NV Bit Image (FS q).
+    Ancho máximo estándar de cabezal 80mm: 512 o 576 puntos.
+    """
+    try:
+        img = Image.open(img_path)
+    except Exception as e:
+        print(f"❌ No se pudo abrir la imagen: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    # Convertir a escala de grises
+    img = img.convert('L')
+    
+    # Redimensionar si supera el ancho máximo manteniendo aspect ratio
+    if img.width > max_width:
+        ratio = max_width / float(img.width)
+        new_height = int(float(img.height) * ratio)
+        img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+
+    # Redondear dimensiones a múltiplos de 8
+    width = (img.width // 8) * 8
+    if width == 0:
+        width = 8
+    height = (img.height // 8) * 8
+    if height == 0:
+        height = 8
+
+    img = img.resize((width, height), Image.Resampling.LANCZOS)
+    
+    # Binarización blanco/negro (umbral 128)
+    bw = img.point(lambda x: 0 if x > 128 else 1, '1')
+
+    # FS q n [xL xH yL yH d1...dk]
+    # x = ancho en bytes (width // 8)
+    # y = alto en bytes (height // 8)
+    x = width // 8
+    y = height // 8
+    
+    xL = x & 0xFF
+    xH = (x >> 8) & 0xFF
+    yL = y & 0xFF
+    yH = (y >> 8) & 0xFF
+
+    pixels = bw.load()
+    data = bytearray()
+    
+    for row in range(height):
+        for col_byte in range(x):
+            b = 0
+            for bit in range(8):
+                px = col_byte * 8 + bit
+                if pixels[px, row]:
+                    b |= (1 << (7 - bit))
+            data.append(b)
+
+    return bytes([xL, xH, yL, yH]) + data, width, height
+
+def cmd_flash(args):
+    print(f"[*] Procesando imagen: {args.image}...")
+    nv_data, w, h = image_to_nv_bytes(args.image, max_width=args.max_width)
+    logo_num = args.logo_num
+    
+    print(f"[*] Dimensiones finales: {w}x{h} px ({len(nv_data)} bytes).")
+    print(f"[*] Flasheando en memoria NV Logo #{logo_num}...")
+
+    # Comando ESC/POS FS q:
+    # Formato: FS q n [xL xH yL yH d1...dk]
+    # n = cantidad de imágenes a definir (1)
+    payload = bytearray(b"\x1b@") # Reset
+    payload.extend(b"\x1cq\x01")  # FS q 1
+    payload.extend(nv_data)
+
+    send_payload(payload)
+    print(f"✅ Logo #{logo_num} grabado correctamente en la memoria NV de la impresora.")
+    print("💡 Nota: Podés imprimirlo en cualquier momento con: ncr-flash-logo --print [numero]")
+
+def cmd_print(args):
+    logo_num = args.logo_num
+    print(f"[*] Enviando orden de impresión de Logo #{logo_num} desde Flash...")
+    # FS p n m
+    # n = número de logo (1)
+    # m = modo (0: Normal, 1: Doble ancho, 2: Doble alto, 3: Cuádruple)
+    ESC = b"\x1b"
+    FS = b"\x1c"
+    payload = bytearray(b"\x1b@")
+    payload.extend(ESC + b"a\x01") # Centrado
+    payload.extend(FS + b"p" + bytes([logo_num, 0])) # Imprimir logo
+    payload.extend(b"\r\n" * 8 + b"\x1bi") # Avance y corte
+    send_payload(payload)
+    print(f"✅ Orden enviada para imprimir Logo #{logo_num}.")
+
+def main():
+    parser = argparse.ArgumentParser(description="Gestor de Logos NV Flash para NCR 7197")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    # Subcomando flash
+    p_flash = subparsers.add_parser("flash", help="Grabar una imagen en la memoria NV Flash")
+    p_flash.add_argument("image", help="Ruta al archivo de imagen (PNG, JPG, BMP)")
+    p_flash.add_argument("--logo-num", type=int, default=1, help="Número de logo (por defecto: 1)")
+    p_flash.add_argument("--max-width", type=int, default=512, help="Ancho máximo en píxeles (default: 512)")
+    p_flash.set_defaults(func=cmd_flash)
+
+    # Subcomando print
+    p_print = subparsers.add_parser("print", help="Imprimir un logo almacenado en Flash")
+    p_print.add_argument("--logo-num", type=int, default=1, help="Número de logo a imprimir (por defecto: 1)")
+    p_print.set_defaults(func=cmd_print)
+
+    args = parser.parse_args()
+    args.func(args)
+
+if __name__ == "__main__":
+    main()
+EOF

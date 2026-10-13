@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import ttk, messagebox, simpledialog
 import subprocess
+import os
 import sys
 
-# Comandos ESC/POS
+# Códigos ESC/POS
 ESC = b"\x1b"
+FS = b"\x1c"
 INIT = b"\x1b@"
 ALIGN_LEFT = b"\x1ba\x00"
 ALIGN_CENTER = b"\x1ba\x01"
@@ -20,68 +22,128 @@ PRODUCT_ID = 0x0310
 class NCRPrinterApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Impresor de Tickets NCR 7197 / K590")
-        self.root.geometry("620x560")
+        self.root.title("NCR 7197 - Ticket Studio & Editor")
+        self.root.geometry("760x680")
+        self.root.minsize(700, 600)
 
-        # Frame de selección de destino (USB Directo vs CUPS Debian)
-        dest_frame = ttk.LabelFrame(root, text=" Conexión / Destino ")
-        dest_frame.pack(fill="x", padx=10, pady=5)
+        self._configurar_estilos()
+        self._construir_ui()
+
+    def _configurar_estilos(self):
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("Header.TLabel", font=("Helvetica", 11, "bold"))
+        style.configure("Action.TButton", font=("Helvetica", 10, "bold"), padding=6)
+        style.configure("Print.TButton", font=("Helvetica", 11, "bold"), padding=8, background="#2e7d32", foreground="white")
+        style.map("Print.TButton", background=[("active", "#1b5e20")])
+
+    def _construir_ui(self):
+        # 1. Barra Superior: Conexión y Estado
+        top_bar = ttk.Frame(self.root, padding="10 10 10 5")
+        top_bar.pack(fill="x")
+
+        dest_group = ttk.LabelFrame(top_bar, text=" Destino de Impresión ", padding="8 5")
+        dest_group.pack(side="left", fill="x", expand=True)
 
         self.modo_var = tk.StringVar(value="usb")
-        ttk.Radiobutton(dest_frame, text="USB Directo (PC Local)", variable=self.modo_var, value="usb").pack(side="left", padx=15, pady=5)
-        ttk.Radiobutton(dest_frame, text="CUPS Red (Servidor Debian / Serial)", variable=self.modo_var, value="debian").pack(side="left", padx=15, pady=5)
+        ttk.Radiobutton(dest_group, text="USB Directo (/dev/ttyUSB0)", variable=self.modo_var, value="usb").pack(side="left", padx=10)
+        ttk.Radiobutton(dest_group, text="CUPS Red (Debian)", variable=self.modo_var, value="debian").pack(side="left", padx=10)
 
-        # Frame de controles de formato
-        fmt_frame = ttk.LabelFrame(root, text=" Formato de Texto ")
-        fmt_frame.pack(fill="x", padx=10, pady=5)
+        # 2. Barra de Herramientas y Formato
+        tools_frame = ttk.LabelFrame(self.root, text=" Estilos y Acciones Rápidas ", padding="8 6")
+        tools_frame.pack(fill="x", padx=10, pady=5)
 
-        self.bold_var = tk.BooleanVar()
-        self.big_var = tk.BooleanVar()
+        # Formato de texto
+        self.bold_var = tk.BooleanVar(value=False)
+        self.big_var = tk.BooleanVar(value=False)
         self.align_var = tk.StringVar(value="left")
 
-        ttk.Checkbutton(fmt_frame, text="Negrita", variable=self.bold_var).pack(side="left", padx=5, pady=5)
-        ttk.Checkbutton(fmt_frame, text="Letra Grande", variable=self.big_var).pack(side="left", padx=5, pady=5)
+        ttk.Checkbutton(tools_frame, text="Negrita", variable=self.bold_var).pack(side="left", padx=6)
+        ttk.Checkbutton(tools_frame, text="Texto Grande", variable=self.big_var).pack(side="left", padx=6)
 
-        ttk.Separator(fmt_frame, orient="vertical").pack(side="left", fill="y", padx=10)
+        ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=8)
 
-        ttk.Radiobutton(fmt_frame, text="Izquierda", variable=self.align_var, value="left").pack(side="left", padx=5)
-        ttk.Radiobutton(fmt_frame, text="Centrado", variable=self.align_var, value="center").pack(side="left", padx=5)
-        ttk.Radiobutton(fmt_frame, text="Derecha", variable=self.align_var, value="right").pack(side="left", padx=5)
+        ttk.Radiobutton(tools_frame, text="Izq", variable=self.align_var, value="left").pack(side="left", padx=4)
+        ttk.Radiobutton(tools_frame, text="Centro", variable=self.align_var, value="center").pack(side="left", padx=4)
+        ttk.Radiobutton(tools_frame, text="Der", variable=self.align_var, value="right").pack(side="left", padx=4)
 
-        # Área de edición de texto (Ancho estándar NCR 42 caracteres)
-        text_frame = ttk.LabelFrame(root, text=" Contenido del Ticket (Ancho 42 caracteres) ")
-        text_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=8)
 
-        self.text_editor = tk.Text(text_frame, font=("Courier", 11), wrap="none", width=42)
-        self.text_editor.pack(fill="both", expand=True, padx=5, pady=5)
-        
-        self.text_editor.insert("1.0", "=== TICKET DE PRUEBA NCR ===\n"
-                                       "Producto 1                    $ 100.00\n"
-                                       "Producto 2                    $ 250.00\n"
-                                       "----------------------------------------\n"
-                                       "TOTAL:                        $ 350.00\n\n"
-                                       "Gracias por su compra!")
+        # Herramientas de formateo del ticket
+        ttk.Button(tools_frame, text="Alinear Columnas", command=self.auto_alinear_columnas).pack(side="left", padx=4)
+        ttk.Button(tools_frame, text="Separador (---)", command=self.insertar_separador).pack(side="left", padx=4)
+        ttk.Button(tools_frame, text="Limpiar", command=self.limpiar).pack(side="left", padx=4)
 
-        # Botones de Acción
-        btn_frame = ttk.Frame(root)
-        btn_frame.pack(fill="x", padx=10, pady=10)
+        # 3. Área Central: Editor con Guía Visual de Ancho (42 columnas)
+        editor_frame = ttk.LabelFrame(self.root, text=" Área del Ticket (42 Caracteres / 80mm) ", padding=8)
+        editor_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
-        ttk.Button(btn_frame, text="Limpiar", command=self.limpiar).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Auto-Alinear Cols", command=self.auto_alinear_columnas).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Cortar Papel", command=self.cortar_solo).pack(side="left", padx=5)
-        ttk.Button(btn_frame, text="Imprimir QR", command=self.pedir_e_imprimir_qr).pack(side="left", padx=5)
-        
-        btn_print = ttk.Button(btn_frame, text=" IMPRIMIR TICKET", command=self.imprimir)
-        btn_print.pack(side="right", padx=5)
+        # Scrollbar y Editor
+        text_container = ttk.Frame(editor_frame)
+        text_container.pack(fill="both", expand=True)
 
-    def pedir_e_imprimir_qr(self):
-        from tkinter import simpledialog
-        valor = simpledialog.askstring("Imprimir QR", "Ingresá URL o texto para el código QR:")
-        if valor:
-            subprocess.run(["ncr-print-qr", valor])
+        scroll_y = ttk.Scrollbar(text_container, orient="vertical")
+        scroll_y.pack(side="right", fill="y")
+
+        self.text_editor = tk.Text(
+            text_container,
+            font=("Courier 10 Pitch", 12),
+            wrap="none",
+            width=42,
+            padx=10,
+            pady=10,
+            yscrollcommand=scroll_y.set,
+            background="#ffffff",
+            foreground="#1e1e1e"
+        )
+        self.text_editor.pack(side="left", fill="both", expand=True)
+        scroll_y.config(command=self.text_editor.yview)
+
+        # Cargar plantilla inicial
+        self.text_editor.insert("1.0",
+            "==========================================\n"
+            "         TICKET DE VENTA / SERVICIO       \n"
+            "==========================================\n"
+            "Producto 1                        $ 150.00\n"
+            "Servicio Tecnico                  $ 350.00\n"
+            "------------------------------------------\n"
+            "TOTAL                             $ 500.00\n\n"
+            "        Muchas gracias por su compra!     \n"
+        )
+
+        # 4. Panel de Acciones Avanzadas (Generador de QR y Herramientas Kiosco)
+        adv_frame = ttk.LabelFrame(self.root, text=" Funciones Especiales ", padding="8 8")
+        adv_frame.pack(fill="x", padx=10, pady=5)
+
+        # Botón QR con icono y diálogo directo
+        btn_qr = ttk.Button(adv_frame, text=" Generar e Imprimir QR", command=self.abrir_dialogo_qr)
+        btn_qr.pack(side="left", padx=6)
+
+        btn_logo = ttk.Button(adv_frame, text=" Imprimir Logo NV (#1)", command=self.imprimir_logo_flash)
+        btn_logo.pack(side="left", padx=6)
+
+        btn_cut = ttk.Button(adv_frame, text=" Avanzar y Cortar", command=self.cortar_solo)
+        btn_cut.pack(side="left", padx=6)
+
+        # 5. Barra Inferior de Impresión Principal
+        bottom_bar = ttk.Frame(self.root, padding="10 8 10 12")
+        bottom_bar.pack(fill="x")
+
+        self.status_lbl = ttk.Label(bottom_bar, text="Listo para imprimir.", foreground="#555")
+        self.status_lbl.pack(side="left")
+
+        btn_print = ttk.Button(bottom_bar, text="🖨️ IMPRIMIR TICKET", style="Print.TButton", command=self.imprimir)
+        btn_print.pack(side="right")
+
+    def set_status(self, msg, error=False):
+        self.status_lbl.config(text=msg, foreground="#b71c1c" if error else "#2e7d32")
 
     def limpiar(self):
         self.text_editor.delete("1.0", tk.END)
+        self.set_status("Editor limpio.")
+
+    def insertar_separador(self):
+        self.text_editor.insert(tk.INSERT, "------------------------------------------\n")
 
     def auto_alinear_columnas(self):
         contenido = self.text_editor.get("1.0", tk.END).splitlines()
@@ -106,7 +168,71 @@ class NCRPrinterApp:
                 nuevas_lineas.append(linea)
         
         self.text_editor.delete("1.0", tk.END)
-        self.text_editor.insert("1.0", "\n".join(nuevas_lineas))
+        self.text_editor.insert("1.0", "\n".join(nuevas_lineas) + "\n")
+        self.set_status("Columnas auto-alineadas a 42 caracteres.")
+
+    def abrir_dialogo_qr(self):
+        win = tk.Toplevel(self.root)
+        win.title("Generador e Impresor de Código QR")
+        win.geometry("450x230")
+        win.resizable(False, False)
+        win.transient(self.root)
+        win.grab_set()
+
+        ttk.Label(win, text="URL o Texto para el QR:", font=("Helvetica", 10, "bold")).pack(anchor="w", padx=15, pady=(15, 2))
+        url_entry = ttk.Entry(win, width=45)
+        url_entry.pack(fill="x", padx=15, pady=5)
+        url_entry.insert(0, "https://github.com/jmrodev")
+        url_entry.focus()
+
+        ttk.Label(win, text="Título superior (opcional):", font=("Helvetica", 10)).pack(anchor="w", padx=15, pady=(8, 2))
+        title_entry = ttk.Entry(win, width=45)
+        title_entry.pack(fill="x", padx=15, pady=5)
+        title_entry.insert(0, "ESCANEA ESTE QR:")
+
+        btn_box = ttk.Frame(win)
+        btn_box.pack(fill="x", padx=15, pady=15)
+
+        def ejecutar():
+            data = url_entry.get().strip()
+            title = title_entry.get().strip()
+            if not data:
+                messagebox.showwarning("Atención", "El contenido del QR no puede estar vacío.", parent=win)
+                return
+            win.destroy()
+            self._imprimir_qr_worker(data, title)
+
+        ttk.Button(btn_box, text="Cancelar", command=win.destroy).pack(side="right", padx=5)
+        ttk.Button(btn_box, text="🖨️ Imprimir QR Ahora", command=ejecutar).pack(side="right", padx=5)
+
+    def _imprimir_qr_worker(self, data, title):
+        qr_cmd = "/home/jmro/.local/bin/ncr-print-qr"
+        if not os.path.exists(qr_cmd):
+            qr_cmd = "ncr-print-qr"
+        try:
+            res = subprocess.run([qr_cmd, data, title], capture_output=True, text=True)
+            if res.returncode == 0:
+                self.set_status("QR impreso exitosamente.")
+                messagebox.showinfo("Éxito", "Código QR impreso correctamente en la NCR 7197.")
+            else:
+                self.set_status(f"Error QR: {res.stderr}", error=True)
+                messagebox.showerror("Error al Imprimir QR", res.stderr or "Fallo en ncr-print-qr")
+        except Exception as e:
+            self.set_status(f"Error: {e}", error=True)
+            messagebox.showerror("Error", str(e))
+
+    def imprimir_logo_flash(self):
+        logo_cmd = "/home/jmro/.local/bin/ncr-flash-logo"
+        if not os.path.exists(logo_cmd):
+            messagebox.showwarning("Herramienta no encontrada", "El script ncr-flash-logo no está disponible.")
+            return
+        res = subprocess.run([logo_cmd, "print", "--logo-num", "1"], capture_output=True, text=True)
+        if res.returncode == 0:
+            self.set_status("Orden de impresión de Logo #1 enviada.")
+            messagebox.showinfo("Éxito", "Orden de Logo #1 enviada a la memoria de la impresora.")
+        else:
+            self.set_status(f"Error Logo: {res.stderr}", error=True)
+            messagebox.showerror("Error Logo Flash", res.stderr or "No se pudo imprimir el logo.")
 
     def construir_bytes(self, texto):
         payload = INIT
@@ -134,43 +260,45 @@ class NCRPrinterApp:
         for linea in texto.splitlines():
             payload += cmd_align + cmd_style + linea.encode('latin1', errors='replace') + b"\r\n"
 
+        # Avance de seguridad para el módulo Presenter (8 líneas) y corte limpio
         payload += ALIGN_LEFT + ESC + b"!\x00" + ESC + b"E\x00" + ESC + b"G\x00" + (b"\r\n" * 8) + CUT_PAPER
         return payload
 
     def enviar_por_usb(self, payload):
-        import os
-        # 1. Si el kernel asignó el puerto ttyUSB, usarlo de forma directa y limpia
+        import serial
         for port in ["/dev/serial/by-id/usb-NCR_7401-K59X-if00-port0", "/dev/ttyUSB0"]:
             if os.path.exists(port):
                 try:
-                    import serial
-                    ser = serial.Serial(port, 115200, timeout=2)
+                    ser = serial.Serial(port, 115200, timeout=3)
                     ser.dtr = True
                     ser.rts = True
                     ser.write(payload)
                     ser.flush()
                     ser.close()
-                    messagebox.showinfo("Éxito", "Ticket impreso correctamente vía USB.")
-                    return
+                    self.set_status("Ticket impreso correctamente vía USB.")
+                    return True
                 except Exception as e:
+                    self.set_status(f"Fallo en puerto {port}: {e}", error=True)
                     pass
 
-        # 2. Fallback con PyUSB nativo
+        # Fallback PyUSB
         try:
             import usb.core
             dev = usb.core.find(idVendor=VENDOR_ID, idProduct=PRODUCT_ID)
             if dev is None:
                 messagebox.showerror("Error USB", "Impresora NCR (0404:0310) no detectada.")
-                return
+                return False
             try:
                 if dev.is_kernel_driver_active(0):
                     dev.detach_kernel_driver(0)
             except Exception:
                 pass
             dev.write(0x01, payload, timeout=5000)
-            messagebox.showinfo("Éxito", "Ticket impreso vía USB Directo.")
+            self.set_status("Ticket impreso vía PyUSB.")
+            return True
         except Exception as e:
             messagebox.showerror("Error de Impresión USB", str(e))
+            return False
 
     def enviar_por_cups(self, payload):
         try:
@@ -178,10 +306,13 @@ class NCRPrinterApp:
             _, stderr = proc.communicate(input=payload)
             if proc.returncode != 0:
                 messagebox.showerror("Error CUPS Debian", stderr.decode('utf-8'))
+                return False
             else:
-                messagebox.showinfo("Éxito", "Ticket enviado a CUPS Debian.")
+                self.set_status("Ticket enviado a CUPS Debian.")
+                return True
         except Exception as e:
             messagebox.showerror("Error CUPS", str(e))
+            return False
 
     def imprimir(self):
         contenido = self.text_editor.get("1.0", tk.END).strip()
@@ -190,9 +321,11 @@ class NCRPrinterApp:
             return
         payload = self.construir_bytes(contenido)
         if self.modo_var.get() == "usb":
-            self.enviar_por_usb(payload)
+            if self.enviar_por_usb(payload):
+                messagebox.showinfo("Éxito", "Ticket impreso correctamente.")
         else:
-            self.enviar_por_cups(payload)
+            if self.enviar_por_cups(payload):
+                messagebox.showinfo("Éxito", "Ticket enviado a CUPS.")
 
     def cortar_solo(self):
         payload = INIT + (b"\r\n" * 8) + CUT_PAPER
