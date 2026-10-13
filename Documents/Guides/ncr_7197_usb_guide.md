@@ -103,3 +103,106 @@ Para que el QR sea impreso de forma instantánea sin saturar el buffer:
   # Ticket demo formateado
   ncr-print --demo
   ```
+
+---
+
+## 7. Diagnóstico Completo de Hardware (Self-Test Ticket)
+
+A continuación se detalla la transcripción completa e íntegra del ticket de autodiagnóstico emitido por la unidad física:
+
+### A. Identificación y Firmware
+* **Diagnostics Form:** Model `7402-K592`
+* **Serial Number:** `0113363210`
+* **Boot Firmware:**
+  * Revision: `V02.04`
+  * Checksum CRC: `12F2`
+  * Part Number (P/N): `497-0426915`
+* **Flash Firmware:**
+  * Revision: `V02.44`
+  * Checksum CRC: `3FB5`
+  * Part Number (P/N): `497-0454079`
+
+### B. Memoria y Almacenamiento
+* **Flash Memory Size:** `2 Mbytes`
+* **Logos Allocation:** `320 Kbytes`
+* **User Fonts Allocation:** `64 Kbytes`
+* **User Data:** `0 Kbytes`
+* **Logo(s) Defined:** `No`
+* **User Char(s) Defined:** `No`
+
+### C. Configuración de Comunicación (RS232 / USB)
+* **Interface Type:** `RS232/USB`
+* **Baud Rate:** `115200 bps`
+* **Data Bits:** `8`
+* **Stop Bits:** `1`
+* **Parity:** `None`
+* **Flow Control:** `DTR/DSR`
+* **Reception Errors:** `Print '?'`
+* **Diagnostic Mode:** `Off`
+
+### D. Emulación, Fuentes y Código
+* **Default Emulation:** `Native Mode`
+* **Carriage Return:** `Used as Print Cmd`
+* **Default Lines Per Inch (LPI):** `7.52 LPI`
+* **Font Size / Pitch:** Standard 10x24 / Compressed 8x16
+* **Resident Code Pages:**
+  * `437` (Default PC437 USA)
+  * `850` (Multilingual Latin I)
+  * `852` (Latin II Slavic)
+  * `858` (Latin I with Euro)
+  * `860` (Portuguese)
+  * `862` (Hebrew)
+  * `863` (Canadian French)
+  * `864` (Arabic)
+  * `865` (Nordic)
+  * `866` (Cyrillic Russian)
+  * `874` (Thai)
+  * `1252` (Windows Latin I)
+  * `Katakana` (+932)
+* **Barcodes & 2D:**
+  * PDF417 Max Columns: `9 Columns`
+
+### E. Especificaciones Mecánicas y Térmicas
+* **Print Density:** `100%`
+* **Paper Width:** `80 mm`
+* **Paper Low Sensor:** `Disabled`
+* **Top of Form Mode:** `Disabled`
+* **Mark Distance:** `111 mm`
+
+### F. Módulo Presenter / Kiosco
+* **Receipt Length:** `111 mm`
+* **Delay Time Out:** `Never / Infinite`
+* **Eject Failure Time:** `10 sec`
+* **Receipt Retain Length:** `50 mm`
+* **KIOSK Exit Sensor:** `Not Installed`
+* **KIOSK Door Switch:** `Installed`
+* **Retract Receipt:** `Disabled`
+
+### G. Niveles de Sensores y Voltajes
+| Sensor | Nivel ON | Nivel OFF | Umbral (Threshold) |
+| :--- | :--- | :--- | :--- |
+| **Black Dot Sensor** | `3.6 V` | `0.4 V` | `2.0 V` |
+| **Paper Low Sensor** | `4.8 V` | `0.2 V` | `2.5 V` |
+| **Paper Exit Sensor** | `0.9 V` | `4.8 V` | `2.4 V` |
+| **Paper Present Sensor** | `0.5 V` | `4.8 V` | `2.2 V` |
+
+### H. Estadísticas de Uso (Tallies de Vida Útil)
+| Métrica | User Tallies | Permanent Tallies |
+| :--- | :--- | :--- |
+| **Receipt Lines Printed** | `6,777,112` | `6,777,112` |
+| **Knife Cuts Executed** | `188,126` | `188,126` |
+| **Hours Powered On** | `94,520` (aprox. 10.7 años) | `94,520` |
+| **Flash Cycles** | `0` | `0` |
+| **Knife Jams** | `7` | `7` |
+| **Cover Openings** | `0` | `0` |
+| **Max Temperature Reached**| `108 °C` | `108 °C` |
+| **Printer Reboots** | `0` | `0` |
+| **Thermal Head Damage** | `0` | `0` |
+
+### I. Acceso al Menú de Configuración de Hardware
+* **Instrucciones oficiales del firmware:**
+  1. Activar el **DIP switch #2** (ON).
+  2. Apagar la impresora o desconectar la alimentación.
+  3. Mantener presionado el botón de **Paper Feed** mientras se restablece la alimentación.
+  4. La impresora emitirá un ticket con el menú interactivo para ajustar parámetros de comunicación, emulación y densidades.
+
