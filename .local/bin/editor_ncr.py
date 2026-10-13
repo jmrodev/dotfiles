@@ -71,23 +71,23 @@ class NCRPrinterApp:
         tools_frame = ttk.LabelFrame(self.root, text=" Formato de Texto ", padding="6 4")
         tools_frame.pack(side="top", fill="x", padx=10, pady=2)
 
-        ttk.Button(tools_frame, text="Negrita (B)", width=10, command=self.toggle_negrita).pack(side="left", padx=3)
+        ttk.Button(tools_frame, text="Negrita", width=9, command=self.toggle_negrita).pack(side="left", padx=3)
         ttk.Button(tools_frame, text="Texto Grande", width=12, command=self.toggle_grande).pack(side="left", padx=3)
 
         ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=6)
 
-        ttk.Button(tools_frame, text="⫷ Izq", width=7, command=lambda: self.aplicar_alineacion("left")).pack(side="left", padx=2)
-        ttk.Button(tools_frame, text="≡ Centro", width=8, command=lambda: self.aplicar_alineacion("center")).pack(side="left", padx=2)
-        ttk.Button(tools_frame, text="Der ⫸", width=7, command=lambda: self.aplicar_alineacion("right")).pack(side="left", padx=2)
+        ttk.Button(tools_frame, text="Izquierda", width=10, command=lambda: self.aplicar_alineacion("left")).pack(side="left", padx=2)
+        ttk.Button(tools_frame, text="Centrar", width=9, command=lambda: self.aplicar_alineacion("center")).pack(side="left", padx=2)
+        ttk.Button(tools_frame, text="Derecha", width=9, command=lambda: self.aplicar_alineacion("right")).pack(side="left", padx=2)
 
         ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=6)
 
-        ttk.Button(tools_frame, text="Alinear Cols", command=self.auto_alinear_columnas).pack(side="left", padx=3)
+        ttk.Button(tools_frame, text="Alinear Columnas", command=self.auto_alinear_columnas).pack(side="left", padx=3)
         ttk.Button(tools_frame, text="Separador (---)", command=self.insertar_separador).pack(side="left", padx=3)
         ttk.Button(tools_frame, text="Limpiar", command=self.limpiar).pack(side="left", padx=3)
 
         # 5. Área Central: Editor Expandible (Toma todo el espacio restante disponible)
-        editor_frame = ttk.LabelFrame(self.root, text=" Vista Previa / Editor WYSIWYG (42 Cols / 80mm) ", padding=6)
+        editor_frame = ttk.LabelFrame(self.root, text=" Vista Previa del Ticket (42 Caracteres / 80mm) ", padding=6)
         editor_frame.pack(side="top", fill="both", expand=True, padx=10, pady=3)
 
         text_container = ttk.Frame(editor_frame)
@@ -117,12 +117,9 @@ class NCRPrinterApp:
         scroll_y.config(command=self.text_editor.yview)
 
         # Tags visuales
-        self.text_editor.tag_configure("align_left", justify="left")
-        self.text_editor.tag_configure("align_center", justify="center")
-        self.text_editor.tag_configure("align_right", justify="right")
-        self.text_editor.tag_configure("bold", font=self.font_bold)
-        self.text_editor.tag_configure("big", font=self.font_big)
-        self.text_editor.tag_configure("big_bold", font=self.font_big_bold)
+        self.text_editor.tag_configure("bold", font=self.font_bold, foreground="#0d47a1")
+        self.text_editor.tag_configure("big", font=self.font_big, foreground="#1b5e20")
+        self.text_editor.tag_configure("big_bold", font=self.font_big_bold, foreground="#b71c1c")
 
         self._cargar_plantilla_inicial()
 
@@ -138,11 +135,8 @@ class NCRPrinterApp:
             "TOTAL                             $ 500.00\n\n"
             "      Muchas gracias por su compra!       \n"
         )
-        # Aplicar estilos visuales a la plantilla
-        self.text_editor.tag_add("align_center", "2.0", "2.end")
         self.text_editor.tag_add("bold", "2.0", "2.end")
         self.text_editor.tag_add("bold", "7.0", "7.end")
-        self.text_editor.tag_add("align_center", "9.0", "9.end")
 
     def set_status(self, msg, error=False):
         self.status_lbl.config(text=msg, foreground="#b71c1c" if error else "#2e7d32")
@@ -155,20 +149,51 @@ class NCRPrinterApp:
         self.text_editor.insert(tk.INSERT, "------------------------------------------\n")
 
     def aplicar_alineacion(self, align_type):
-        """Aplica alineación (left, center, right) a las líneas seleccionadas o línea actual."""
+        """
+        Alinea el texto dentro del ancho de 42 columnas (o 21 si es texto grande)
+        usando espaciado real. Esto garantiza 100% fidelidad visual WYSIWYG en pantalla
+        y en la tira de papel.
+        """
         try:
-            start = self.text_editor.index("sel.first linestart")
-            end = self.text_editor.index("sel.last lineend")
+            start_idx = self.text_editor.index("sel.first")
+            end_idx = self.text_editor.index("sel.last")
+            first_line = int(start_idx.split(".")[0])
+            last_line = int(end_idx.split(".")[0])
         except tk.TclError:
-            start = self.text_editor.index("insert linestart")
-            end = self.text_editor.index("insert lineend")
+            first_line = int(self.text_editor.index("insert").split(".")[0])
+            last_line = first_line
 
-        for tag in ["align_left", "align_center", "align_right"]:
-            self.text_editor.tag_remove(tag, start, end)
+        for line_num in range(first_line, last_line + 1):
+            line_start = f"{line_num}.0"
+            line_end = f"{line_num}.end"
+            texto = self.text_editor.get(line_start, line_end)
+            
+            # Chequear si la línea tiene tag grande
+            tags = self.text_editor.tag_names(line_start)
+            is_big = ("big" in tags or "big_bold" in tags)
+            ancho_max = 21 if is_big else 42
 
-        tag_name = f"align_{align_type}"
-        self.text_editor.tag_add(tag_name, start, end)
-        self.set_status(f"Alineación '{align_type}' aplicada.")
+            limpio = texto.strip()
+            if not limpio:
+                continue
+
+            if align_type == "center":
+                if len(limpio) < ancho_max:
+                    nuevo_texto = limpio.center(ancho_max)
+                else:
+                    nuevo_texto = limpio
+            elif align_type == "right":
+                if len(limpio) < ancho_max:
+                    nuevo_texto = limpio.rjust(ancho_max)
+                else:
+                    nuevo_texto = limpio
+            else: # left
+                nuevo_texto = limpio
+
+            self.text_editor.delete(line_start, line_end)
+            self.text_editor.insert(line_start, nuevo_texto)
+
+        self.set_status(f"Líneas alineadas a la {align_type.upper()}.")
 
     def toggle_negrita(self):
         """Alterna negrita en la selección o palabra actual."""
