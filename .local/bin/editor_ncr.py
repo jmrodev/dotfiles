@@ -22,9 +22,9 @@ PRODUCT_ID = 0x0310
 class NCRPrinterApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("NCR 7197 - Ticket Studio & Editor")
-        self.root.geometry("780x620")
-        self.root.minsize(720, 520)
+        self.root.title("NCR 7197 - Ticket Studio & Control Center")
+        self.root.geometry("800x640")
+        self.root.minsize(740, 540)
 
         self._configurar_estilos()
         self._construir_ui()
@@ -35,50 +35,61 @@ class NCRPrinterApp:
         style.configure("Header.TLabel", font=("Helvetica", 10, "bold"))
         style.configure("Print.TButton", font=("Helvetica", 10, "bold"), padding=6, background="#2e7d32", foreground="white")
         style.map("Print.TButton", background=[("active", "#1b5e20")])
-        style.configure("Special.TButton", font=("Helvetica", 10, "bold"), padding=8)
-        style.configure("TNotebook.Tab", padding=[16, 6], font=("Helvetica", 10, "bold"))
+        style.configure("TNotebook.Tab", padding=[14, 6], font=("Helvetica", 9, "bold"))
 
     def _construir_ui(self):
-        # 1. Barra Inferior Fija (Impresión y Estado)
+        # 1. Barra Inferior Fija (Impresión y Estado Global)
         bottom_bar = ttk.Frame(self.root, padding="10 6 10 8")
         bottom_bar.pack(side="bottom", fill="x")
 
-        self.status_lbl = ttk.Label(bottom_bar, text="Listo para imprimir.", foreground="#555")
+        self.status_lbl = ttk.Label(bottom_bar, text="Listo para operar.", foreground="#555")
         self.status_lbl.pack(side="left")
 
         btn_print = ttk.Button(bottom_bar, text="🖨️ IMPRIMIR TICKET", style="Print.TButton", command=self.imprimir)
         btn_print.pack(side="right")
 
         # 2. Barra Superior: Conexión y Destino
-        top_bar = ttk.Frame(self.root, padding="10 6 10 4")
+        top_bar = ttk.Frame(self.root, padding="10 6 10 2")
         top_bar.pack(side="top", fill="x")
 
-        dest_group = ttk.LabelFrame(top_bar, text=" Destino / Conexión de Impresora ", padding="6 4")
+        dest_group = ttk.LabelFrame(top_bar, text=" Conexión / Destino de Impresora ", padding="6 3")
         dest_group.pack(fill="x")
 
         self.modo_var = tk.StringVar(value="usb")
         ttk.Radiobutton(dest_group, text="USB Directo (/dev/ttyUSB0)", variable=self.modo_var, value="usb").pack(side="left", padx=12)
         ttk.Radiobutton(dest_group, text="CUPS Red (Debian)", variable=self.modo_var, value="debian").pack(side="left", padx=12)
 
-        # 3. Pestañas Superiores (Notebook)
+        # 3. Pestañas Principales Específicas
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(side="top", fill="both", expand=True, padx=10, pady=4)
 
-        # Tab 1: Editor de Tickets
+        # Tab 1: Editor de Ticket
         self.tab_editor = ttk.Frame(self.notebook, padding=6)
         self.notebook.add(self.tab_editor, text="  📝 Editor de Ticket  ")
 
-        # Tab 2: Funciones Especiales y Hardware
-        self.tab_funciones = ttk.Frame(self.notebook, padding=12)
-        self.notebook.add(self.tab_funciones, text="  ⚙️ Funciones Especiales  ")
+        # Tab 2: Códigos QR
+        self.tab_qr = ttk.Frame(self.notebook, padding=12)
+        self.notebook.add(self.tab_qr, text="  📱 Generar QR  ")
 
-        # Construir contenido de cada pestaña
+        # Tab 3: Logos NV Flash
+        self.tab_logos = ttk.Frame(self.notebook, padding=12)
+        self.notebook.add(self.tab_logos, text="  🖼️ Logos Flash (320 KB)  ")
+
+        # Tab 4: Cabezal y Kiosco
+        self.tab_hardware = ttk.Frame(self.notebook, padding=12)
+        self.notebook.add(self.tab_hardware, text="  ⚙️ Cabezal y Kiosco  ")
+
+        # Construir contenido modular de cada tab
         self._construir_tab_editor()
-        self._construir_tab_funciones()
+        self._construir_tab_qr()
+        self._construir_tab_logos()
+        self._construir_tab_hardware()
 
+    # =========================================================================
+    # TAB 1: EDITOR DE TICKET WYSIWYG
+    # =========================================================================
     def _construir_tab_editor(self):
-        # Barra de Herramientas de Formato
-        tools_frame = ttk.LabelFrame(self.tab_editor, text=" Formato de Texto ", padding="6 4")
+        tools_frame = ttk.LabelFrame(self.tab_editor, text=" Formato y Estructura ", padding="6 4")
         tools_frame.pack(side="top", fill="x", pady=(0, 4))
 
         ttk.Button(tools_frame, text="Negrita", width=9, command=self.toggle_negrita).pack(side="left", padx=3)
@@ -96,7 +107,7 @@ class NCRPrinterApp:
         ttk.Button(tools_frame, text="Separador (---)", command=self.insertar_separador).pack(side="left", padx=3)
         ttk.Button(tools_frame, text="Limpiar", command=self.limpiar).pack(side="left", padx=3)
 
-        # Contenedor de papel térmico (42 caracteres fijos)
+        # Contenedor centrado que emula la tira de 80mm
         paper_container = ttk.Frame(self.tab_editor)
         paper_container.pack(fill="both", expand=True)
 
@@ -134,55 +145,93 @@ class NCRPrinterApp:
         self.text_editor.tag_configure("big", font=self.font_big, foreground="#1b5e20")
         self.text_editor.tag_configure("big_bold", font=self.font_big_bold, foreground="#b71c1c")
 
+        # Eventos de tracking estricto de columna según tamaño
         self.text_editor.bind("<KeyRelease>", self._on_key_release)
         self.text_editor.bind("<ButtonRelease-1>", self._on_key_release)
 
         self._cargar_plantilla_inicial()
 
-    def _construir_tab_funciones(self):
-        # 1. Grupo Código QR
-        qr_group = ttk.LabelFrame(self.tab_funciones, text=" Generador de Código QR (Matriz CP437) ", padding=10)
+    # =========================================================================
+    # TAB 2: GENERADOR QR
+    # =========================================================================
+    def _construir_tab_qr(self):
+        qr_group = ttk.LabelFrame(self.tab_qr, text=" Generador e Impresor de Códigos QR ", padding=12)
         qr_group.pack(fill="x", pady=6)
 
-        qr_desc = ttk.Label(qr_group, text="Imprime un código QR 1:1 calibrado mediante bloques densos sin desbordar el buffer USB.", foreground="#555")
-        qr_desc.pack(anchor="w", pady=(0, 6))
+        ttk.Label(qr_group, text="Impresión monocromática 1:1 mediante matriz compacta CP437 optimizada para el buffer de la NCR 7197.", foreground="#444").pack(anchor="w", pady=(0, 10))
 
-        qr_inputs = ttk.Frame(qr_group)
-        qr_inputs.pack(fill="x")
+        grid_f = ttk.Frame(qr_group)
+        grid_f.pack(fill="x", pady=5)
 
-        ttk.Label(qr_inputs, text="URL / Contenido:", font=("Helvetica", 9, "bold")).grid(row=0, column=0, sticky="w", padx=4, pady=3)
-        self.qr_url_entry = ttk.Entry(qr_inputs, width=42)
-        self.qr_url_entry.grid(row=0, column=1, sticky="ew", padx=6, pady=3)
+        ttk.Label(grid_f, text="URL / Texto a codificar:", font=("Helvetica", 9, "bold")).grid(row=0, column=0, sticky="w", padx=4, pady=4)
+        self.qr_url_entry = ttk.Entry(grid_f, width=45)
+        self.qr_url_entry.grid(row=0, column=1, sticky="ew", padx=6, pady=4)
         self.qr_url_entry.insert(0, "https://github.com/jmrodev")
 
-        ttk.Label(qr_inputs, text="Título superior:").grid(row=1, column=0, sticky="w", padx=4, pady=3)
-        self.qr_title_entry = ttk.Entry(qr_inputs, width=42)
-        self.qr_title_entry.grid(row=1, column=1, sticky="ew", padx=6, pady=3)
+        ttk.Label(grid_f, text="Título en encabezado (opcional):").grid(row=1, column=0, sticky="w", padx=4, pady=4)
+        self.qr_title_entry = ttk.Entry(grid_f, width=45)
+        self.qr_title_entry.grid(row=1, column=1, sticky="ew", padx=6, pady=4)
         self.qr_title_entry.insert(0, "ESCANEA ESTE QR:")
 
-        qr_inputs.columnconfigure(1, weight=1)
+        grid_f.columnconfigure(1, weight=1)
 
-        ttk.Button(qr_group, text="🖨️ Imprimir Código QR Ahora", command=self._imprimir_qr_desde_tab).pack(anchor="e", pady=(8, 0))
+        ttk.Button(qr_group, text="📱 Imprimir Código QR Ahora", command=self._imprimir_qr_desde_tab).pack(anchor="e", pady=(12, 4))
 
-        # 2. Grupo Logos NV Flash
-        logo_group = ttk.LabelFrame(self.tab_funciones, text=" Memoria NV Flash de Logos (320 KB) ", padding=10)
+    # =========================================================================
+    # TAB 3: LOGOS FLASH (NV RAM)
+    # =========================================================================
+    def _construir_tab_logos(self):
+        logo_group = ttk.LabelFrame(self.tab_logos, text=" Gestión de Almacenamiento NV Flash (320 KB) ", padding=12)
         logo_group.pack(fill="x", pady=6)
 
-        logo_desc = ttk.Label(logo_group, text="Administra y prueba los gráficos monocromáticos almacenados en la Flash permanente.", foreground="#555")
-        logo_desc.pack(anchor="w", pady=(0, 6))
+        ttk.Label(logo_group, text="Graba imágenes monocromáticas en la memoria permanente para imprimirlas instantáneamente sin saturar el bus.", foreground="#444").pack(anchor="w", pady=(0, 10))
 
-        logo_btns = ttk.Frame(logo_group)
-        logo_btns.pack(fill="x")
+        btns_f = ttk.Frame(logo_group)
+        btns_f.pack(fill="x", pady=8)
 
-        ttk.Button(logo_btns, text="Flashear Nueva Imagen...", command=self._flashear_imagen_dialogo).pack(side="left", padx=4)
-        ttk.Button(logo_btns, text="🖨️ Imprimir Logo NV (#1)", command=self.imprimir_logo_flash).pack(side="left", padx=4)
+        ttk.Button(btns_f, text="📂 Seleccionar y Flashear Imagen...", command=self._flashear_imagen_dialogo).pack(side="left", padx=6)
+        ttk.Button(btns_f, text="🖨️ Probar Impresión de Logo NV (#1)", command=self.imprimir_logo_flash).pack(side="left", padx=6)
 
-        # 3. Control Físico del Kiosco / Presenter
-        hw_group = ttk.LabelFrame(self.tab_funciones, text=" Control Mecánico del Cabezal y Kiosco ", padding=10)
+    # =========================================================================
+    # TAB 4: CABEZAL Y KIOSCO
+    # =========================================================================
+    def _construir_tab_hardware(self):
+        hw_group = ttk.LabelFrame(self.tab_hardware, text=" Diagnóstico y Control de Mecanismos ", padding=12)
         hw_group.pack(fill="x", pady=6)
 
-        ttk.Button(hw_group, text="✂️ Avanzar 8 líneas y Cortar Papel", command=self.cortar_solo).pack(side="left", padx=4)
-        ttk.Button(hw_group, text="📋 Imprimir Ticket Demo", command=self._imprimir_ticket_demo).pack(side="left", padx=4)
+        ttk.Label(hw_group, text="Comandos directos sobre la guillotina de corte, eyector del kiosco (Presenter) y autotest.", foreground="#444").pack(anchor="w", pady=(0, 10))
+
+        btns_f = ttk.Frame(hw_group)
+        btns_f.pack(fill="x", pady=8)
+
+        ttk.Button(btns_f, text="✂️ Avanzar y Cortar Papel", command=self.cortar_solo).pack(side="left", padx=6)
+        ttk.Button(btns_f, text="🧾 Imprimir Ticket Demostración", command=self._imprimir_ticket_demo).pack(side="left", padx=6)
+
+    # =========================================================================
+    # LOGICA DE FORMATO Y SALTO INTELIGENTE SEGUN FUENTE
+    # =========================================================================
+    def _get_max_cols_for_line(self, line_num):
+        """Devuelve el límite físico real de columnas de la línea (21 si es grande, 42 normal)."""
+        tags = self.text_editor.tag_names(f"{line_num}.0")
+        return 21 if ("big" in tags or "big_bold" in tags) else 42
+
+    def _on_key_release(self, event=None):
+        cursor_pos = self.text_editor.index(tk.INSERT)
+        line, col = cursor_pos.split(".")
+        line_num = int(line)
+        col = int(col)
+
+        max_cols = self._get_max_cols_for_line(line_num)
+
+        # Salto estricto de renglón si se supera el ancho físico de la fuente actual
+        if event and event.char and event.char.isprintable() and col >= max_cols:
+            self.text_editor.insert(tk.INSERT, "\n")
+            line_num += 1
+            col = 0
+
+        self.status_lbl.config(
+            text=f"Línea: {line_num} | Columna: {col}/{max_cols} {'(Fuente Grande)' if max_cols == 21 else '(Normal)'} {('⚠️ [LÍMITE ALCANZADO]' if col >= max_cols else '')}"
+        )
 
     def _imprimir_qr_desde_tab(self):
         data = self.qr_url_entry.get().strip()
@@ -214,20 +263,6 @@ class NCRPrinterApp:
         print_cmd = "/home/jmro/.local/bin/ncr-print"
         subprocess.run([print_cmd, "--demo"])
         self.set_status("Ticket demo enviado.")
-
-    def _on_key_release(self, event=None):
-        cursor_pos = self.text_editor.index(tk.INSERT)
-        line, col = cursor_pos.split(".")
-        col = int(col)
-        
-        if event and event.char and event.char.isprintable() and col >= 42:
-            self.text_editor.insert(tk.INSERT, "\n")
-            line = str(int(line) + 1)
-            col = 0
-
-        self.status_lbl.config(
-            text=f"Línea: {line} | Columna: {col}/42 {('⚠️ [LÍMITE ALCANZADO]' if col >= 42 else '')}"
-        )
 
     def _cargar_plantilla_inicial(self):
         self.text_editor.delete("1.0", tk.END)
@@ -269,10 +304,7 @@ class NCRPrinterApp:
             line_end = f"{line_num}.end"
             texto = self.text_editor.get(line_start, line_end)
             
-            tags = self.text_editor.tag_names(line_start)
-            is_big = ("big" in tags or "big_bold" in tags)
-            ancho_max = 21 if is_big else 42
-
+            ancho_max = self._get_max_cols_for_line(line_num)
             limpio = texto.strip()
             if not limpio:
                 continue
@@ -321,19 +353,30 @@ class NCRPrinterApp:
             end = self.text_editor.index("insert lineend")
 
         tags = self.text_editor.tag_names(start)
+        first_line = int(start.split(".")[0])
+        last_line = int(end.split(".")[0])
+
         if "big" in tags or "big_bold" in tags:
             self.text_editor.tag_remove("big", start, end)
             if "big_bold" in tags:
                 self.text_editor.tag_remove("big_bold", start, end)
                 self.text_editor.tag_add("bold", start, end)
-            self.set_status("Tamaño normal restablecido.")
+            self.set_status("Tamaño normal restablecido (42 columnas).")
         else:
             if "bold" in tags:
                 self.text_editor.tag_remove("bold", start, end)
                 self.text_editor.tag_add("big_bold", start, end)
             else:
                 self.text_editor.tag_add("big", start, end)
-            self.set_status("Texto grande aplicado.")
+            
+            # Al pasar a grande, reajustar si alguna línea supera las 21 columnas
+            for l in range(first_line, last_line + 1):
+                txt = self.text_editor.get(f"{l}.0", f"{l}.end")
+                if len(txt) > 21:
+                    partes = [txt[i:i+21] for i in range(0, len(txt), 21)]
+                    self.text_editor.delete(f"{l}.0", f"{l}.end")
+                    self.text_editor.insert(f"{l}.0", "\n".join(partes))
+            self.set_status("Texto grande aplicado (Límite ajustado a 21 columnas).")
 
     def auto_alinear_columnas(self):
         contenido = self.text_editor.get("1.0", tk.END).splitlines()
@@ -391,6 +434,11 @@ class NCRPrinterApp:
             messagebox.showerror("Error Logo Flash", res.stderr or "No se pudo imprimir el logo.")
 
     def construir_bytes(self):
+        """
+        Construye el payload binario ESC/POS dividiendo físicamente las líneas
+        según el ancho de fuente (21 columnas para grande, 42 para normal)
+        garantizando que la tira de papel impresa sea IDÉNTICA a la vista previa.
+        """
         payload = INIT
         total_lines = int(self.text_editor.index("end-1c").split(".")[0])
 
@@ -404,17 +452,27 @@ class NCRPrinterApp:
             is_big = ("big" in tags or "big_bold" in tags)
 
             font_byte = 0
+            max_c = 42
             if is_bold:
                 font_byte |= 0x08
             if is_big:
                 font_byte |= 0x30
+                max_c = 21
 
             cmd_font = ESC + b"!" + bytes([font_byte])
             cmd_bold_extra = (ESC + b"E\x01" + ESC + b"G\x01") if is_bold else (ESC + b"E\x00" + ESC + b"G\x00")
             cmd_style = cmd_font + cmd_bold_extra
 
-            payload += ALIGN_LEFT + cmd_style + texto_linea.encode('latin1', errors='replace') + b"\r\n"
+            # División de seguridad si la línea excede el ancho físico
+            if len(texto_linea) > max_c:
+                sublineas = [texto_linea[i:i+max_c] for i in range(0, len(texto_linea), max_c)]
+            else:
+                sublineas = [texto_linea]
 
+            for sub in sublineas:
+                payload += ALIGN_LEFT + cmd_style + sub.encode('latin1', errors='replace') + b"\r\n"
+
+        # Avance para módulo Presenter (8 líneas) y corte limpio
         payload += ALIGN_LEFT + ESC + b"!\x00" + ESC + b"E\x00" + ESC + b"G\x00" + (b"\r\n" * 8) + CUT_PAPER
         return payload
 
