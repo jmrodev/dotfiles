@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
+from tkinter import ttk, messagebox, font as tkfont
 import subprocess
 import os
 import sys
@@ -23,8 +23,8 @@ class NCRPrinterApp:
     def __init__(self, root):
         self.root = root
         self.root.title("NCR 7197 - Ticket Studio & Editor")
-        self.root.geometry("760x680")
-        self.root.minsize(700, 600)
+        self.root.geometry("780x700")
+        self.root.minsize(720, 620)
 
         self._configurar_estilos()
         self._construir_ui()
@@ -33,64 +33,65 @@ class NCRPrinterApp:
         style = ttk.Style()
         style.theme_use("clam")
         style.configure("Header.TLabel", font=("Helvetica", 11, "bold"))
-        style.configure("Action.TButton", font=("Helvetica", 10, "bold"), padding=6)
+        style.configure("Action.TButton", font=("Helvetica", 10, "bold"), padding=5)
         style.configure("Print.TButton", font=("Helvetica", 11, "bold"), padding=8, background="#2e7d32", foreground="white")
         style.map("Print.TButton", background=[("active", "#1b5e20")])
 
     def _construir_ui(self):
-        # 1. Barra Superior: Conexión y Estado
+        # 1. Barra Superior: Conexión y Destino
         top_bar = ttk.Frame(self.root, padding="10 10 10 5")
         top_bar.pack(fill="x")
 
-        dest_group = ttk.LabelFrame(top_bar, text=" Destino de Impresión ", padding="8 5")
+        dest_group = ttk.LabelFrame(top_bar, text=" Conexión / Destino ", padding="8 5")
         dest_group.pack(side="left", fill="x", expand=True)
 
         self.modo_var = tk.StringVar(value="usb")
         ttk.Radiobutton(dest_group, text="USB Directo (/dev/ttyUSB0)", variable=self.modo_var, value="usb").pack(side="left", padx=10)
         ttk.Radiobutton(dest_group, text="CUPS Red (Debian)", variable=self.modo_var, value="debian").pack(side="left", padx=10)
 
-        # 2. Barra de Herramientas y Formato
-        tools_frame = ttk.LabelFrame(self.root, text=" Estilos y Acciones Rápidas ", padding="8 6")
+        # 2. Barra de Herramientas: Formato de Texto y Alineación Interactiva
+        tools_frame = ttk.LabelFrame(self.root, text=" Formato y Alineación (Afecta Selección / Línea Actual) ", padding="8 6")
         tools_frame.pack(fill="x", padx=10, pady=5)
 
-        # Formato de texto
-        self.bold_var = tk.BooleanVar(value=False)
-        self.big_var = tk.BooleanVar(value=False)
-        self.align_var = tk.StringVar(value="left")
-
-        ttk.Checkbutton(tools_frame, text="Negrita", variable=self.bold_var).pack(side="left", padx=6)
-        ttk.Checkbutton(tools_frame, text="Texto Grande", variable=self.big_var).pack(side="left", padx=6)
+        # Botones de estilo
+        ttk.Button(tools_frame, text="Negrita (B)", width=11, command=self.toggle_negrita).pack(side="left", padx=4)
+        ttk.Button(tools_frame, text="Texto Grande", width=13, command=self.toggle_grande).pack(side="left", padx=4)
 
         ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=8)
 
-        ttk.Radiobutton(tools_frame, text="Izq", variable=self.align_var, value="left").pack(side="left", padx=4)
-        ttk.Radiobutton(tools_frame, text="Centro", variable=self.align_var, value="center").pack(side="left", padx=4)
-        ttk.Radiobutton(tools_frame, text="Der", variable=self.align_var, value="right").pack(side="left", padx=4)
+        # Botones de alineación real en pantalla (párrafo/línea)
+        ttk.Button(tools_frame, text="⫷ Izquierda", width=11, command=lambda: self.aplicar_alineacion("left")).pack(side="left", padx=4)
+        ttk.Button(tools_frame, text="≡ Centro", width=10, command=lambda: self.aplicar_alineacion("center")).pack(side="left", padx=4)
+        ttk.Button(tools_frame, text="Derecha ⫸", width=11, command=lambda: self.aplicar_alineacion("right")).pack(side="left", padx=4)
 
         ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=8)
 
-        # Herramientas de formateo del ticket
-        ttk.Button(tools_frame, text="Alinear Columnas", command=self.auto_alinear_columnas).pack(side="left", padx=4)
+        # Utilidades de estructura
+        ttk.Button(tools_frame, text="Auto-Alinear Cols", command=self.auto_alinear_columnas).pack(side="left", padx=4)
         ttk.Button(tools_frame, text="Separador (---)", command=self.insertar_separador).pack(side="left", padx=4)
         ttk.Button(tools_frame, text="Limpiar", command=self.limpiar).pack(side="left", padx=4)
 
-        # 3. Área Central: Editor con Guía Visual de Ancho (42 columnas)
-        editor_frame = ttk.LabelFrame(self.root, text=" Área del Ticket (42 Caracteres / 80mm) ", padding=8)
+        # 3. Área Central: Editor con Tags Visuales y Límites (42 columnas)
+        editor_frame = ttk.LabelFrame(self.root, text=" Vista Previa / Editor WYSIWYG (42 Caracteres / 80mm) ", padding=8)
         editor_frame.pack(fill="both", expand=True, padx=10, pady=5)
 
-        # Scrollbar y Editor
         text_container = ttk.Frame(editor_frame)
         text_container.pack(fill="both", expand=True)
 
         scroll_y = ttk.Scrollbar(text_container, orient="vertical")
         scroll_y.pack(side="right", fill="y")
 
+        self.font_normal = tkfont.Font(family="Courier 10 Pitch", size=12, weight="normal")
+        self.font_bold = tkfont.Font(family="Courier 10 Pitch", size=12, weight="bold")
+        self.font_big = tkfont.Font(family="Courier 10 Pitch", size=18, weight="normal")
+        self.font_big_bold = tkfont.Font(family="Courier 10 Pitch", size=18, weight="bold")
+
         self.text_editor = tk.Text(
             text_container,
-            font=("Courier 10 Pitch", 12),
+            font=self.font_normal,
             wrap="none",
             width=42,
-            padx=10,
+            padx=12,
             pady=10,
             yscrollcommand=scroll_y.set,
             background="#ffffff",
@@ -99,33 +100,26 @@ class NCRPrinterApp:
         self.text_editor.pack(side="left", fill="both", expand=True)
         scroll_y.config(command=self.text_editor.yview)
 
-        # Cargar plantilla inicial
-        self.text_editor.insert("1.0",
-            "==========================================\n"
-            "         TICKET DE VENTA / SERVICIO       \n"
-            "==========================================\n"
-            "Producto 1                        $ 150.00\n"
-            "Servicio Tecnico                  $ 350.00\n"
-            "------------------------------------------\n"
-            "TOTAL                             $ 500.00\n\n"
-            "        Muchas gracias por su compra!     \n"
-        )
+        # Configuración de Tags visuales en Tkinter
+        self.text_editor.tag_configure("align_left", justify="left")
+        self.text_editor.tag_configure("align_center", justify="center")
+        self.text_editor.tag_configure("align_right", justify="right")
+        self.text_editor.tag_configure("bold", font=self.font_bold)
+        self.text_editor.tag_configure("big", font=self.font_big)
+        self.text_editor.tag_configure("big_bold", font=self.font_big_bold)
 
-        # 4. Panel de Acciones Avanzadas (Generador de QR y Herramientas Kiosco)
-        adv_frame = ttk.LabelFrame(self.root, text=" Funciones Especiales ", padding="8 8")
+        # Cargar plantilla inicial con formatos predefinidos
+        self._cargar_plantilla_inicial()
+
+        # 4. Panel de Funciones Especiales (QR, Logo Flash, Corte)
+        adv_frame = ttk.LabelFrame(self.root, text=" Funciones Especiales de Hardware ", padding="8 8")
         adv_frame.pack(fill="x", padx=10, pady=5)
 
-        # Botón QR con icono y diálogo directo
-        btn_qr = ttk.Button(adv_frame, text=" Generar e Imprimir QR", command=self.abrir_dialogo_qr)
-        btn_qr.pack(side="left", padx=6)
+        ttk.Button(adv_frame, text=" Generar e Imprimir QR", command=self.abrir_dialogo_qr).pack(side="left", padx=6)
+        ttk.Button(adv_frame, text=" Imprimir Logo NV (#1)", command=self.imprimir_logo_flash).pack(side="left", padx=6)
+        ttk.Button(adv_frame, text=" Avanzar y Cortar", command=self.cortar_solo).pack(side="left", padx=6)
 
-        btn_logo = ttk.Button(adv_frame, text=" Imprimir Logo NV (#1)", command=self.imprimir_logo_flash)
-        btn_logo.pack(side="left", padx=6)
-
-        btn_cut = ttk.Button(adv_frame, text=" Avanzar y Cortar", command=self.cortar_solo)
-        btn_cut.pack(side="left", padx=6)
-
-        # 5. Barra Inferior de Impresión Principal
+        # 5. Barra Inferior de Impresión y Estado
         bottom_bar = ttk.Frame(self.root, padding="10 8 10 12")
         bottom_bar.pack(fill="x")
 
@@ -134,6 +128,24 @@ class NCRPrinterApp:
 
         btn_print = ttk.Button(bottom_bar, text="🖨️ IMPRIMIR TICKET", style="Print.TButton", command=self.imprimir)
         btn_print.pack(side="right")
+
+    def _cargar_plantilla_inicial(self):
+        self.text_editor.delete("1.0", tk.END)
+        self.text_editor.insert("1.0",
+            "==========================================\n"
+            "       TICKET DE VENTA / SERVICIO         \n"
+            "==========================================\n"
+            "Producto 1                        $ 150.00\n"
+            "Servicio Tecnico                  $ 350.00\n"
+            "------------------------------------------\n"
+            "TOTAL                             $ 500.00\n\n"
+            "      Muchas gracias por su compra!       \n"
+        )
+        # Aplicar estilos visuales a la plantilla
+        self.text_editor.tag_add("align_center", "2.0", "2.end")
+        self.text_editor.tag_add("bold", "2.0", "2.end")
+        self.text_editor.tag_add("bold", "7.0", "7.end")
+        self.text_editor.tag_add("align_center", "9.0", "9.end")
 
     def set_status(self, msg, error=False):
         self.status_lbl.config(text=msg, foreground="#b71c1c" if error else "#2e7d32")
@@ -144,6 +156,71 @@ class NCRPrinterApp:
 
     def insertar_separador(self):
         self.text_editor.insert(tk.INSERT, "------------------------------------------\n")
+
+    def aplicar_alineacion(self, align_type):
+        """Aplica alineación (left, center, right) a las líneas seleccionadas o línea actual."""
+        try:
+            start = self.text_editor.index("sel.first linestart")
+            end = self.text_editor.index("sel.last lineend")
+        except tk.TclError:
+            start = self.text_editor.index("insert linestart")
+            end = self.text_editor.index("insert lineend")
+
+        for tag in ["align_left", "align_center", "align_right"]:
+            self.text_editor.tag_remove(tag, start, end)
+
+        tag_name = f"align_{align_type}"
+        self.text_editor.tag_add(tag_name, start, end)
+        self.set_status(f"Alineación '{align_type}' aplicada.")
+
+    def toggle_negrita(self):
+        """Alterna negrita en la selección o palabra actual."""
+        try:
+            start = self.text_editor.index("sel.first")
+            end = self.text_editor.index("sel.last")
+        except tk.TclError:
+            start = self.text_editor.index("insert linestart")
+            end = self.text_editor.index("insert lineend")
+
+        # Verificar si ya tiene negrita
+        tags = self.text_editor.tag_names(start)
+        if "bold" in tags or "big_bold" in tags:
+            self.text_editor.tag_remove("bold", start, end)
+            if "big_bold" in tags:
+                self.text_editor.tag_remove("big_bold", start, end)
+                self.text_editor.tag_add("big", start, end)
+            self.set_status("Negrita removida.")
+        else:
+            if "big" in tags:
+                self.text_editor.tag_remove("big", start, end)
+                self.text_editor.tag_add("big_bold", start, end)
+            else:
+                self.text_editor.tag_add("bold", start, end)
+            self.set_status("Negrita aplicada.")
+
+    def toggle_grande(self):
+        """Alterna tamaño grande en la selección o línea actual."""
+        try:
+            start = self.text_editor.index("sel.first")
+            end = self.text_editor.index("sel.last")
+        except tk.TclError:
+            start = self.text_editor.index("insert linestart")
+            end = self.text_editor.index("insert lineend")
+
+        tags = self.text_editor.tag_names(start)
+        if "big" in tags or "big_bold" in tags:
+            self.text_editor.tag_remove("big", start, end)
+            if "big_bold" in tags:
+                self.text_editor.tag_remove("big_bold", start, end)
+                self.text_editor.tag_add("bold", start, end)
+            self.set_status("Tamaño normal restablecido.")
+        else:
+            if "bold" in tags:
+                self.text_editor.tag_remove("bold", start, end)
+                self.text_editor.tag_add("big_bold", start, end)
+            else:
+                self.text_editor.tag_add("big", start, end)
+            self.set_status("Texto grande aplicado.")
 
     def auto_alinear_columnas(self):
         contenido = self.text_editor.get("1.0", tk.END).splitlines()
@@ -234,31 +311,44 @@ class NCRPrinterApp:
             self.set_status(f"Error Logo: {res.stderr}", error=True)
             messagebox.showerror("Error Logo Flash", res.stderr or "No se pudo imprimir el logo.")
 
-    def construir_bytes(self, texto):
+    def construir_bytes(self):
+        """
+        Construye el payload binario ESC/POS analizando cada línea y sus tags visuales aplicados.
+        """
         payload = INIT
-        align = self.align_var.get()
-        if align == "center":
-            cmd_align = ALIGN_CENTER
-        elif align == "right":
-            cmd_align = ALIGN_RIGHT
-        else:
-            cmd_align = ALIGN_LEFT
+        total_lines = int(self.text_editor.index("end-1c").split(".")[0])
 
-        is_bold = self.bold_var.get()
-        is_big = self.big_var.get()
+        for line_num in range(1, total_lines + 1):
+            line_start = f"{line_num}.0"
+            line_end = f"{line_num}.end"
+            texto_linea = self.text_editor.get(line_start, line_end)
 
-        font_byte = 0
-        if is_bold:
-            font_byte |= 0x08
-        if is_big:
-            font_byte |= 0x30
+            # Obtener tags en el inicio de la línea
+            tags = self.text_editor.tag_names(line_start)
 
-        cmd_font = ESC + b"!" + bytes([font_byte])
-        cmd_bold_extra = (ESC + b"E\x01" + ESC + b"G\x01") if is_bold else (ESC + b"E\x00" + ESC + b"G\x00")
-        cmd_style = cmd_font + cmd_bold_extra
+            # Alineación
+            if "align_center" in tags:
+                cmd_align = ALIGN_CENTER
+            elif "align_right" in tags:
+                cmd_align = ALIGN_RIGHT
+            else:
+                cmd_align = ALIGN_LEFT
 
-        for linea in texto.splitlines():
-            payload += cmd_align + cmd_style + linea.encode('latin1', errors='replace') + b"\r\n"
+            # Estilo de fuente (Grande / Negrita)
+            is_bold = ("bold" in tags or "big_bold" in tags)
+            is_big = ("big" in tags or "big_bold" in tags)
+
+            font_byte = 0
+            if is_bold:
+                font_byte |= 0x08
+            if is_big:
+                font_byte |= 0x30
+
+            cmd_font = ESC + b"!" + bytes([font_byte])
+            cmd_bold_extra = (ESC + b"E\x01" + ESC + b"G\x01") if is_bold else (ESC + b"E\x00" + ESC + b"G\x00")
+            cmd_style = cmd_font + cmd_bold_extra
+
+            payload += cmd_align + cmd_style + texto_linea.encode('latin1', errors='replace') + b"\r\n"
 
         # Avance de seguridad para el módulo Presenter (8 líneas) y corte limpio
         payload += ALIGN_LEFT + ESC + b"!\x00" + ESC + b"E\x00" + ESC + b"G\x00" + (b"\r\n" * 8) + CUT_PAPER
@@ -319,7 +409,7 @@ class NCRPrinterApp:
         if not contenido:
             messagebox.showwarning("Atención", "El ticket está vacío.")
             return
-        payload = self.construir_bytes(contenido)
+        payload = self.construir_bytes()
         if self.modo_var.get() == "usb":
             if self.enviar_por_usb(payload):
                 messagebox.showinfo("Éxito", "Ticket impreso correctamente.")
