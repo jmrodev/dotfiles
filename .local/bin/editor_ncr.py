@@ -86,14 +86,15 @@ class NCRPrinterApp:
         ttk.Button(tools_frame, text="Separador (---)", command=self.insertar_separador).pack(side="left", padx=3)
         ttk.Button(tools_frame, text="Limpiar", command=self.limpiar).pack(side="left", padx=3)
 
-        # 5. Área Central: Editor Expandible (Toma todo el espacio restante disponible)
-        editor_frame = ttk.LabelFrame(self.root, text=" Vista Previa del Ticket (42 Caracteres / 80mm) ", padding=6)
+        # 5. Área Central: Simulación del Rollo Térmico Físico (42 Caracteres / 80mm)
+        editor_frame = ttk.LabelFrame(self.root, text=" Rollo de Papel Térmico Físico (80mm / 42 Columnas Fijas) ", padding=6)
         editor_frame.pack(side="top", fill="both", expand=True, padx=10, pady=3)
 
-        text_container = ttk.Frame(editor_frame)
-        text_container.pack(fill="both", expand=True)
+        # Contenedor centrado para simular la tira de papel
+        paper_container = ttk.Frame(editor_frame)
+        paper_container.pack(fill="both", expand=True)
 
-        scroll_y = ttk.Scrollbar(text_container, orient="vertical")
+        scroll_y = ttk.Scrollbar(paper_container, orient="vertical")
         scroll_y.pack(side="right", fill="y")
 
         self.font_normal = tkfont.Font(family="Courier 10 Pitch", size=11, weight="normal")
@@ -101,17 +102,24 @@ class NCRPrinterApp:
         self.font_big = tkfont.Font(family="Courier 10 Pitch", size=16, weight="normal")
         self.font_big_bold = tkfont.Font(family="Courier 10 Pitch", size=16, weight="bold")
 
+        # Frame que enmarca la tira de papel exactamente en 42 columnas
+        paper_body = tk.Frame(paper_container, bg="#dcdcdc", padx=2, pady=2)
+        paper_body.pack(expand=True, fill="y")
+
         self.text_editor = tk.Text(
-            text_container,
+            paper_body,
             font=self.font_normal,
-            wrap="none",
+            wrap="char",
             width=42,
-            height=12,
-            padx=10,
+            height=14,
+            padx=8,
             pady=8,
             yscrollcommand=scroll_y.set,
             background="#ffffff",
-            foreground="#1e1e1e"
+            foreground="#1e1e1e",
+            highlightthickness=1,
+            highlightbackground="#9e9e9e",
+            highlightcolor="#2e7d32"
         )
         self.text_editor.pack(side="left", fill="both", expand=True)
         scroll_y.config(command=self.text_editor.yview)
@@ -121,7 +129,27 @@ class NCRPrinterApp:
         self.text_editor.tag_configure("big", font=self.font_big, foreground="#1b5e20")
         self.text_editor.tag_configure("big_bold", font=self.font_big_bold, foreground="#b71c1c")
 
+        # Eventos para salto automático estricto y tracking del cursor
+        self.text_editor.bind("<KeyRelease>", self._on_key_release)
+        self.text_editor.bind("<ButtonRelease-1>", self._on_key_release)
+
         self._cargar_plantilla_inicial()
+
+    def _on_key_release(self, event=None):
+        """Actualiza el indicador de columna y fuerza el salto al llegar a 42."""
+        cursor_pos = self.text_editor.index(tk.INSERT)
+        line, col = cursor_pos.split(".")
+        col = int(col)
+        
+        # Si el usuario tipea el caracter 43, forzar salto automático de línea real
+        if event and event.char and event.char.isprintable() and col >= 42:
+            self.text_editor.insert(tk.INSERT, "\n")
+            line = str(int(line) + 1)
+            col = 0
+
+        self.status_lbl.config(
+            text=f"Línea: {line} | Columna: {col}/42 {('⚠️ [LÍMITE ALCANZADO]' if col >= 42 else '')}"
+        )
 
     def _cargar_plantilla_inicial(self):
         self.text_editor.delete("1.0", tk.END)
