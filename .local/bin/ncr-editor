@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Wrapper agnóstico para lanzar el Editor de Tickets y Etiquetas NCR
+# ==============================================================================
+# ncr-editor: Wrapper to launch NCR Receipt/Label Editor
+# ==============================================================================
 
 PYTHON_BIN="python3"
 if [ -x "$HOME/.venv/ncr/bin/python3" ]; then
@@ -20,7 +22,7 @@ for candidate in \
 done
 
 if [ -z "$SCRIPT_PATH" ]; then
-    echo "Error: no se encontró el script editor_ncr.py" >&2
+    echo "Error: editor_ncr.py script not found" >&2
     exit 1
 fi
 

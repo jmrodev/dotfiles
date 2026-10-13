@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# capture-stream: Direct HLS (m3u8) stream capture without re-encoding
+# ==============================================================================
+
+OUTPUT_DIR="$HOME/Videos"
+mkdir -p "$OUTPUT_DIR"
+
+URL="$1"
+if [ -z "$URL" ]; then
+    echo -n "🔗 Enter .m3u8 URL: "
+    read -r URL
+fi
+
+if [ -z "$URL" ]; then
+    echo "❌ No URL provided."
+    exit 1
+fi
+
+FILENAME="$OUTPUT_DIR/stream_$(date +'%Y%m%d_%H%M%S').mp4"
+
+echo "🔴 Capturing stream to: $FILENAME"
+echo "⏹️ Press 'q' or 'Ctrl+C' at any time to stop recording..."
+echo ""
+
+ffmpeg -hide_banner -loglevel info \
+    -headers "Referer: https://www.cam4.com/\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36\r\n" \
+    -i "$URL" \
+    -c copy -bsf:a aac_adtstoasc \
+    -movflags +faststart \
+    "$FILENAME"
+
+echo ""
+echo "✅ Capture finished and saved to: $FILENAME"

@@ -14,7 +14,7 @@ def get_base_dir() -> str:
         return os.path.join(os.path.abspath(os.path.expanduser(xdg_data)), "coleccion_comandos")
     return os.path.expanduser("~/.local/share/coleccion_comandos")
 
-def recolectar_comandos():
+def collect_commands():
     base_dir = get_base_dir()
     os.makedirs(base_dir, exist_ok=True)
 
@@ -38,7 +38,7 @@ def recolectar_comandos():
     )
     transcript_files = sorted(glob.glob(transcripts_pattern), key=os.path.getmtime)
 
-    nuevos_comandos = []
+    new_commands = []
     last_cmd = None
 
     for path in transcript_files:
@@ -69,23 +69,23 @@ def recolectar_comandos():
                             cmd_hash = hashlib.sha256(cmd.encode("utf-8")).hexdigest()
                             if cmd_hash not in seen_hashes:
                                 seen_hashes.add(cmd_hash)
-                                nuevos_comandos.append((cmd_hash, cmd))
+                                new_commands.append((cmd_hash, cmd))
                 except Exception:
                     pass
 
-    if not nuevos_comandos:
-        print("ℹ️ No hay comandos nuevos para agregar.")
+    if not new_commands:
+        print("ℹ️ No new commands found to add.")
         return
 
     with open(master_file, "a", encoding="utf-8") as f_out, open(
         hashes_file, "a", encoding="utf-8"
     ) as f_hash:
-        for idx, (h, cmd) in enumerate(nuevos_comandos, start=existing_count + 1):
+        for idx, (h, cmd) in enumerate(new_commands, start=existing_count + 1):
             f_out.write(f"# === Comando {idx} ===\n{cmd}\n\n")
             f_hash.write(h + "\n")
 
-    print(f"✅ Se agregaron {len(nuevos_comandos)} nuevos comandos a {master_file}")
-    print(f"📦 Total acumulado en la colección: {existing_count + len(nuevos_comandos)} comandos.")
+    print(f"✅ Added {len(new_commands)} new commands to {master_file}")
+    print(f"📦 Total collection: {existing_count + len(new_commands)} commands.")
 
 if __name__ == "__main__":
-    recolectar_comandos()
+    collect_commands()

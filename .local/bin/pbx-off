@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# pbx-off: Stop VoIP stack on home server (192.168.50.10)
+# ==============================================================================
+
+echo "=> Stopping VoIP stack..."
+if ssh -o ConnectTimeout=3 -t jmro@192.168.50.10 "docker compose -f ~/voip-stack/compose.yml stop"; then
+    echo -e "\033[0;32m[OK] PBX stopped successfully.\033[0m"
+else
+    echo -e "\033[0;31m[ERROR] SSH connection failed. Could not stop PBX.\033[0m" >&2
+    exit 1
+fi

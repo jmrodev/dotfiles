@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# record-screen: Record screen region + internal audio on Sway / Wayland
+# ==============================================================================
+
+OUTPUT_DIR="$HOME/Videos"
+mkdir -p "$OUTPUT_DIR"
+FILENAME="$OUTPUT_DIR/recording_$(date +'%Y%m%d_%H%M%S').mp4"
+
+echo "🎯 Select screen region with mouse..."
+REGION=$(slurp)
+
+if [ -z "$REGION" ]; then
+    echo "❌ Cancelled by user."
+    exit 0
+fi
+
+echo "🔴 Recording screen and audio to: $FILENAME"
+echo "⏹️ Press Ctrl+C in this terminal to stop and save."
+
+wf-recorder -a -g "$REGION" -f "$FILENAME"
+
+echo ""
+echo "✅ Recording saved to: $FILENAME"

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# server-off: Gracefully power off home server via SSH (192.168.50.10)
+# ==============================================================================
+
+echo "=> Attempting to power off server (192.168.50.10)..."
+if ssh -o ConnectTimeout=3 -t jmro@192.168.50.10 "sudo poweroff"; then
+    echo -e "\033[0;32m[OK] Poweroff signal sent successfully.\033[0m"
+else
+    echo -e "\033[0;31m[ERROR] SSH connection failed. Server unreachable or IP incorrect.\033[0m" >&2
+    exit 1
+fi

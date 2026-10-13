@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# scale-font: Dynamically adjust system font scaling factor (e.g., scale-font 1.15)
+# ==============================================================================
+
+if [ -z "$1" ]; then
+    echo "Usage: scale-font <factor>"
+    echo "Example: scale-font 1.0 (default) or scale-font 1.25"
+    exit 1
+fi
+
+gsettings set org.gnome.desktop.interface text-scaling-factor "$1"

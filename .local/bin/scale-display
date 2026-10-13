@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# scale-display: Dynamically adjust Sway display scaling (e.g., scale-display 1.25)
+# ==============================================================================
+
+if [ -z "$1" ]; then
+    echo "Usage: scale-display <scale_factor>"
+    echo "Example: scale-display 1.25 (or 1.3, 1.35, 1.4)"
+    exit 1
+fi
+
+swaymsg output eDP-1 scale "$1"

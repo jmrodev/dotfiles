@@ -26,38 +26,7 @@ alias tree 'eza --tree --icons=always'
 alias cat 'bat --style=plain'
 alias man 'batman'
 
-# Aliases de Servidor
-function server-off
-    echo "=> Intentando apagar servidor (192.168.50.10)..."
-    if ssh -o ConnectTimeout=3 -t jmro@192.168.50.10 "sudo poweroff"
-        set_color green; echo "[OK] Orden de apagado enviada correctamente."; set_color normal
-    else
-        set_color red; echo "[ERROR] SSH falló. El servidor no responde o la IP está mal."; set_color normal
-        return 1
-    end
-end
-
-alias server-on 'wakeonlan 00:25:64:e2:bf:4b'
-
-function pbx-on
-    echo "=> Iniciando stack VoIP..."
-    if ssh -o ConnectTimeout=3 -t jmro@192.168.50.10 "docker compose -f ~/voip-stack/compose.yml start"
-        set_color green; echo "[OK] PBX iniciada."; set_color normal
-    else
-        set_color red; echo "[ERROR] Falló la conexión al servidor para iniciar PBX."; set_color normal
-        return 1
-    end
-end
-
-function pbx-off
-    echo "=> Deteniendo stack VoIP..."
-    if ssh -o ConnectTimeout=3 -t jmro@192.168.50.10 "docker compose -f ~/voip-stack/compose.yml stop"
-        set_color green; echo "[OK] PBX detenida."; set_color normal
-    else
-        set_color red; echo "[ERROR] Falló la conexión al servidor para detener PBX."; set_color normal
-        return 1
-    end
-end
+# Server and PBX helpers are standalone scripts in ~/.local/bin (server-on, server-off, pbx-on, pbx-off)
 
 # Alias de Dotfiles Bare Repo
 alias dotfiles '/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
@@ -140,7 +109,7 @@ function cheatsheet -d "Muestra el resumen de atajos y servicios"
     echo -e "    \033[38;5;114mdotfiles\033[0m             Git repo del sistema"
     echo -e "    \033[38;5;114mjupyter\033[0m              Lanzar JupyterLab en ~/Notebooks"
     echo -e "    \033[38;5;114mz <dir>\033[0m              Saltar con Zoxide"
-    echo -e "    \033[38;5;114mpantalla\033[0m / \033[38;5;114mtexto\033[0m     Escala Sway / Fuentes"
+    echo -e "    \033[38;5;114mscale-display\033[0m / \033[38;5;114mfont\033[0m Escala Sway / Fuentes"
     echo ""
     echo -e "  \033[1;38;5;111m⚡ SWAY / NAVEGACIÓN & VENTANAS\033[0m"
     echo -e "    \033[38;5;114mSuper + d\033[0m            Lanzador de aplicaciones"

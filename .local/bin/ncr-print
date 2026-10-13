@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
-# Wrapper para imprimir con la impresora fiscal/térmica NCR
+# ==============================================================================
+# ncr-print: Wrapper to print to NCR thermal receipt printer
+# ==============================================================================
 
 if [ -t 0 ] && [ $# -eq 0 ]; then
-    echo "Uso:"
-    echo "  imprimir <archivo.txt>"
-    echo "  cat <archivo.txt> | imprimir"
-    echo "  echo 'texto' | imprimir"
+    echo "Usage:"
+    echo "  ncr-print <file.txt>"
+    echo "  cat <file.txt> | ncr-print"
+    echo "  echo 'text' | ncr-print"
     exit 1
 fi
 
-# Detectar python adecuado (venv específico si existe, o python3 del sistema)
 PYTHON_BIN="python3"
 if [ -x "$HOME/.venv/ncr/bin/python3" ]; then
     PYTHON_BIN="$HOME/.venv/ncr/bin/python3"
 fi
 
-# Localizar el script imprimir_ncr.py dinámicamente
 SCRIPT_PATH=""
 for candidate in \
     "${IMPRIMIR_NCR_SCRIPT:-}" \
@@ -30,7 +30,7 @@ for candidate in \
 done
 
 if [ -z "$SCRIPT_PATH" ]; then
-    echo "Error: no se encontró el script imprimir_ncr.py" >&2
+    echo "Error: imprimir_ncr.py script not found" >&2
     exit 1
 fi
 
