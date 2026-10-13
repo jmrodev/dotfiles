@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# clean: System cache, orphan packages, and garbage cleanup
+# ==============================================================================
+
+set -eo pipefail
+
+before_kb=$(df -k / | awk 'NR==2 {print $3}')
+
+echo "=> 🧹 Starting deep system cleanup..."
+
+# 1. Arch pacman orphan packages
+echo "=> 📦 Searching for Arch orphan packages..."
+if command -v pacman >/dev/null 2>&1; then
+    orphans=$(pacman -Qdtq 2>/dev/null || true)
+    if [[ -n "$orphans" ]]; then
+        sudo pacman -Rns $orphans --noconfirm
+    else
+        echo "   No orphan packages found."
+    fi
+fi
+
+# 2. Journald logs
+echo "=> 📜 Vacuuming system logs (keeping last 7 days)..."
+if command -v journalctl >/dev/null 2>&1; then
+    sudo journalctl --vacuum-time=7d
+fi
+
+# 3. Flatpak
+if command -v flatpak >/dev/null 2>&1; then
+    echo "=> 📦 Cleaning unused Flatpaks..."
+    flatpak uninstall --unused -y
+fi
+
+# 4. Docker
+if command -v docker >/dev/null 2>&1; then
+    echo "=> 🐳 Cleaning Docker build cache..."
+    docker builder prune -a -f
+fi
+
+# 5. Node / NPM / PNPM
+if command -v npm >/dev/null 2>&1; then
+    echo "=> 📦 Cleaning NPM cache..."
+    npm cache clean --force >/dev/null 2>&1 || true
+fi
+if command -v pnpm >/dev/null 2>&1; then
+    echo "=> 📦 Cleaning PNPM cache..."
+    pnpm store prune >/dev/null 2>&1 || true
+fi
+
+# 6. Browsers and Slack cache
+echo "=> 🗑️ Clearing browser (Chrome/Brave) and Slack caches..."
+rm -rf "$HOME/.cache/google-chrome/Default/Cache" 2>/dev/null || true
+rm -rf "$HOME/.cache/BraveSoftware/Brave-Browser/Default/Cache" 2>/dev/null || true
+rm -rf "$HOME/.config/Slack/Cache" 2>/dev/null || true
+rm -rf "$HOME/.config/Slack/Service Worker/CacheStorage" 2>/dev/null || true
+rm -rf "$HOME/.config/Slack/Code Cache" 2>/dev/null || true
+
+# 7. Stremio cache
+echo "=> 🎬 Clearing Stremio cache..."
+rm -rf "$HOME/.var/app/com.stremio.Stremio/.stremio-server/stremio-cache/"* 2>/dev/null || true
+
+# 8. Summary & space reclaimed
+after_kb=$(df -k / | awk 'NR==2 {print $3}')
+saved_kb=$(( before_kb - after_kb ))
+
+if (( saved_kb < 0 )); then
+    saved_kb=0
+fi
+
+saved_mb=$(( saved_kb / 1024 ))
+
+echo ""
+echo "=> ✨ Cleanup completed successfully!"
+
+if (( saved_mb >= 1024 )); then
+    saved_gb=$(awk "BEGIN {printf \"%.2f\", $saved_mb / 1024}")
+    echo "=> 📉 Total space reclaimed: ${saved_gb} GB"
+elif (( saved_mb > 0 )); then
+    echo "=> 📉 Total space reclaimed: ${saved_mb} MB"
+else
+    echo "=> 📉 Total space reclaimed: 0 MB (system was already spotless!)"
+fi
+
+final_free_kb=$(df -k / | awk 'NR==2 {print $4}')
+final_used_gb=$(awk "BEGIN {printf \"%.2f\", $after_kb / 1024 / 1024}")
+final_free_gb=$(awk "BEGIN {printf \"%.2f\", $final_free_kb / 1024 / 1024}")
+
+echo "----------------------------------------"
+echo "=> 💾 Disk Used : ${final_used_gb} GB"
+echo "=> 💿 Disk Free : ${final_free_gb} GB"

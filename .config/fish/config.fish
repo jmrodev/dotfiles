@@ -70,6 +70,11 @@ if command -v zoxide >/dev/null 2>&1
     alias cd z
 end
 
+function jupyter -d "Inicia JupyterLab en ~/Notebooks"
+    mkdir -p ~/Notebooks
+    jupyter-lab ~/Notebooks
+end
+
 if command -v starship >/dev/null 2>&1
     starship init fish | source
 end
@@ -113,6 +118,7 @@ function cheatsheet -d "Muestra el resumen de atajos y servicios"
     echo -e "    \033[38;5;114mCIMA Salud\033[0m           https://cimasalud.duckdns.org"
     echo -e "    \033[38;5;114mOpenWrt Web/WOL\033[0m      http://192.168.50.1:8088/cgi-bin/server?key=jmro-wake-2026"
     echo -e "    \033[38;5;114mOpenWrt WOL WAN\033[0m      http://jmro.duckdns.org:8088/cgi-bin/server?key=jmro-wake-2026"
+    echo -e "    \033[38;5;114mHomarr Local\033[0m         http://192.168.50.10"
     echo -e "    \033[38;5;114mGitHub Perfil\033[0m        https://github.com/jmrodev"
     echo -e "    \033[38;5;114mWeb TandilLabs\033[0m       https://jmrodev.github.io/tandillabs"
     echo ""
@@ -128,15 +134,17 @@ function cheatsheet -d "Muestra el resumen de atajos y servicios"
     echo -e "  \033[1;38;5;111m🖥️  SISTEMA & SERVICIOS\033[0m"
     echo -e "    \033[38;5;114mbtop\033[0m                 Monitor CPU, RAM y red"
     echo -e "    \033[38;5;114mduf\033[0m / \033[38;5;114mncdu\033[0m          Uso y análisis de disco"
-    echo -e "    \033[38;5;114mlimpieza\033[0m             Limpiar cachés y Docker"
+    echo -e "    \033[38;5;114mclean\033[0m                Limpiar cachés y paquetes huérfanos"
     echo -e "    \033[38;5;114mserver-on\033[0m / \033[38;5;114moff\033[0m      WOL / Apagar servidor (192.168.50.10)"
     echo -e "    \033[38;5;114mpbx-on\033[0m / \033[38;5;114moff\033[0m         Iniciar / Frenar VoIP"
     echo -e "    \033[38;5;114mdotfiles\033[0m             Git repo del sistema"
+    echo -e "    \033[38;5;114mjupyter\033[0m              Lanzar JupyterLab en ~/Notebooks"
     echo -e "    \033[38;5;114mz <dir>\033[0m              Saltar con Zoxide"
     echo -e "    \033[38;5;114mpantalla\033[0m / \033[38;5;114mtexto\033[0m     Escala Sway / Fuentes"
     echo ""
     echo -e "  \033[1;38;5;111m⚡ SWAY / NAVEGACIÓN & VENTANAS\033[0m"
     echo -e "    \033[38;5;114mSuper + d\033[0m            Lanzador de aplicaciones"
+    echo -e "    \033[38;5;114mSuper + e\033[0m            Explorador de archivos (Dolphin)"
     echo -e "    \033[38;5;114mSuper + Enter\033[0m        Terminal (Kitty)"
     echo -e "    \033[38;5;114mSuper + i\033[0m            Workspace dedicado Chrome"
     echo -e "    \033[38;5;114mSuper + 1..9\033[0m         Cambiar a Workspace 1..9"
