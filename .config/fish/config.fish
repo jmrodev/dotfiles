@@ -30,6 +30,7 @@ alias man 'batman'
 
 # Alias de Dotfiles Bare Repo
 alias dotfiles '/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
+alias menu 'cheatsheet'
 
 # ==========================================
 # Inicializaciones Automáticas
@@ -106,7 +107,7 @@ function cheatsheet -d "Muestra el resumen de atajos y servicios"
     echo -e "    \033[38;5;114mclean\033[0m                Limpiar cachés y paquetes huérfanos"
     echo -e "    \033[38;5;114mserver-on\033[0m / \033[38;5;114moff\033[0m      WOL / Apagar servidor (192.168.50.10)"
     echo -e "    \033[38;5;114mpbx-on\033[0m / \033[38;5;114moff\033[0m         Iniciar / Frenar VoIP"
-    echo -e "    \033[38;5;114mncr-print\033[0m / \033[38;5;114meditor\033[0m   Imprimir / Editor tickets térmica NCR"
+    echo -e "    \033[38;5;114mncr-print\033[0m / \033[38;5;114mncr-editor\033[0m   Imprimir / Editor tickets térmica NCR"
     echo -e "    \033[38;5;114mcollect-cmds\033[0m         Recolectar comandos de sesiones AGY"
     echo -e "    \033[38;5;114mcapture-stream\033[0m       Capturar flujo HLS (m3u8)"
     echo -e "    \033[38;5;114mrecord-screen\033[0m        Grabar área de pantalla + audio"

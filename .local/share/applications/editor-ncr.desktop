@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Editor Ticket NCR
 Comment=Editor visual para imprimir tickets y etiquetas en NCR 7197
-Exec=ncr-editor
+Exec=/home/jmro/.local/bin/ncr-editor
 Icon=printer
 Terminal=false
 Type=Application
