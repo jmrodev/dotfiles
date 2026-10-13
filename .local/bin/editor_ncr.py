@@ -69,9 +69,16 @@ class NCRPrinterApp:
         ttk.Button(btn_frame, text="Limpiar", command=self.limpiar).pack(side="left", padx=5)
         ttk.Button(btn_frame, text="Auto-Alinear Cols", command=self.auto_alinear_columnas).pack(side="left", padx=5)
         ttk.Button(btn_frame, text="Cortar Papel", command=self.cortar_solo).pack(side="left", padx=5)
+        ttk.Button(btn_frame, text="Imprimir QR", command=self.pedir_e_imprimir_qr).pack(side="left", padx=5)
         
         btn_print = ttk.Button(btn_frame, text=" IMPRIMIR TICKET", command=self.imprimir)
         btn_print.pack(side="right", padx=5)
+
+    def pedir_e_imprimir_qr(self):
+        from tkinter import simpledialog
+        valor = simpledialog.askstring("Imprimir QR", "Ingresá URL o texto para el código QR:")
+        if valor:
+            subprocess.run(["ncr-print-qr", valor])
 
     def limpiar(self):
         self.text_editor.delete("1.0", tk.END)
@@ -127,15 +134,33 @@ class NCRPrinterApp:
         for linea in texto.splitlines():
             payload += cmd_align + cmd_style + linea.encode('latin1', errors='replace') + b"\r\n"
 
-        payload += ALIGN_LEFT + ESC + b"!\x00" + ESC + b"E\x00" + ESC + b"G\x00" + b"\r\n\r\n\r\n\r\n" + CUT_PAPER
+        payload += ALIGN_LEFT + ESC + b"!\x00" + ESC + b"E\x00" + ESC + b"G\x00" + (b"\r\n" * 8) + CUT_PAPER
         return payload
 
     def enviar_por_usb(self, payload):
+        import os
+        # 1. Si el kernel asignó el puerto ttyUSB, usarlo de forma directa y limpia
+        for port in ["/dev/serial/by-id/usb-NCR_7401-K59X-if00-port0", "/dev/ttyUSB0"]:
+            if os.path.exists(port):
+                try:
+                    import serial
+                    ser = serial.Serial(port, 115200, timeout=2)
+                    ser.dtr = True
+                    ser.rts = True
+                    ser.write(payload)
+                    ser.flush()
+                    ser.close()
+                    messagebox.showinfo("Éxito", "Ticket impreso correctamente vía USB.")
+                    return
+                except Exception as e:
+                    pass
+
+        # 2. Fallback con PyUSB nativo
         try:
             import usb.core
             dev = usb.core.find(idVendor=VENDOR_ID, idProduct=PRODUCT_ID)
             if dev is None:
-                messagebox.showerror("Error USB", "Impresora NCR (0404:0310) no encontrada por USB.")
+                messagebox.showerror("Error USB", "Impresora NCR (0404:0310) no detectada.")
                 return
             try:
                 if dev.is_kernel_driver_active(0):
@@ -143,7 +168,7 @@ class NCRPrinterApp:
             except Exception:
                 pass
             dev.write(0x01, payload, timeout=5000)
-            messagebox.showinfo("Éxito", "Ticket enviado vía USB Directo.")
+            messagebox.showinfo("Éxito", "Ticket impreso vía USB Directo.")
         except Exception as e:
             messagebox.showerror("Error de Impresión USB", str(e))
 
@@ -170,7 +195,7 @@ class NCRPrinterApp:
             self.enviar_por_cups(payload)
 
     def cortar_solo(self):
-        payload = INIT + b"\r\n\r\n\r\n\r\n" + CUT_PAPER
+        payload = INIT + (b"\r\n" * 8) + CUT_PAPER
         if self.modo_var.get() == "usb":
             self.enviar_por_usb(payload)
         else:

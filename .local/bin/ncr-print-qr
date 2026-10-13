@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# ncr-print-qr: Generador e impresor de QR 1:1 calibrado para NCR 7197
+# ==============================================================================
+
+if [ -z "$1" ]; then
+    echo "Uso: ncr-print-qr <texto_o_url> [titulo]"
+    echo "Ejemplo: ncr-print-qr 'https://github.com/jmrodev' 'Mi GitHub'"
+    exit 1
+fi
+
+PAYLOAD="$1"
+TITLE="${2:-ESCANEA ESTE QR:}"
+
+PYTHON_BIN="python3"
+if [ -x "$HOME/.venv/ncr/bin/python3" ]; then
+    PYTHON_BIN="$HOME/.venv/ncr/bin/python3"
+fi
+
+"$PYTHON_BIN" -c '
+import sys, qrcode, serial, time, os
+
+url = sys.argv[1]
+title = sys.argv[2]
+
+qr = qrcode.QRCode(
+    version=1,
+    error_correction=qrcode.constants.ERROR_CORRECT_L,
+    box_size=1,
+    border=1
+)
+qr.add_data(url)
+qr.make(fit=True)
+matrix = qr.get_matrix()
+
+ESC = b"\x1b"
+INIT = ESC + b"@"
+SELECT_CP437 = ESC + b"t\x00"
+ALIGN_CENTER = ESC + b"a\x01"
+
+payload = bytearray(INIT + SELECT_CP437 + ALIGN_CENTER + title.encode("latin1", "replace") + b"\r\n\r\n")
+payload.extend(ESC + b"3\x14")
+
+h = len(matrix)
+w = len(matrix[0])
+
+for r in range(0, h, 2):
+    line = bytearray()
+    for c in range(w):
+        top = matrix[r][c]
+        bot = matrix[r+1][c] if r + 1 < h else False
+        if top and bot:
+            line.extend(b"\xdb")
+        elif top and not bot:
+            line.extend(b"\xdf")
+        elif not top and bot:
+            line.extend(b"\xdc")
+        else:
+            line.extend(b" ")
+    line.extend(b"\r\n")
+    payload.extend(line)
+
+payload.extend(ESC + b"2" + ALIGN_CENTER + b"\r\n" + url.encode("latin1", "replace") + b"\r\n" + (b"\r\n" * 8) + b"\x1bi")
+
+port = "/dev/serial/by-id/usb-NCR_7401-K59X-if00-port0"
+if not os.path.exists(port):
+    port = "/dev/ttyUSB0"
+
+try:
+    ser = serial.Serial(port, 115200, timeout=2)
+    ser.dtr = True
+    ser.rts = True
+    ser.write(payload)
+    ser.flush()
+    ser.close()
+    print("✅ QR impreso con exito en NCR 7197")
+except Exception as e:
+    print(f"Error al imprimir: {e}", file=sys.stderr)
+    sys.exit(1)
+' "$PAYLOAD" "$TITLE"

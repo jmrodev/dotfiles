@@ -34,8 +34,8 @@ if [ -z "$SCRIPT_PATH" ]; then
     exit 1
 fi
 
-if [ -n "$1" ] && [ -f "$1" ]; then
+if [ -n "$1" ] && [ -f "$1" ] && [ $# -eq 1 ]; then
     exec "$PYTHON_BIN" "$SCRIPT_PATH" -f "$1"
 else
-    exec "$PYTHON_BIN" "$SCRIPT_PATH"
+    exec "$PYTHON_BIN" "$SCRIPT_PATH" "$@"
 fi
