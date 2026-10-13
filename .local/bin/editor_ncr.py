@@ -23,8 +23,8 @@ class NCRPrinterApp:
     def __init__(self, root):
         self.root = root
         self.root.title("NCR 7197 - Ticket Studio & Editor")
-        self.root.geometry("780x700")
-        self.root.minsize(720, 620)
+        self.root.geometry("740x560")
+        self.root.minsize(680, 480)
 
         self._configurar_estilos()
         self._construir_ui()
@@ -32,48 +32,63 @@ class NCRPrinterApp:
     def _configurar_estilos(self):
         style = ttk.Style()
         style.theme_use("clam")
-        style.configure("Header.TLabel", font=("Helvetica", 11, "bold"))
-        style.configure("Action.TButton", font=("Helvetica", 10, "bold"), padding=5)
-        style.configure("Print.TButton", font=("Helvetica", 11, "bold"), padding=8, background="#2e7d32", foreground="white")
+        style.configure("Header.TLabel", font=("Helvetica", 10, "bold"))
+        style.configure("Action.TButton", font=("Helvetica", 9, "bold"), padding=3)
+        style.configure("Print.TButton", font=("Helvetica", 10, "bold"), padding=6, background="#2e7d32", foreground="white")
         style.map("Print.TButton", background=[("active", "#1b5e20")])
 
     def _construir_ui(self):
-        # 1. Barra Superior: Conexión y Destino
-        top_bar = ttk.Frame(self.root, padding="10 10 10 5")
-        top_bar.pack(fill="x")
+        # 1. Barra Inferior Fija (Impresión y Estado) -> Se empaqueta primero al BOTTOM para no perderse nunca
+        bottom_bar = ttk.Frame(self.root, padding="10 4 10 8")
+        bottom_bar.pack(side="bottom", fill="x")
 
-        dest_group = ttk.LabelFrame(top_bar, text=" Conexión / Destino ", padding="8 5")
+        self.status_lbl = ttk.Label(bottom_bar, text="Listo para imprimir.", foreground="#555")
+        self.status_lbl.pack(side="left")
+
+        btn_print = ttk.Button(bottom_bar, text="🖨️ IMPRIMIR TICKET", style="Print.TButton", command=self.imprimir)
+        btn_print.pack(side="right")
+
+        # 2. Panel de Funciones Especiales Fijo al BOTTOM
+        adv_frame = ttk.LabelFrame(self.root, text=" Funciones Especiales ", padding="6 4")
+        adv_frame.pack(side="bottom", fill="x", padx=10, pady=(2, 4))
+
+        ttk.Button(adv_frame, text=" Generar e Imprimir QR", command=self.abrir_dialogo_qr).pack(side="left", padx=4)
+        ttk.Button(adv_frame, text=" Imprimir Logo NV (#1)", command=self.imprimir_logo_flash).pack(side="left", padx=4)
+        ttk.Button(adv_frame, text=" Avanzar y Cortar", command=self.cortar_solo).pack(side="left", padx=4)
+
+        # 3. Barra Superior: Conexión y Destino (TOP)
+        top_bar = ttk.Frame(self.root, padding="10 6 10 2")
+        top_bar.pack(side="top", fill="x")
+
+        dest_group = ttk.LabelFrame(top_bar, text=" Conexión / Destino ", padding="6 3")
         dest_group.pack(side="left", fill="x", expand=True)
 
         self.modo_var = tk.StringVar(value="usb")
         ttk.Radiobutton(dest_group, text="USB Directo (/dev/ttyUSB0)", variable=self.modo_var, value="usb").pack(side="left", padx=10)
         ttk.Radiobutton(dest_group, text="CUPS Red (Debian)", variable=self.modo_var, value="debian").pack(side="left", padx=10)
 
-        # 2. Barra de Herramientas: Formato de Texto y Alineación Interactiva
-        tools_frame = ttk.LabelFrame(self.root, text=" Formato y Alineación (Afecta Selección / Línea Actual) ", padding="8 6")
-        tools_frame.pack(fill="x", padx=10, pady=5)
+        # 4. Barra de Herramientas de Formato (TOP)
+        tools_frame = ttk.LabelFrame(self.root, text=" Formato de Texto ", padding="6 4")
+        tools_frame.pack(side="top", fill="x", padx=10, pady=2)
 
-        # Botones de estilo
-        ttk.Button(tools_frame, text="Negrita (B)", width=11, command=self.toggle_negrita).pack(side="left", padx=4)
-        ttk.Button(tools_frame, text="Texto Grande", width=13, command=self.toggle_grande).pack(side="left", padx=4)
+        ttk.Button(tools_frame, text="Negrita (B)", width=10, command=self.toggle_negrita).pack(side="left", padx=3)
+        ttk.Button(tools_frame, text="Texto Grande", width=12, command=self.toggle_grande).pack(side="left", padx=3)
 
-        ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=8)
+        ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=6)
 
-        # Botones de alineación real en pantalla (párrafo/línea)
-        ttk.Button(tools_frame, text="⫷ Izquierda", width=11, command=lambda: self.aplicar_alineacion("left")).pack(side="left", padx=4)
-        ttk.Button(tools_frame, text="≡ Centro", width=10, command=lambda: self.aplicar_alineacion("center")).pack(side="left", padx=4)
-        ttk.Button(tools_frame, text="Derecha ⫸", width=11, command=lambda: self.aplicar_alineacion("right")).pack(side="left", padx=4)
+        ttk.Button(tools_frame, text="⫷ Izq", width=7, command=lambda: self.aplicar_alineacion("left")).pack(side="left", padx=2)
+        ttk.Button(tools_frame, text="≡ Centro", width=8, command=lambda: self.aplicar_alineacion("center")).pack(side="left", padx=2)
+        ttk.Button(tools_frame, text="Der ⫸", width=7, command=lambda: self.aplicar_alineacion("right")).pack(side="left", padx=2)
 
-        ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=8)
+        ttk.Separator(tools_frame, orient="vertical").pack(side="left", fill="y", padx=6)
 
-        # Utilidades de estructura
-        ttk.Button(tools_frame, text="Auto-Alinear Cols", command=self.auto_alinear_columnas).pack(side="left", padx=4)
-        ttk.Button(tools_frame, text="Separador (---)", command=self.insertar_separador).pack(side="left", padx=4)
-        ttk.Button(tools_frame, text="Limpiar", command=self.limpiar).pack(side="left", padx=4)
+        ttk.Button(tools_frame, text="Alinear Cols", command=self.auto_alinear_columnas).pack(side="left", padx=3)
+        ttk.Button(tools_frame, text="Separador (---)", command=self.insertar_separador).pack(side="left", padx=3)
+        ttk.Button(tools_frame, text="Limpiar", command=self.limpiar).pack(side="left", padx=3)
 
-        # 3. Área Central: Editor con Tags Visuales y Límites (42 columnas)
-        editor_frame = ttk.LabelFrame(self.root, text=" Vista Previa / Editor WYSIWYG (42 Caracteres / 80mm) ", padding=8)
-        editor_frame.pack(fill="both", expand=True, padx=10, pady=5)
+        # 5. Área Central: Editor Expandible (Toma todo el espacio restante disponible)
+        editor_frame = ttk.LabelFrame(self.root, text=" Vista Previa / Editor WYSIWYG (42 Cols / 80mm) ", padding=6)
+        editor_frame.pack(side="top", fill="both", expand=True, padx=10, pady=3)
 
         text_container = ttk.Frame(editor_frame)
         text_container.pack(fill="both", expand=True)
@@ -81,18 +96,19 @@ class NCRPrinterApp:
         scroll_y = ttk.Scrollbar(text_container, orient="vertical")
         scroll_y.pack(side="right", fill="y")
 
-        self.font_normal = tkfont.Font(family="Courier 10 Pitch", size=12, weight="normal")
-        self.font_bold = tkfont.Font(family="Courier 10 Pitch", size=12, weight="bold")
-        self.font_big = tkfont.Font(family="Courier 10 Pitch", size=18, weight="normal")
-        self.font_big_bold = tkfont.Font(family="Courier 10 Pitch", size=18, weight="bold")
+        self.font_normal = tkfont.Font(family="Courier 10 Pitch", size=11, weight="normal")
+        self.font_bold = tkfont.Font(family="Courier 10 Pitch", size=11, weight="bold")
+        self.font_big = tkfont.Font(family="Courier 10 Pitch", size=16, weight="normal")
+        self.font_big_bold = tkfont.Font(family="Courier 10 Pitch", size=16, weight="bold")
 
         self.text_editor = tk.Text(
             text_container,
             font=self.font_normal,
             wrap="none",
             width=42,
-            padx=12,
-            pady=10,
+            height=12,
+            padx=10,
+            pady=8,
             yscrollcommand=scroll_y.set,
             background="#ffffff",
             foreground="#1e1e1e"
@@ -100,7 +116,7 @@ class NCRPrinterApp:
         self.text_editor.pack(side="left", fill="both", expand=True)
         scroll_y.config(command=self.text_editor.yview)
 
-        # Configuración de Tags visuales en Tkinter
+        # Tags visuales
         self.text_editor.tag_configure("align_left", justify="left")
         self.text_editor.tag_configure("align_center", justify="center")
         self.text_editor.tag_configure("align_right", justify="right")
@@ -108,26 +124,7 @@ class NCRPrinterApp:
         self.text_editor.tag_configure("big", font=self.font_big)
         self.text_editor.tag_configure("big_bold", font=self.font_big_bold)
 
-        # Cargar plantilla inicial con formatos predefinidos
         self._cargar_plantilla_inicial()
-
-        # 4. Panel de Funciones Especiales (QR, Logo Flash, Corte)
-        adv_frame = ttk.LabelFrame(self.root, text=" Funciones Especiales de Hardware ", padding="8 8")
-        adv_frame.pack(fill="x", padx=10, pady=5)
-
-        ttk.Button(adv_frame, text=" Generar e Imprimir QR", command=self.abrir_dialogo_qr).pack(side="left", padx=6)
-        ttk.Button(adv_frame, text=" Imprimir Logo NV (#1)", command=self.imprimir_logo_flash).pack(side="left", padx=6)
-        ttk.Button(adv_frame, text=" Avanzar y Cortar", command=self.cortar_solo).pack(side="left", padx=6)
-
-        # 5. Barra Inferior de Impresión y Estado
-        bottom_bar = ttk.Frame(self.root, padding="10 8 10 12")
-        bottom_bar.pack(fill="x")
-
-        self.status_lbl = ttk.Label(bottom_bar, text="Listo para imprimir.", foreground="#555")
-        self.status_lbl.pack(side="left")
-
-        btn_print = ttk.Button(bottom_bar, text="🖨️ IMPRIMIR TICKET", style="Print.TButton", command=self.imprimir)
-        btn_print.pack(side="right")
 
     def _cargar_plantilla_inicial(self):
         self.text_editor.delete("1.0", tk.END)
