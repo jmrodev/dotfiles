@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+name="$1"
+host="$2"
+port="$3"
+
+if ! kitty @ --to unix:@kitty launch --type=tab --tab-title="$name" telnet "$host" "$port" 2>/dev/null; then
+    kitty --hold --title "$name" telnet "$host" "$port" &
+fi

@@ -1,0 +1,13 @@
+#!/bin/bash
+# Daemon to synchronize Wayland PRIMARY (selection) and CLIPBOARD buffers
+
+cleanup() {
+    pkill -P $$ 2>/dev/null
+    exit 0
+}
+trap cleanup SIGINT SIGTERM EXIT
+
+wl-paste -n --primary --watch "$HOME/.local/bin/wl-clip-sync" to-clipboard &
+wl-paste -n --watch "$HOME/.local/bin/wl-clip-sync" to-primary &
+
+wait

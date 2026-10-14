@@ -1,0 +1,57 @@
+#!/usr/bin/env python3
+"""
+wl-clip-sync: Bidirectional synchronization between Wayland PRIMARY and CLIPBOARD buffers.
+Allows:
+- Mouse text selection -> instant Ctrl+V paste
+- Ctrl+C copy -> instant middle-click / 3-finger tap paste
+- Prevents feedback loops using hash deduplication
+"""
+import os
+import sys
+import hashlib
+import subprocess
+
+STATE_FILE = f"/run/user/{os.getuid()}/wl_clip_sync_hash"
+
+def get_last_hash():
+    try:
+        with open(STATE_FILE, "r") as f:
+            return f.read().strip()
+    except Exception:
+        return ""
+
+def set_last_hash(h):
+    try:
+        with open(STATE_FILE, "w") as f:
+            f.write(h)
+    except Exception:
+        pass
+
+def main():
+    if len(sys.argv) < 2:
+        sys.exit(0)
+
+    mode = sys.argv[1]
+    try:
+        data = sys.stdin.buffer.read()
+    except Exception:
+        sys.exit(0)
+
+    if not data:
+        sys.exit(0)
+
+    h = hashlib.sha256(data).hexdigest()
+    if h == get_last_hash():
+        sys.exit(0)
+
+    set_last_hash(h)
+
+    if mode == "to-clipboard":
+        # PRIMARY changed (mouse selection) -> copy to CLIPBOARD
+        subprocess.run(["wl-copy"], input=data, check=False)
+    elif mode == "to-primary":
+        # CLIPBOARD changed (Ctrl+C) -> copy to PRIMARY
+        subprocess.run(["wl-copy", "--primary"], input=data, check=False)
+
+if __name__ == "__main__":
+    main()

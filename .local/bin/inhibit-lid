@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# inhibit-lid: Inhibe la suspensión, bloqueo e idle al cerrar la tapa del portátil durante la sesión.
+# Utiliza unidades de usuario transitorias de systemd (systemd-run).
+
+set -euo pipefail
+
+UNIT="lid-inhibit"
+APP_NAME="Inhibidor de Tapa"
+
+notify() {
+    local urgency="$1"
+    local icon="$2"
+    local title="$3"
+    local body="$4"
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -a "$APP_NAME" -u "$urgency" -i "$icon" "$title" "$body"
+    fi
+}
+
+is_active() {
+    systemctl --user is-active --quiet "$UNIT" 2>/dev/null
+}
+
+start_inhibit() {
+    if is_active; then
+        echo "El inhibidor ya está activo."
+        return 0
+    fi
+
+    systemd-run --user --unit="$UNIT" \
+        systemd-inhibit --what=handle-lid-switch:sleep:idle \
+                        --who="lid-inhibit" \
+                        --why="Prevenir suspension y bloqueo al cerrar tapa" \
+                        sleep infinity >/dev/null 2>&1
+
+    echo "Inhibidor activado: podés cerrar la tapa sin suspensión, bloqueo ni interrupción."
+    notify "normal" "dialog-information" "💻 Tapa desactivada" "Podés cerrar la tapa sin suspensión ni bloqueo."
+}
+
+stop_inhibit() {
+    if ! is_active; then
+        echo "El inhibidor no está activo."
+        return 0
+    fi
+
+    systemctl --user stop "$UNIT" 2>/dev/null || true
+    echo "Inhibidor desactivado: restaurado comportamiento normal."
+    notify "normal" "dialog-warning" "💻 Tapa restaurada" "Comportamiento normal de suspensión restaurado."
+}
+
+status_inhibit() {
+    if is_active; then
+        echo "Estado: ACTIVO (la tapa no suspenderá)"
+        exit 0
+    else
+        echo "Estado: INACTIVO (comportamiento normal)"
+        exit 1
+    fi
+}
+
+toggle_inhibit() {
+    if is_active; then
+        stop_inhibit
+    else
+        start_inhibit
+    fi
+}
+
+case "${1:-toggle}" in
+    start|on|enable)
+        start_inhibit
+        ;;
+    stop|off|disable)
+        stop_inhibit
+        ;;
+    status)
+        status_inhibit
+        ;;
+    toggle)
+        toggle_inhibit
+        ;;
+    -h|--help|help)
+        echo "Uso: $(basename "$0") [start|stop|toggle|status]"
+        echo ""
+        echo "Opciones:"
+        echo "  start|on     Activa la inhibición de tapa, sleep e idle"
+        echo "  stop|off     Desactiva la inhibición y restaura el comportamiento normal"
+        echo "  status       Verifica si el inhibidor está activo"
+        echo "  toggle       Alterna entre activado y desactivado (por defecto)"
+        ;;
+    *)
+        echo "Opción no reconocida: $1" >&2
+        echo "Uso: $(basename "$0") [start|stop|toggle|status]" >&2
+        exit 2
+        ;;
+esac

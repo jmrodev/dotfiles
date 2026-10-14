@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+import os
+import glob
+import time
+import hashlib
+import requests
+
+QUEUE_DIR = os.path.expanduser("~/Videos/Boveda_Queue")
+SERVER_URL = "http://192.168.50.10:8087"
+SERVER_TS_URL = "http://100.106.211.71:8087"
+TOKEN = "secreto123"
+
+def calculate_fast_hash(filepath):
+    """Calcula SHA-256 instantáneo sobre cabecera (64KB) + cola (64KB) + tamaño"""
+    try:
+        size = os.path.getsize(filepath)
+        h = hashlib.sha256()
+        h.update(str(size).encode())
+        with open(filepath, "rb") as f:
+            h.update(f.read(65536))
+            if size > 65536:
+                f.seek(max(0, size - 65536))
+                h.update(f.read(65536))
+        return h.hexdigest()
+    except:
+        return None
+
+def get_online_url():
+    for base in [SERVER_URL, SERVER_TS_URL]:
+        try:
+            r = requests.get(f"{base}/capture_status_api", headers={"X-Boveda-Token": TOKEN}, timeout=2)
+            if r.status_code in [200, 401, 403]:
+                return base
+        except:
+            pass
+    return None
+
+def check_file_on_server(base_url, filename):
+    """Consulta al servidor si el archivo ya existe, su tamaño y su fast hash"""
+    try:
+        r = requests.get(
+            f"{base_url}/api/file_check",
+            params={"filename": filename, "subpath": "Videos", "token": TOKEN},
+            timeout=5
+        )
+        if r.status_code == 200:
+            return r.json()  # {"exists": True/False, "size": bytes, "hash": "..."}
+    except:
+        pass
+    return {"exists": False, "size": 0, "hash": None}
+
+def sync():
+    base_url = get_online_url()
+    if not base_url:
+        return
+
+    # Buscar tanto .mkv como .mp4
+    raw_files = glob.glob(os.path.join(QUEUE_DIR, "*.mkv")) + glob.glob(os.path.join(QUEUE_DIR, "*.mp4"))
+    if not raw_files:
+        return
+
+    for fpath in raw_files:
+        # Verificar que el archivo no esté siendo escrito activamente por ffmpeg
+        size1 = os.path.getsize(fpath)
+        time.sleep(1)
+        size2 = os.path.getsize(fpath)
+        if size1 != size2:
+            continue
+
+        # Si es .mkv y ya terminó de grabarse, remuxear a .mp4 para la web
+        if fpath.endswith(".mkv"):
+            mp4_path = os.path.splitext(fpath)[0] + ".mp4"
+            remux = subprocess.run([
+                "ffmpeg", "-hide_banner", "-loglevel", "error",
+                "-i", fpath, "-c", "copy", "-movflags", "+faststart", "-y", mp4_path
+            ])
+            if remux.returncode == 0 and os.path.exists(mp4_path) and os.path.getsize(mp4_path) > 0:
+                try: os.remove(fpath)
+                except: pass
+                fpath = mp4_path
+                size2 = os.path.getsize(fpath)
+
+        fname = os.path.basename(fpath)
+        local_hash = calculate_fast_hash(fpath)
+        server_info = check_file_on_server(base_url, fname)
+
+        # 1. Verificación por Fast Hash (identidad criptográfica exacta)
+        if server_info.get("exists") and server_info.get("hash") == local_hash and local_hash is not None:
+            print(f"[OK] {fname} verificado por Fast Hash en Bóveda. Limpiando copia local.")
+            os.remove(fpath)
+            json_path = os.path.splitext(fpath)[0] + ".json"
+            if os.path.exists(json_path):
+                try: os.remove(json_path)
+                except: pass
+            continue
+
+        # 2. Si no coincide el hash o no existe, se sube
+        print(f"[-] Subiendo {fname} ({round(size2/(1024*1024), 1)} MB)...")
+        try:
+            with open(fpath, "rb") as f:
+                res = requests.post(
+                    f"{base_url}/upload_chunk",
+                    data={
+                        "filename": fname,
+                        "chunkIndex": 0,
+                        "totalChunks": 1,
+                        "uploadId": str(int(time.time())),
+                        "subpath": "Videos",
+                        "token": TOKEN
+                    },
+                    files={"file": f},
+                    timeout=180
+                )
+            if res.status_code == 200:
+                # Comprobación inmediata post-subida por hash
+                post_check = check_file_on_server(base_url, fname)
+                if post_check.get("hash") == local_hash:
+                    print(f"[OK] {fname} subido y verificado criptográficamente. Limpiando copia local.")
+                    os.remove(fpath)
+                    json_path = os.path.splitext(fpath)[0] + ".json"
+                    if os.path.exists(json_path):
+                        try: os.remove(json_path)
+                        except: pass
+                else:
+                    print(f"[!] Hash no coincidió tras la subida para {fname}. Se conservará local.")
+        except Exception as e:
+            print(f"[!] Error subiendo {fname}: {e}")
+
+if __name__ == "__main__":
+    sync()

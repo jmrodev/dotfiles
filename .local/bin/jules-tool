@@ -1,0 +1,143 @@
+#!/usr/bin/env node
+
+const https = require('https');
+const readline = require('readline');
+
+const API_KEY = process.env.JULES_API_KEY || '';
+const BASE_HOST = 'jules.googleapis.com';
+const BASE_PATH = '/v1alpha';
+
+function request(method, path, body = null) {
+  return new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : null;
+    const req = https.request({
+      hostname: BASE_HOST,
+      path: `${BASE_PATH}${path}`,
+      method: method,
+      headers: {
+        'x-goog-api-key': API_KEY,
+        'Content-Type': 'application/json',
+        ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
+      }
+    }, (res) => {
+      let raw = '';
+      res.on('data', chunk => raw += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(raw);
+          if (res.statusCode >= 400) {
+            reject(new Error(parsed.error?.message || `HTTP ${res.statusCode}: ${raw}`));
+          } else {
+            resolve(parsed);
+          }
+        } catch (e) {
+          if (res.statusCode >= 400) {
+            reject(new Error(`HTTP ${res.statusCode}: ${raw}`));
+          } else {
+            resolve(raw);
+          }
+        }
+      });
+    });
+
+    req.on('error', reject);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+const args = process.argv.slice(2);
+const command = args[0];
+
+async function main() {
+  try {
+    switch (command) {
+      case 'sources':
+      case 'list-sources': {
+        const res = await request('GET', '/sources');
+        console.log(JSON.stringify(res.sources || [], null, 2));
+        break;
+      }
+      case 'sessions':
+      case 'list-sessions': {
+        const pageSize = args[1] || 10;
+        const res = await request('GET', `/sessions?pageSize=${pageSize}`);
+        const sessions = (res.sessions || []).map(s => ({
+          id: s.id || s.name,
+          title: s.title || (s.prompt ? s.prompt.slice(0, 60) + '...' : 'Untitled'),
+          state: s.state,
+          url: s.url,
+          source: s.sourceContext?.source,
+          updatedAt: s.updateTime
+        }));
+        console.log(JSON.stringify(sessions, null, 2));
+        break;
+      }
+      case 'session':
+      case 'get-session': {
+        const id = args[1];
+        if (!id) {
+          console.error("Usage: jules-tool session <session_id>");
+          process.exit(1);
+        }
+        const cleanId = id.startsWith('sessions/') ? id.replace('sessions/', '') : id;
+        const res = await request('GET', `/sessions/${cleanId}`);
+        console.log(JSON.stringify(res, null, 2));
+        break;
+      }
+      case 'activities': {
+        const id = args[1];
+        if (!id) {
+          console.error("Usage: jules-tool activities <session_id>");
+          process.exit(1);
+        }
+        const cleanId = id.startsWith('sessions/') ? id.replace('sessions/', '') : id;
+        const res = await request('GET', `/sessions/${cleanId}/activities`);
+        console.log(JSON.stringify(res.activities || [], null, 2));
+        break;
+      }
+      case 'create':
+      case 'prompt': {
+        // e.g. jules-tool create "github/jmrodev/secretary-app" "Fix bug in navbar"
+        let source = args[1];
+        let promptText = args.slice(2).join(' ');
+
+        if (!source || !promptText) {
+          console.error("Usage: jules-tool create <repo_id> <prompt>");
+          console.error("Example: jules-tool create github/jmrodev/secretary-app \"Fix unit test in stats\"");
+          process.exit(1);
+        }
+
+        if (!source.startsWith('sources/')) {
+          source = `sources/${source}`;
+        }
+
+        const payload = {
+          prompt: promptText,
+          sourceContext: {
+            source: source
+          }
+        };
+
+        const res = await request('POST', '/sessions', payload);
+        console.log("Session created successfully:");
+        console.log(JSON.stringify(res, null, 2));
+        break;
+      }
+      default:
+        console.log(`Jules CLI Utility
+Commands:
+  jules-tool sources                      List connected repositories
+  jules-tool sessions [pageSize]          List recent sessions
+  jules-tool session <id>                 Get session details
+  jules-tool activities <id>              Get session activities/steps
+  jules-tool create <repo_id> <prompt>    Start a new task/session
+`);
+    }
+  } catch (err) {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
+  }
+}
+
+main();

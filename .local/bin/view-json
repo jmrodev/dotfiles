@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if command -v jless &>/dev/null; then
+    jless "$1"
+else
+    jq -C . "$1" | less -R
+fi
