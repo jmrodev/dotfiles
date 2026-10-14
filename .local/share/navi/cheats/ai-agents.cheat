@@ -1,0 +1,36 @@
+% collect, agents, ai
+
+# Collect executed commands from agent sessions into master log
+collect-cmds
+
+# Inspect recently collected commands in master log
+tail -n 30 ~/.local/share/coleccion_comandos/comandos_master.txt
+
+# Search for a specific command across collected history
+grep -rn "<query>" ~/.local/share/coleccion_comandos/comandos_master.txt
+
+% ai, agents, llm
+
+# OpenCode: Start interactive session with selected model
+opencode --model <model>
+
+# OpenCode: Run a single-line prompt directly
+opencode run "<prompt>"
+
+# Antigravity CLI: Launch interactive session
+agy
+
+# Antigravity CLI: Run a background goal task
+agy --goal "<task>"
+
+# Repomix: Pack repository context directly to system clipboard
+repomix --stdout | wl-copy
+
+# Repomix: Export repository context to file
+repomix --output <output_file>
+
+# Antigravity CLI: List active MCP servers and tools
+agy mcp list
+
+$ model: echo -e "google/gemini-2.5-flash\nfree/deepseek-chat\nfree/mimo-v2-flash"
+$ output_file: echo -e "context-repo.xml\ncontext-repo.md"

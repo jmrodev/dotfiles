@@ -1,0 +1,33 @@
+---
+syntax: bash
+tags: [ ai, agents, llm ]
+---
+# Collect executed commands from agent/LLM sessions into master log:
+collect-cmds
+
+# Inspect the last 30 collected commands:
+tail -n 30 ~/.local/share/coleccion_comandos/comandos_master.txt
+
+# Search for a specific command across collected history:
+grep -rn "<query>" ~/.local/share/coleccion_comandos/comandos_master.txt
+
+# Start interactive OpenCode session with a specific model:
+opencode --model <model>
+
+# Run a single-line prompt with OpenCode:
+opencode run "<prompt>"
+
+# Launch interactive Antigravity CLI:
+agy
+
+# Run a goal task in Antigravity:
+agy --goal "<task>"
+
+# Pack repository context directly to clipboard via Repomix:
+repomix --stdout | wl-copy
+
+# Export repository context to file:
+repomix --output context-repo.xml
+
+# List active MCP servers and available tools:
+agy mcp list
