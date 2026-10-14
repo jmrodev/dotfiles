@@ -48,6 +48,40 @@ if [[ "$resp4" =~ ^[sSyY]$ ]]; then
     fi
 fi
 
+read -p "¿Deseas restaurar configuraciones del sistema (Docker daemon, udev rules)? (s/N): " resp_sys
+if [[ "$resp_sys" =~ ^[sSyY]$ ]]; then
+    if [ -f "$DIR/docker-daemon.json" ]; then
+        echo ">> Configurando /etc/docker/daemon.json..."
+        sudo mkdir -p /etc/docker
+        sudo cp "$DIR/docker-daemon.json" /etc/docker/daemon.json
+    fi
+    if [ -f "$DIR/99-ncr-printer.rules" ]; then
+        echo ">> Copiando reglas udev..."
+        sudo cp "$DIR/99-ncr-printer.rules" /etc/udev/rules.d/
+        sudo udevadm control --reload-rules && sudo udevadm trigger || true
+    fi
+fi
+
+read -p "¿Deseas configurar grupos de usuario (docker, kvm, input, etc.) y servicios systemd? (s/N): " resp_groups
+if [[ "$resp_groups" =~ ^[sSyY]$ ]]; then
+    echo ">> Agregando usuario $USER a grupos críticos..."
+    sudo usermod -aG docker,kvm,input,uucp,video,lp "$USER" || true
+
+    echo ">> Habilitando servicios esenciales (docker, tailscale, bluetooth, avahi)..."
+    sudo systemctl enable --now docker.service || true
+    sudo systemctl enable --now tailscaled.service || true
+    sudo systemctl enable --now bluetooth.service || true
+    sudo systemctl enable --now avahi-daemon.service || true
+fi
+
+read -p "¿Deseas verificar/instalar entornos dev (uv, node global, bun)? (s/N): " resp_dev
+if [[ "$resp_dev" =~ ^[sSyY]$ ]]; then
+    if ! command -v uv &>/dev/null; then
+        echo ">> Instalando uv (gestor ultra rápido de Python)..."
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
+fi
+
 echo ""
 echo "=========================================================="
 echo "              ¡RESTAURACIÓN FINALIZADA!                  "
