@@ -46,18 +46,11 @@ cheatpaths:
     tags: [ personal ]
     readonly: false
 
-  # Cheatsheets that are tagged "work" are stored here by default:
-  - name: work
-    path: /home/jmro/.config/cheat/cheatsheets/work
-    tags: [ work ]
-    readonly: false
-
   # Community cheatsheets (https://github.com/cheat/cheatsheets):
-  # To install: git clone https://github.com/cheat/cheatsheets /home/jmro/.config/cheat/cheatsheets/community
-  #- name: community
-  #  path: /home/jmro/.config/cheat/cheatsheets/community
-  #  tags: [ community ]
-  #  readonly: true
+  - name: community
+    path: /home/jmro/.config/cheat/cheatsheets/community
+    tags: [ community ]
+    readonly: true
 
   # You can also use glob patterns to automatically load cheatsheets from all
   # directories that match.

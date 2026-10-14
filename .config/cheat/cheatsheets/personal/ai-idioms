@@ -1,0 +1,73 @@
+# Shell & Sistema
+cmd 2>/dev/null || true                                     # Ejecucion tolerante a fallos
+cmd 2>&1 | grep -iE "error|fail"                            # Filtrar stderr en stdout
+which <binario> >/dev/null 2>&1                             # Validar binario instalado
+echo -n "texto" | wl-copy                                   # Copiar limpio al portapapeles en Wayland
+
+# SSH No Interactivo
+ssh -o BatchMode=yes -o ConnectTimeout=5 -o StrictHostKeyChecking=no user@host "cmd"
+ssh -o HostKeyAlgorithms=+ssh-rsa -o PubkeyAcceptedKeyTypes=+ssh-rsa -i ~/.ssh/id_rsa user@host "cmd" # routers OpenWrt / dropbear
+ssh -f -N -L 8080:127.0.0.1:80 user@host                    # Port forwarding en background
+
+# Docker
+docker ps --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}"
+docker exec <container> sh -c 'echo "$DB_NAME" && psql -U "$DB_USER" -d "$DB_NAME"'
+docker container prune -f && docker image prune -f          # Limpieza desatendida
+
+# Git & GitHub CLI
+git log origin/main..HEAD --oneline --no-merges             # Historial de rama actual
+git diff --stat origin/main...HEAD                          # Archivos cambiados vs main
+git log -S "variable" --oneline                             # Pickaxe de cambios de texto
+git fetch --prune && git branch -vv | grep ': gone]'        # Listar ramas huerfanas
+gh pr create --base main --head <rama> --title "feat: ..."  # Crear PR desde terminal
+gh pr checks <numero> --watch                               # Seguir CI/CD en vivo
+gh pr merge <numero> --merge --auto                         # Auto-merge al pasar tests
+
+# Pipes & Busqueda
+grep -rn --exclude-dir={node_modules,.git,dist,.venv} "PATRON" .
+find . -maxdepth 3 -type f -mmin -60 ! -path "*/.*"         # Modificados en ultima hora
+sed -i 's/127\.0\.0\.1:8080/0\.0\.0\.0:80/g' <archivo>     # Reemplazo in-place
+ss -tulpn | grep :<puerto>                                  # Proceso que escucha en puerto
+timeout 2 bash -c "</dev/tcp/host/puerto>"                  # Test de puerto nativo Bash
+
+# Wayland, Sway & Audio
+sway -C && swaymsg reload                                   # Validar y recargar Sway
+wpctl status | grep -E "Sinks|Sources" -A 10                # Sinks activos de audio
+wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+                   # Subir volumen
+grim -g "$(slurp)" - | wl-copy --type image/png             # Screenshot de seleccion
+
+# Arch Linux (pacman/yay)
+pacman -Qs <termino>                                        # Buscar paquetes instalados
+pacman -Qo <ruta_binario>                                   # A que paquete pertenece el archivo
+pacman -Qdtq                                                # Paquetes huerfanos
+paccache -r 2>/dev/null || sudo pacman -Sc --noconfirm      # Limpieza de cache
+
+# Multimedia (ffmpeg)
+ffmpeg -i video.mp4 -vn -c:a copy audio.aac                 # Extraer audio sin recodificar
+timeout --signal=INT 60 ffmpeg -y -headers "User-Agent: ...\r\n" -i "url.m3u8" -c copy salida.mp4
+
+# Android (adb)
+adb devices -l                                              # Dispositivos conectados
+adb -s <serial> shell getprop ro.product.model              # Shell por serial puntual
+adb shell pm path <pkg> | sed 's/package://' | xargs -I{} adb pull {} ./app.apk
+
+# Bluetooth
+timeout 5 bluetoothctl scan on 2>&1 || true; bluetoothctl devices
+bluetoothctl info <MAC>                                     # Info y estado por MAC
+
+# Impresion (CUPS)
+lpstat -p -d                                                # Estado de impresoras
+cupsenable <impresora> && cupsaccept <impresora>            # Desbloquear cola
+
+# Multiplexor (tmux)
+tmux source-file ~/.tmux.conf                               # Recargar config al vuelo
+tmux send-keys -t <sesion>:<pan> "cmd" C-m                  # Enviar comando a panel remoto
+
+# Nube (rclone)
+rclone lsd <remoto>: --drive-pacer-min-sleep 200ms          # Evitar rate-limits de Google Drive
+rclone sync <origen> <destino> --dry-run --progress         # Simulacion de sincronizacion
+
+# Node & AWS CLI
+pnpm outdated || npm outdated                               # Dependencias desactualizadas
+aws configure set region us-east-1 --profile <perfil>       # Configurar region de perfil
+aws sts get-caller-identity --profile <perfil> --output table
