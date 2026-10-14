@@ -116,8 +116,8 @@ class NCRPrinterApp:
 
         self.font_normal = tkfont.Font(family="Courier 10 Pitch", size=11, weight="normal")
         self.font_bold = tkfont.Font(family="Courier 10 Pitch", size=11, weight="bold")
-        self.font_big = tkfont.Font(family="Courier 10 Pitch", size=16, weight="normal")
-        self.font_big_bold = tkfont.Font(family="Courier 10 Pitch", size=16, weight="bold")
+        self.font_big = tkfont.Font(family="Courier 10 Pitch", size=22, weight="normal")
+        self.font_big_bold = tkfont.Font(family="Courier 10 Pitch", size=22, weight="bold")
 
         paper_body = tk.Frame(paper_container, bg="#dcdcdc", padx=2, pady=2)
         paper_body.pack(expand=True, fill="y")
@@ -379,30 +379,32 @@ class NCRPrinterApp:
             self.set_status("Texto grande aplicado (Límite ajustado a 21 columnas).")
 
     def auto_alinear_columnas(self):
-        contenido = self.text_editor.get("1.0", tk.END).splitlines()
-        nuevas_lineas = []
-        for linea in contenido:
+        """Alinea columnas dividiendo texto con tabulaciones o espacios según el ancho de fuente de cada línea."""
+        total_lines = int(self.text_editor.index("end-1c").split(".")[0])
+        for line_num in range(1, total_lines + 1):
+            line_start = f"{line_num}.0"
+            line_end = f"{line_num}.end"
+            linea = self.text_editor.get(line_start, line_end)
+            
+            ancho_max = self._get_max_cols_for_line(line_num)
+            
             if "\t" in linea:
                 partes = linea.split("\t", 1)
             elif "  " in linea and not linea.strip().startswith("-") and not linea.strip().startswith("="):
                 partes = linea.rsplit("  ", 1)
             else:
-                partes = [linea]
+                continue
             
             if len(partes) == 2:
                 izq = partes[0].strip()
                 der = partes[1].strip()
-                espacios = 42 - len(izq) - len(der)
+                espacios = ancho_max - len(izq) - len(der)
                 if espacios > 0:
-                    nuevas_lineas.append(izq + (" " * espacios) + der)
-                else:
-                    nuevas_lineas.append(linea)
-            else:
-                nuevas_lineas.append(linea)
-        
-        self.text_editor.delete("1.0", tk.END)
-        self.text_editor.insert("1.0", "\n".join(nuevas_lineas) + "\n")
-        self.set_status("Columnas auto-alineadas a 42 caracteres.")
+                    nueva_linea = izq + (" " * espacios) + der
+                    self.text_editor.delete(line_start, line_end)
+                    self.text_editor.insert(line_start, nueva_linea)
+
+        self.set_status("Columnas auto-alineadas respetando el tamaño de fuente de cada línea.")
 
     def _imprimir_qr_worker(self, data, title):
         qr_cmd = "/home/jmro/.local/bin/ncr-print-qr"
