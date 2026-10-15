@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Wrapper to make KDE apps (like Dolphin) seamlessly launch kitty when looking for konsole
+exec /usr/bin/kitty "$@"
