@@ -19,4 +19,5 @@ ZSH_HIGHLIGHT_STYLES[comment]='fg=blue'
 alias ssh="TERM=xterm-256color ssh"
 source ~/.config/user-dirs.dirs
 
-export PATH="$HOME/.opencode/bin:$PATH"
+export PATH="$HOME/.local/bin:$HOME/.gemini/antigravity-cli/bin:$HOME/.opencode/bin:$HOME/go/bin:$HOME/.npm-global/bin:$PATH"
+
