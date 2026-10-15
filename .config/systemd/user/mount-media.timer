@@ -1,0 +1,10 @@
+[Unit]
+Description=Periodic check to mount ServerDebian via Tailscale
+
+[Timer]
+OnBootSec=10s
+OnUnitActiveSec=20s
+AccuracySec=5s
+
+[Install]
+WantedBy=timers.target
