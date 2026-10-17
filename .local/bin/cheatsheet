@@ -10,10 +10,10 @@ mkdir -p "$CHEATS_DIR"
 # Seleccionar paginador preferido
 if command -v bat >/dev/null 2>&1; then
     PAGER_CMD="bat --style=plain --paging=always --language=markdown"
-    PREVIEW_CMD="bat --color=always --style=numbers --language=markdown \"$CHEATS_DIR/{}.md\""
+    PREVIEW_CMD="bat --color=always --style=numbers --language=markdown $CHEATS_DIR/{}.md"
 else
     PAGER_CMD="less -R"
-    PREVIEW_CMD="cat \"$CHEATS_DIR/{}.md\""
+    PREVIEW_CMD="cat $CHEATS_DIR/{}.md"
 fi
 
 # Si se pasó argumento directo (ej: cheatsheet git)
