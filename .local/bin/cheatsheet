@@ -46,7 +46,7 @@ if command -v fzf >/dev/null 2>&1; then
         --layout=reverse \
         --border=rounded \
         --prompt="📖 Cheatsheet > " \
-        --header="Navegar lista: ↑/↓ | Scrollear manual: Tab/Sh-Tab o →/← o Shift+↑/↓ | Enter: paginador full" \
+        --footer="[ ↑/↓: Lista ] [ Tab/Sh-Tab o →/←: Scrollear ] [ Alt+w: Wrap ] [ Enter: Fullscreen ] [ Esc: Salir ]" \
         --preview="$PREVIEW_CMD" \
         --preview-window="right:65%:wrap" \
         --bind="tab:preview-down,btab:preview-up" \
