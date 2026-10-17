@@ -42,12 +42,16 @@ fi
 # Menú interactivo con fzf si está disponible
 if command -v fzf >/dev/null 2>&1; then
     SELECTED=$(echo "$SHEETS" | fzf \
-        --height=70% \
+        --height=85% \
         --layout=reverse \
         --border=rounded \
-        --prompt="📖 Seleccionar Cheatsheet > " \
+        --prompt="📖 Cheatsheet > " \
+        --header="Preview: Shift+↑/↓ o Ctrl+u/d (scroll) | Alt+w (toggle wrap) | Enter (abrir en paginador)" \
         --preview="$PREVIEW_CMD" \
-        --preview-window="right:60%:wrap")
+        --preview-window="right:65%:wrap" \
+        --bind="ctrl-d:preview-down,ctrl-u:preview-up" \
+        --bind="shift-down:preview-down,shift-up:preview-up" \
+        --bind="alt-w:toggle-preview-wrap")
 
     if [ -n "$SELECTED" ] && [ -f "$CHEATS_DIR/$SELECTED.md" ]; then
         $PAGER_CMD "$CHEATS_DIR/$SELECTED.md"
