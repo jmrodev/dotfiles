@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+# ==============================================================================
+# cheatsheet — Sistema de manuales y chuletas personales paginadas
+# Descubre automáticamente cualquier archivo .md en CHEATS_DIR
+# ==============================================================================
+
+CHEATS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/cheatsheets/docs"
+mkdir -p "$CHEATS_DIR"
+
+# Seleccionar paginador preferido
+if command -v bat >/dev/null 2>&1; then
+    PAGER_CMD="bat --style=plain --paging=always --language=markdown"
+    PREVIEW_CMD="bat --color=always --style=numbers --language=markdown \"$CHEATS_DIR/{}.md\""
+else
+    PAGER_CMD="less -R"
+    PREVIEW_CMD="cat \"$CHEATS_DIR/{}.md\""
+fi
+
+# Si se pasó argumento directo (ej: cheatsheet git)
+if [ -n "$1" ]; then
+    TARGET="$CHEATS_DIR/$1.md"
+    if [ -f "$TARGET" ]; then
+        $PAGER_CMD "$TARGET"
+        exit 0
+    else
+        echo "❌ No se encontró la ayuda para: $1"
+        echo "Temas disponibles en $CHEATS_DIR:"
+        find "$CHEATS_DIR" -maxdepth 1 -name "*.md" -exec basename {} .md \; | sort | sed 's/^/  - /'
+        exit 1
+    fi
+fi
+
+# Obtener lista dinámica de temas (.md existentes)
+SHEETS=$(find "$CHEATS_DIR" -maxdepth 1 -name "*.md" -exec basename {} .md \; 2>/dev/null | sort)
+
+if [ -z "$SHEETS" ]; then
+    echo "ℹ️  No hay cheatsheets en: $CHEATS_DIR"
+    echo "Crea archivos .md (ej: git.md, bash.md, nvim.md) y aparecerán automáticamente."
+    exit 0
+fi
+
+# Menú interactivo con fzf si está disponible
+if command -v fzf >/dev/null 2>&1; then
+    SELECTED=$(echo "$SHEETS" | fzf \
+        --height=70% \
+        --layout=reverse \
+        --border=rounded \
+        --prompt="📖 Seleccionar Cheatsheet > " \
+        --preview="$PREVIEW_CMD" \
+        --preview-window="right:60%:wrap")
+
+    if [ -n "$SELECTED" ] && [ -f "$CHEATS_DIR/$SELECTED.md" ]; then
+        $PAGER_CMD "$CHEATS_DIR/$SELECTED.md"
+    fi
+else
+    # Fallback sin fzf: menú select nativo bash
+    echo "📖 Cheatsheets disponibles:"
+    select ITEM in $SHEETS "Salir"; do
+        if [ "$ITEM" = "Salir" ] || [ -z "$ITEM" ]; then
+            break
+        fi
+        $PAGER_CMD "$CHEATS_DIR/$ITEM.md"
+        break
+    done
+fi
