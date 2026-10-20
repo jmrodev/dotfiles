@@ -11,6 +11,20 @@
 ## Copia al Portapapeles
 * **Snippets y One-liners para el usuario:** Siempre que se entregue un one-liner, bookmarklet, script de una línea o comando sensible a saltos de línea de la terminal, copiarlo directamente al portapapeles del sistema usando `wl-copy` para evitar que se cuelen espacios o saltos de línea al copiar manualmente.
 
+## Entorno de Terminal y Multiplexer Oficial
+* **Emulador de Terminal:** **Kitty** (`/usr/bin/kitty`).
+  - **Shell:** Fish (`/usr/bin/fish`).
+  - **Fuente:** `JetBrainsMono Nerd Font` (tamaño 14.0).
+  - **Opacidad:** `background_opacity 0.9`.
+  - **Portapapeles inteligente:** Selección con mouse copia automáticamente, `Ctrl+C` copia si hay texto seleccionado o interrumpe proceso si no lo hay; `Ctrl+V` pega.
+  - **Theming:** Sincronizado automáticamente claro/oscuro vía `~/.config/kitty/current-theme.conf`.
+* **Multiplexer y Gestor de Agentes:** **Herdr** (`~/.config/herdr/config.toml`).
+  - Invocación desde Sway: `kitty -e herdr`.
+  - Tema: `vesper`.
+  - Atajo base: `Ctrl+b`.
+  - Workspaces para agentes: `Super+o` (OpenCode), `Super+g` (Antigravity), `Super+c` (AgyCode).
+* **Emuladores y multiplexers deprecados/eliminados:** Foot, Alacritty, Tmux, Ranger, Zellij y Xterm NO deben reinstalarse ni referenciarse.
+
 ## Flujo de Dotfiles y Estado del Sistema (`homestate`)
 * **Detección de cambios y candidatos:** Antes de sincronizar o evaluar qué archivos van a los dotfiles, usar `homestate json` o `homestate diff` para ver altas y modificaciones en `~/.config`, `~/.local/bin` y dotfiles de raíz.
 * **Seguridad de credenciales:** Antes de agregar cualquier script o configuración, verificar que no contenga API keys, tokens o contraseñas hardcodeadas; de haberlas, moverlas a `~/.config/fish/conf.d/secrets.fish` y consumirlas mediante variables de entorno.
