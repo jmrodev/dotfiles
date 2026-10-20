@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=IPTV Argentina (VLC)
+Comment=Ver canales de Argentina en VLC
+Exec=vlc https://iptv-org.github.io/iptv/countries/ar.m3u
+Icon=vlc
+Terminal=false
+Categories=AudioVideo;Player;TV;

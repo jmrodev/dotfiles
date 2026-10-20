@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=IPTV Español (VLC)
+Comment=Ver canales en Español en VLC
+Exec=vlc https://iptv-org.github.io/iptv/languages/spa.m3u
+Icon=vlc
+Terminal=false
+Categories=AudioVideo;Player;TV;

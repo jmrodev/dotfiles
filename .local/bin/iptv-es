@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+exec vlc "https://iptv-org.github.io/iptv/languages/spa.m3u" "$@"
