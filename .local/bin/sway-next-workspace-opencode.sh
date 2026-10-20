@@ -5,19 +5,14 @@ if [[ -z "$SWAYSOCK" ]]; then
     export SWAYSOCK=$(ls /run/user/$(id -u)/sway-ipc.*.sock 2>/dev/null | head -n 1)
 fi
 
-# 1. Verificar si ya existe una ventana de Kitty en Sway
+# 1. Si Kitty ya está abierto en Sway, enfocarlo
 has_kitty=$(swaymsg -t get_tree | grep -q '"app_id": "kitty"' && echo "1" || echo "0")
 
 if [[ "$has_kitty" == "1" ]]; then
-    # Enfocar la ventana existente de Kitty
     swaymsg '[app_id="kitty"] focus'
-    
-    # Comprobar si existe la ventana 'opencode' en Tmux
-    if tmux list-windows -F '#{window_name}' 2>/dev/null | grep -qx 'opencode'; then
-        tmux select-window -t opencode 2>/dev/null
-    else
-        # Si no existe, crear una ventana nueva de Tmux para opencode
-        tmux new-window -n opencode "opencode" 2>/dev/null || tmux new-window -n opencode 2>/dev/null
+    # Si el servidor herdr está corriendo, creamos o enfocamos una pestaña
+    if herdr status 2>/dev/null | grep -q "status: running"; then
+        herdr tab create --label "opencode" --focus 2>/dev/null || true
     fi
     exit 0
 fi
@@ -38,5 +33,5 @@ if [[ -z "$target_ws" ]]; then
     target_ws=$((max_ws + 1))
 fi
 
-# Cambiar de workspace y lanzar Kitty con Tmux corriendo opencode
-swaymsg "workspace number $target_ws; exec kitty -e tmux new-session -A -s main -n opencode opencode"
+# Cambiar de workspace y lanzar Kitty con herdr
+swaymsg "workspace number $target_ws; exec kitty -e herdr"
