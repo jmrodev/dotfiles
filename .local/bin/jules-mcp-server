@@ -1,0 +1,246 @@
+#!/usr/bin/env node
+
+const https = require('https');
+const readline = require('readline');
+
+const API_KEY = process.env.JULES_API_KEY;
+if (!API_KEY) {
+  process.stderr.write("Error: JULES_API_KEY environment variable is not set.\n");
+  process.exit(1);
+}
+const BASE_HOST = 'jules.googleapis.com';
+const BASE_PATH = '/v1alpha';
+
+function request(method, path, body = null) {
+  return new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : null;
+    const req = https.request({
+      hostname: BASE_HOST,
+      path: `${BASE_PATH}${path}`,
+      method: method,
+      headers: {
+        'x-goog-api-key': API_KEY,
+        'Content-Type': 'application/json',
+        ...(data ? { 'Content-Length': Buffer.byteLength(data) } : {})
+      }
+    }, (res) => {
+      let raw = '';
+      res.on('data', chunk => raw += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(raw);
+          if (res.statusCode >= 400) {
+            reject(new Error(parsed.error?.message || `HTTP ${res.statusCode}: ${raw}`));
+          } else {
+            resolve(parsed);
+          }
+        } catch (e) {
+          if (res.statusCode >= 400) {
+            reject(new Error(`HTTP ${res.statusCode}: ${raw}`));
+          } else {
+            resolve(raw);
+          }
+        }
+      });
+    });
+
+    req.on('error', reject);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+const TOOLS = [
+  {
+    name: "jules_list_sources",
+    description: "List all connected GitHub repositories (sources) in Google Jules.",
+    inputSchema: {
+      type: "object",
+      properties: {}
+    }
+  },
+  {
+    name: "jules_list_sessions",
+    description: "List recent coding tasks/sessions in Jules with status (IN_PROGRESS, COMPLETED, etc.).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        pageSize: {
+          type: "number",
+          description: "Number of sessions to return (default: 10)"
+        }
+      }
+    }
+  },
+  {
+    name: "jules_get_session",
+    description: "Get detailed information about a specific Jules session (including status, PR link if created, diffs).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: {
+          type: "string",
+          description: "The ID or resource name of the session"
+        }
+      },
+      required: ["sessionId"]
+    }
+  },
+  {
+    name: "jules_get_activities",
+    description: "Get granular steps and activities inside a Jules session.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        sessionId: {
+          type: "string",
+          description: "The ID of the session"
+        }
+      },
+      required: ["sessionId"]
+    }
+  },
+  {
+    name: "jules_create_session",
+    description: "Create and dispatch a new coding task to Google Jules for a connected repository.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        source: {
+          type: "string",
+          description: "Repository source identifier (e.g., 'sources/github/jmrodev/secretary-app' or 'github/jmrodev/secretary-app')"
+        },
+        prompt: {
+          type: "string",
+          description: "Clear instructions for the coding task to execute in the repository"
+        }
+      },
+      required: ["source", "prompt"]
+    }
+  }
+];
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+  terminal: false
+});
+
+rl.on('line', async (line) => {
+  if (!line.trim()) return;
+  try {
+    const msg = JSON.parse(line);
+    const { id, method, params } = msg;
+
+    if (method === 'initialize') {
+      const response = {
+        jsonrpc: "2.0",
+        id: id,
+        result: {
+          protocolVersion: "2024-11-05",
+          capabilities: {
+            tools: {}
+          },
+          serverInfo: {
+            name: "jules-mcp-server",
+            version: "1.0.0"
+          }
+        }
+      };
+      console.log(JSON.stringify(response));
+    } else if (method === 'notifications/initialized') {
+      // Notification, no reply needed
+    } else if (method === 'tools/list') {
+      const response = {
+        jsonrpc: "2.0",
+        id: id,
+        result: {
+          tools: TOOLS
+        }
+      };
+      console.log(JSON.stringify(response));
+    } else if (method === 'tools/call') {
+      const toolName = params.name;
+      const args = params.arguments || {};
+
+      try {
+        let resultText = "";
+
+        if (toolName === 'jules_list_sources') {
+          const res = await request('GET', '/sources');
+          resultText = JSON.stringify(res.sources || [], null, 2);
+        } else if (toolName === 'jules_list_sessions') {
+          const pageSize = args.pageSize || 10;
+          const res = await request('GET', `/sessions?pageSize=${pageSize}`);
+          resultText = JSON.stringify(res.sessions || [], null, 2);
+        } else if (toolName === 'jules_get_session') {
+          let sId = args.sessionId || "";
+          sId = sId.startsWith('sessions/') ? sId.replace('sessions/', '') : sId;
+          const res = await request('GET', `/sessions/${sId}`);
+          resultText = JSON.stringify(res, null, 2);
+        } else if (toolName === 'jules_get_activities') {
+          let sId = args.sessionId || "";
+          sId = sId.startsWith('sessions/') ? sId.replace('sessions/', '') : sId;
+          const res = await request('GET', `/sessions/${sId}/activities`);
+          resultText = JSON.stringify(res.activities || [], null, 2);
+        } else if (toolName === 'jules_create_session') {
+          let source = args.source || "";
+          if (!source.startsWith('sources/')) {
+            source = `sources/${source}`;
+          }
+          const payload = {
+            prompt: args.prompt,
+            sourceContext: {
+              source: source
+            }
+          };
+          const res = await request('POST', '/sessions', payload);
+          resultText = JSON.stringify(res, null, 2);
+        } else {
+          throw new Error(`Unknown tool: ${toolName}`);
+        }
+
+        const response = {
+          jsonrpc: "2.0",
+          id: id,
+          result: {
+            content: [
+              {
+                type: "text",
+                text: resultText
+              }
+            ],
+            isError: false
+          }
+        };
+        console.log(JSON.stringify(response));
+      } catch (err) {
+        const response = {
+          jsonrpc: "2.0",
+          id: id,
+          result: {
+            content: [
+              {
+                type: "text",
+                text: `Tool error: ${err.message}`
+              }
+            ],
+            isError: true
+          }
+        };
+        console.log(JSON.stringify(response));
+      }
+    } else {
+      console.log(JSON.stringify({
+        jsonrpc: "2.0",
+        id: id,
+        error: {
+          code: -32601,
+          message: "Method not found"
+        }
+      }));
+    }
+  } catch (e) {
+    // Malformed JSON
+  }
+});

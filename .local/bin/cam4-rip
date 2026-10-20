@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+import sys
+import os
+import re
+import time
+import subprocess
+from datetime import datetime
+
+arg = sys.argv[1] if len(sys.argv) > 1 else input("🔗 Ingresá usuario o URL de Cam4: ").strip()
+if not arg:
+    print("❌ No se ingresó ningún dato.")
+    sys.exit(1)
+
+m3u8_url = None
+username = "stream"
+
+if ".m3u8" in arg:
+    m3u8_url = arg
+    m = re.search(r'/as\+([a-zA-Z0-9_-]+)/', arg)
+    if m:
+        username = m.group(1)[:8]
+else:
+    if "cam4.com/" in arg:
+        m = re.search(r'cam4\.com/([a-zA-Z0-9_-]+)', arg)
+        username = m.group(1) if m else "cam4"
+        target_url = arg
+    else:
+        username = arg.strip("/")
+        target_url = f"https://www.cam4.com/{username}"
+
+    print(f"🔍 Conectando con {username} en segundo plano...")
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            executable_path="/opt/brave-bin/brave",
+            headless=True,
+            args=["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"]
+        )
+        page = browser.new_page()
+
+        def on_req(req):
+            global m3u8_url
+            if ".m3u8" in req.url and not m3u8_url:
+                m3u8_url = req.url
+
+        page.on("request", on_req)
+        try:
+            page.goto(target_url, timeout=25000)
+        except Exception:
+            pass
+
+        for _ in range(30):
+            if m3u8_url:
+                break
+            time.sleep(0.5)
+
+        browser.close()
+
+if not m3u8_url:
+    print("❌ No se encontró transmisión activa para ese usuario.")
+    sys.exit(1)
+
+out_dir = os.path.expanduser("~/Videos")
+os.makedirs(out_dir, exist_ok=True)
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+out_file = os.path.join(out_dir, f"cam4_{username}_{timestamp}.mp4")
+
+headers_val = "Referer: https://www.cam4.com/\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36\r\n"
+
+print("🎯 Stream HLS detectado!")
+print(f"🔴 Grabando en: {out_file}")
+print("⏹️ Presioná 'q' o 'Ctrl+C' para detener y guardar.")
+print("")
+
+cmd = [
+    "ffmpeg", "-hide_banner", "-loglevel", "info",
+    "-headers", headers_val,
+    "-i", m3u8_url,
+    "-c", "copy", "-bsf:a", "aac_adtstoasc",
+    out_file
+]
+
+try:
+    subprocess.run(cmd)
+except KeyboardInterrupt:
+    pass
+
+print(f"\n✅ Grabación guardada en: {out_file}")
