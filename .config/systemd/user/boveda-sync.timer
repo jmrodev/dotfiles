@@ -1,0 +1,11 @@
+[Unit]
+Description=Timer para sincronizar cola de Bóveda al servidor
+After=network.target
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

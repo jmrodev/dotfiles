@@ -1,0 +1,14 @@
+[Unit]
+Description=Herdr — agent-aware terminal multiplexer server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/home/jmro/.local/bin/herdr server
+Restart=on-failure
+RestartSec=3
+Environment=PATH=/home/jmro/.local/bin:/usr/local/bin:/usr/bin:/home/jmro/.npm-global/bin:/home/jmro/go/bin
+
+[Install]
+WantedBy=default.target

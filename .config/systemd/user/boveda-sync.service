@@ -1,0 +1,9 @@
+[Unit]
+Description=Boveda Auto Sync Queue to Server
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/jmro/.local/bin/boveda-sync
+StandardOutput=journal
+StandardError=journal
