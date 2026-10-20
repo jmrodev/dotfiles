@@ -14,6 +14,10 @@
 - **OpenWrt LuCI WAN:** http://jmro.duckdns.org:8088/cgi-bin/luci
 - **Homarr / Caddy:** http://media (o http://192.168.50.10)
 - **Portainer Media:** http://media:9000
+- **JDownloader 2:** http://media:5800 (o http://100.106.211.71:5800)
+- **Jellyseerr:** http://media:5055 (o http://100.106.211.71:5055)
+- **Prowlarr:** http://media:9696 (o http://100.106.211.71:9696)
+- **Vaultwarden Local:** http://media:8083 (o https://pass.mcscheerle.duckdns.org)
 - **File Browser Media:** http://media:8082
 - **qBittorrent Media:** http://media:8080
 - **Sonarr / Radarr:** http://media/sonarr | http://media/radarr
@@ -26,9 +30,9 @@
 # 📡 TOPOLOGÍA LOCAL & CONEXIONES SSH
 - `ssh openwrt`: Router OpenWrt Local (192.168.50.1:22)
 - `ssh openwrt-wan`: Router OpenWrt WAN (jmro.duckdns.org:22222)
-- `ssh jmro-debian`: Servidor Media Local (192.168.50.10)
+- `ssh jmro-debian`: Servidor Media Local (192.168.50.10 | Tailscale: 100.106.211.71)
 - `ssh debian-wan`: Servidor via OpenWrt Jump (jmro.duckdns.org)
-- `ssh cima-rpi`: Raspberry Pi CIMA (cimasalud.duckdns.org:2223)
+- `ssh cima-rpi`: Raspberry Pi CIMA (cimasalud.duckdns.org:2223 | Tailscale: 100.115.139.50)
 - `ssh cima-notebook`: Notebook CIMA Prod (cimasalud.duckdns.org:2222)
 - `ssh toshiba`: Toshiba Manjaro (Tailscale 100.114.212.5)
 - `ssh xp-open`: Windows XP / POS (192.168.50.32:2222)

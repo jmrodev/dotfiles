@@ -1,4 +1,6 @@
 # "Wow" config para Starship
+scan_timeout = 60
+command_timeout = 1000
 
 format = """
 [╭─](#9A348E)\

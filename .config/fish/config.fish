@@ -53,14 +53,7 @@ if command -v fzf >/dev/null 2>&1
     fzf --fish | source
 end
 
-# ==========================================
-# Tmux Autostart y Greeting (Banner 2 Col)
-# ==========================================
-if status is-interactive
-    if test -z "$TMUX"
-        exec tmux new-session -A -s main
-    end
-end
+
 
 function fish_greeting
     # Inicio limpio sin banners

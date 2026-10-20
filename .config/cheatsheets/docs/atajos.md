@@ -1,7 +1,7 @@
 # ⚡ SWAY / NAVEGACIÓN & VENTANAS
 - `Super + d`: Lanzador de aplicaciones
 - `Super + e`: Explorador de archivos (Dolphin)
-- `Super + Enter`: Terminal (Kitty)
+- `Super + Enter`: Terminal (Kitty + Herdr)
 - `Super + i`: Workspace dedicado Chrome
 - `Super + 1..9`: Cambiar a Workspace 1..9
 - `Super + Tab`: Alternar con el workspace anterior
