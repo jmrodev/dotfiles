@@ -199,7 +199,6 @@ qt5ct
 qt6-imageformats
 qt6-wayland
 qt6ct
-ranger
 remmina
 retroarch
 rsync
@@ -225,7 +224,6 @@ thunderbird
 timeshift-autosnap-manjaro
 tk
 tldr
-tmux
 trash-cli
 tree
 tree-sitter-cli
@@ -253,8 +251,6 @@ which
 wireless-regdb
 wireshark-qt
 wl-clipboard
-wlsunset
-wluma
 wpa_supplicant
 wqy-microhei
 wsdd
@@ -268,13 +264,10 @@ xf86-video-intel
 xf86-video-nouveau
 xfsprogs
 xorg-xwayland
-xterm
 yay
 yazi
 zathura
 zathura-pdf-poppler
-zeit
-zellij
 zip
 zoxide
 zram-generator
