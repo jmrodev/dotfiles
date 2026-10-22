@@ -41,6 +41,7 @@
         "backlight",
         // system
         "custom/theme",
+        "custom/sunset",
         "custom/pacman",
         "tray",
         "clock"
@@ -218,9 +219,11 @@
             "on": "󰌵",
             "off": "󰌶"
         },
-        "exec": "fallback_latitude=50.1 fallback_longitude=8.7 latitude= longitude= /usr/share/sway/scripts/sunset.sh",
-        "on-click": "/usr/share/sway/scripts/sunset.sh toggle",
-        "exec-if": "/usr/share/sway/scripts/sunset.sh check",
+        "exec": "$HOME/.local/bin/gammastep-control status",
+        "on-click": "$HOME/.local/bin/gammastep-control toggle",
+        "on-click-right": "$HOME/.local/bin/gammastep-control menu",
+        "on-scroll-up": "$HOME/.local/bin/gammastep-control up",
+        "on-scroll-down": "$HOME/.local/bin/gammastep-control down",
         "signal": 6
     },
     "custom/theme": {

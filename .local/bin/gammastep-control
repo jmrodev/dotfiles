@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+STATE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/gammastep/state"
+CONFIG_DIR="$(dirname "$STATE_FILE")"
+mkdir -p "$CONFIG_DIR"
+
+# Defaults
+DEFAULT_TEMP=4000
+DEFAULT_BRIGHT=0.5
+DEFAULT_GAMMA="1.0:1.0:1.0"
+DEFAULT_STATUS="off"
+
+load_state() {
+    if [ -f "$STATE_FILE" ]; then
+        # shellcheck disable=SC1090
+        source "$STATE_FILE"
+    fi
+    TEMP="${TEMP:-$DEFAULT_TEMP}"
+    BRIGHT="${BRIGHT:-$DEFAULT_BRIGHT}"
+    GAMMA="${GAMMA:-$DEFAULT_GAMMA}"
+    STATUS="${STATUS:-$DEFAULT_STATUS}"
+}
+
+save_state() {
+    cat <<EOF > "$STATE_FILE"
+TEMP=${TEMP}
+BRIGHT=${BRIGHT}
+GAMMA=${GAMMA}
+STATUS=${STATUS}
+EOF
+}
+
+apply_gammastep() {
+    pkill -x gammastep 2>/dev/null
+    if [ "$STATUS" = "on" ]; then
+        gammastep -O "$TEMP" -b "$BRIGHT" -g "$GAMMA" >/dev/null 2>&1 &
+    else
+        gammastep -x >/dev/null 2>&1
+    fi
+}
+
+notify_waybar() {
+    waybar-signal sunset 2>/dev/null || true
+}
+
+status_json() {
+    load_state
+    if pgrep -x gammastep >/dev/null; then
+        STATUS="on"
+    else
+        STATUS="off"
+    fi
+    save_state
+
+    local icon alt tooltip
+    if [ "$STATUS" = "on" ]; then
+        alt="on"
+        tooltip="Gammastep ON\nTemp: ${TEMP}K\nBrillo: ${BRIGHT}\nGamma: ${GAMMA}\n\nClic: On/Off\nScroll: Temp ±200K\nClic derecho: Menú"
+    else
+        alt="off"
+        tooltip="Gammastep OFF (Preset: ${TEMP}K | Brillo: ${BRIGHT})\n\nClic: Activar\nScroll: Temp ±200K\nClic derecho: Menú"
+    fi
+
+    printf '{"alt":"%s","tooltip":"%b","class":"%s"}\n' "$alt" "$tooltip" "$alt"
+}
+
+toggle() {
+    load_state
+    if [ "$STATUS" = "on" ]; then
+        STATUS="off"
+    else
+        STATUS="on"
+    fi
+    save_state
+    apply_gammastep
+    notify_waybar
+}
+
+temp_adjust() {
+    load_state
+    local step=200
+    if [ "$1" = "up" ]; then
+        TEMP=$((TEMP + step))
+    elif [ "$1" = "down" ]; then
+        TEMP=$((TEMP - step))
+    fi
+
+    # Limites razonables de temperatura (1000K a 10000K)
+    if [ "$TEMP" -lt 1000 ]; then TEMP=1000; fi
+    if [ "$TEMP" -gt 10000 ]; then TEMP=10000; fi
+
+    save_state
+    apply_gammastep
+    notify_waybar
+}
+
+menu_rofi() {
+    load_state
+    local toggle_label="󰌵 Prender"
+    if [ "$STATUS" = "on" ]; then
+        toggle_label="󰌶 Apagar"
+    fi
+
+    local options
+    options=$(cat <<EOF
+$toggle_label
+🌡 Cambiar Temperatura (Actual: ${TEMP}K)
+🔆 Cambiar Brillo (Actual: ${BRIGHT})
+🎨 Cambiar Gamma RGB (Actual: ${GAMMA})
+⚡ Preset 3500K - Brillo 0.4 (Noche intensa)
+⚡ Preset 4000K - Brillo 0.5 (Tu default)
+⚡ Preset 5000K - Brillo 0.7 (Lectura)
+⚡ Preset 6500K - Brillo 1.0 (Neutro)
+EOF
+)
+
+    local selected
+    selected=$(echo "$options" | rofi -dmenu -i -p "Gammastep" -theme-str 'window {width: 420px;}')
+
+    case "$selected" in
+        "󰌵 Prender"|"󰌶 Apagar")
+            toggle
+            ;;
+        "🌡 Cambiar Temperatura"*)
+            local new_temp
+            new_temp=$(rofi -dmenu -p "Temperatura Kelvin (1000-10000)" -filter "$TEMP" -theme-str 'window {width: 320px;}')
+            if [[ "$new_temp" =~ ^[0-9]+$ ]] && [ "$new_temp" -ge 1000 ] && [ "$new_temp" -le 10000 ]; then
+                TEMP="$new_temp"
+                save_state
+                apply_gammastep
+                notify_waybar
+            fi
+            ;;
+        "🔆 Cambiar Brillo"*)
+            local new_bright
+            new_bright=$(rofi -dmenu -p "Brillo software (0.1 - 1.0)" -filter "$BRIGHT" -theme-str 'window {width: 320px;}')
+            if [[ "$new_bright" =~ ^0\.[0-9]+$|^1\.0$|^1$ ]]; then
+                BRIGHT="$new_bright"
+                save_state
+                apply_gammastep
+                notify_waybar
+            fi
+            ;;
+        "🎨 Cambiar Gamma RGB"*)
+            local new_gamma
+            new_gamma=$(rofi -dmenu -p "Gamma R:G:B" -filter "$GAMMA" -theme-str 'window {width: 320px;}')
+            if [[ "$new_gamma" =~ ^[0-9.]+:[0-9.]+:[0-9.]+$ ]]; then
+                GAMMA="$new_gamma"
+                save_state
+                apply_gammastep
+                notify_waybar
+            fi
+            ;;
+        "⚡ Preset 3500K"*)
+            TEMP=3500; BRIGHT=0.4; STATUS="on"
+            save_state; apply_gammastep; notify_waybar
+            ;;
+        "⚡ Preset 4000K"*)
+            TEMP=4000; BRIGHT=0.5; STATUS="on"
+            save_state; apply_gammastep; notify_waybar
+            ;;
+        "⚡ Preset 5000K"*)
+            TEMP=5000; BRIGHT=0.7; STATUS="on"
+            save_state; apply_gammastep; notify_waybar
+            ;;
+        "⚡ Preset 6500K"*)
+            TEMP=6500; BRIGHT=1.0; STATUS="on"
+            save_state; apply_gammastep; notify_waybar
+            ;;
+    esac
+}
+
+case "$1" in
+    status) status_json ;;
+    toggle) toggle ;;
+    up) temp_adjust up ;;
+    down) temp_adjust down ;;
+    menu) menu_rofi ;;
+    *) status_json ;;
+esac
