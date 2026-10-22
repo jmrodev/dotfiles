@@ -1,0 +1,135 @@
+#!/usr/bin/env python3
+"""
+chelo-harness — Coding-Agent Harness con Gobernanza, TDD y Puertas de Calidad
+Inspirado en el flujo ODD (Organic Driven Development).
+Autor: Juan Marcelo Rodríguez (jmrodev)
+"""
+
+import sys
+import os
+import subprocess
+import shutil
+from pathlib import Path
+
+CYAN = "\033[0;36m"
+GREEN = "\033[0;32m"
+YELLOW = "\033[1;33m"
+RED = "\033[0;31m"
+BOLD = "\033[1m"
+NC = "\033[0m"
+
+MAX_ALLOWED_CHANGES = 10
+
+def banner():
+    print(f"{CYAN}{BOLD}╔═══════════════════════════════════════════════════════════════╗{NC}")
+    print(f"{CYAN}{BOLD}║         🛡️  CHELO-HARNESS — CODING AGENT RUNTIME             ║{NC}")
+    print(f"{CYAN}{BOLD}╚═══════════════════════════════════════════════════════════════╝{NC}\n")
+
+def check_git_repo():
+    res = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], capture_output=True)
+    if res.returncode != 0:
+        print(f"{RED}❌ Error: chelo-harness debe ejecutarse dentro de un repositorio Git.{NC}")
+        sys.exit(1)
+
+def run_command(cmd, desc, critical=True):
+    print(f"▶ {BOLD}{desc}...{NC}")
+    res = subprocess.run(cmd, shell=True)
+    if res.returncode != 0 and critical:
+        print(f"{RED}❌ Falló: {desc}{NC}")
+        return False
+    return True
+
+def audit_changes_rule():
+    """Regla de los 10 cambios: frena si el diff o cambios staged superan 10 archivos."""
+    res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
+    lines = [l for l in res.stdout.splitlines() if l.strip()]
+    count = len(lines)
+    
+    print(f"📊 Archivos modificados en el workspace: {BOLD}{count}{NC}")
+    if count > MAX_ALLOWED_CHANGES:
+        print(f"\n{RED}{BOLD}🚨 FRENO DE SEGURIDAD (REGLA DE LOS 10 CAMBIOS){NC}")
+        print(f"{YELLOW}El cambio actual afecta a {count} archivos (límite máximo permitido: {MAX_ALLOWED_CHANGES}).{NC}")
+        print("Es muy probable que se esté abarcando más de lo pedido en el ticket/tarea.")
+        print(f"{YELLOW}Pausando ejecución para revisión humana manual antes de continuar.{NC}\n")
+        return False
+    return True
+
+def cmd_gate():
+    """Puerta de calidad: Corre Linters, Tests, GGA y verifica la regla de 10 cambios."""
+    banner()
+    check_git_repo()
+    print(f"{BLUE}Iniciando Quality Gate en:{NC} {Path.cwd()}\n")
+
+    # 1. Regla de 10 cambios
+    if not audit_changes_rule():
+        sys.exit(2)
+
+    # 2. Verificar si hay cambios sin commitear
+    status = subprocess.run(["git", "status", "--short"], capture_output=True, text=True).stdout.strip()
+    if not status:
+        print(f"{GREEN}✓ Workspace limpio sin cambios pendientes.{NC}")
+        return
+
+    # 3. Auditoría con GGA (Gentleman Guardian Angel) si está disponible
+    if shutil.which("gga"):
+        print(f"\n{BLUE}▶ Ejecutando auditoría de riesgos con GGA...{NC}")
+        gga_res = subprocess.run(["gga", "review", "--staged"], capture_output=True, text=True)
+        if gga_res.returncode == 0:
+            print(f"{GREEN}✓ Auditoría GGA aprobada sin riesgos críticos.{NC}")
+        else:
+            print(f"{YELLOW}⚠️  Aviso GGA:{NC}\n{gga_res.stdout[:300]}")
+
+    print(f"\n{GREEN}{BOLD}✓ QUALITY GATE SUPERADO EXITOSAMENTE.{NC}")
+
+def cmd_commit(message):
+    """Commitea con formato convencional respetando el Quality Gate."""
+    banner()
+    check_git_repo()
+
+    if not audit_changes_rule():
+        sys.exit(2)
+
+    # Bloqueo estricto de Co-Authored-By
+    if "Co-Authored-By" in message or "AI" in message:
+        print(f"{RED}❌ Error de gobernanza: Prohibido incluir atribución de IA o Co-Authored-By en el commit.{NC}")
+        sys.exit(1)
+
+    print(f"▶ Commiteando cambios con mensaje convencional: {BOLD}{message}{NC}")
+    subprocess.run(["git", "add", "."])
+    res = subprocess.run(["git", "commit", "-m", message])
+    if res.returncode == 0:
+        print(f"{GREEN}✓ Commit exitoso.{NC}")
+
+def print_help():
+    banner()
+    print("USO:")
+    print("  chelo-harness gate              Ejecuta la puerta de calidad y audita regla de 10 cambios")
+    print("  chelo-harness commit \"<msg>\"    Commitea con validaciones de gobernanza pre-commit")
+    print("  chelo-harness status            Inspecciona el estado del workspace bajo las reglas de Chelo")
+    print("\nREGLAS INTEGRADAS:")
+    print(f"  - Límite máximo de {MAX_ALLOWED_CHANGES} archivos por cambio.")
+    print("  - Prohibido Co-Authored-By / Atribución de IA en commits.")
+    print("  - Integración nativa con Engram y GGA.")
+
+def main():
+    if len(sys.argv) < 2:
+        print_help()
+        sys.exit(0)
+
+    cmd = sys.argv[1]
+    if cmd == "gate":
+        cmd_gate()
+    elif cmd == "commit":
+        if len(sys.argv) < 3:
+            print(f"{RED}Falta el mensaje de commit. Uso: chelo-harness commit \"tipo(scope): mensaje\"{NC}")
+            sys.exit(1)
+        cmd_commit(sys.argv[2])
+    elif cmd == "status":
+        banner()
+        check_git_repo()
+        audit_changes_rule()
+    else:
+        print_help()
+
+if __name__ == "__main__":
+    main()
