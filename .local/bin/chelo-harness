@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-chelo-harness — Coding-Agent Harness con Gobernanza, TDD, Preguntas Interactivas y Memoria en Engram
+chelo-harness — Coding-Agent Harness con Gobernanza, Menús Interactivos, TDD y Memoria en Engram
 Autor: Juan Marcelo Rodríguez (jmrodev)
 """
 
@@ -16,6 +16,7 @@ GREEN = "\033[0;32m"
 YELLOW = "\033[1;33m"
 RED = "\033[0;31m"
 BLUE = "\033[0;34m"
+MAGENTA = "\033[0;35m"
 BOLD = "\033[1m"
 NC = "\033[0m"
 
@@ -39,8 +40,31 @@ def get_project_name():
     except Exception:
         return Path.cwd().name
 
+def select_option(title, options, allow_custom=True):
+    print(f"{BOLD}{CYAN}{title}{NC}")
+    for idx, opt in enumerate(options, 1):
+        print(f"  {YELLOW}{idx}){NC} {opt}")
+    if allow_custom:
+        print(f"  {YELLOW}0){NC} Otro (escribir manualmente)")
+    
+    while True:
+        try:
+            choice = input(f"{BOLD}👉 Elegí una opción [1-{len(options)}]: {NC}").strip()
+            if not choice:
+                return options[0]
+            if choice == "0" and allow_custom:
+                custom_val = input(f"   {CYAN}Escribí el valor personalizado:{NC} ").strip()
+                return custom_val if custom_val else options[0]
+            if choice.isdigit():
+                num = int(choice)
+                if 1 <= num <= len(options):
+                    return options[num - 1]
+            print(f"{RED}Opción inválida. Ingresá un número del 1 al {len(options)}.{NC}")
+        except (KeyboardInterrupt, EOFError):
+            print(f"\n{YELLOW}Operación cancelada.{NC}")
+            sys.exit(0)
+
 def audit_changes_rule():
-    """Regla de los 10 cambios: frena si el diff o cambios staged superan 10 archivos."""
     res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
     lines = [l for l in res.stdout.splitlines() if l.strip()]
     count = len(lines)
@@ -55,46 +79,80 @@ def audit_changes_rule():
     return True
 
 def cmd_interactive_session():
-    """Modo interactivo principal: Cuestionario guiado + Registro en Engram + Gate."""
     banner()
     check_git_repo()
     project = get_project_name()
 
     print(f"📂 Proyecto detectado: {BOLD}{GREEN}{project}{NC}\n")
-    print(f"{BOLD}🧠 CUESTIONARIO DE GOBERNANZA & ARQUITECTURA{NC}")
-    print("Respondé estas 3 preguntas clave para que queden guardadas en la memoria de los agentes.\n")
+    print(f"{BOLD}🧠 CUESTIONARIO GUIADO DE GOBERNANZA & ARQUITECTURA{NC}\n")
 
-    # Pregunta 1: Objetivo
-    try:
-        p1_objetivo = input(f"{CYAN}{BOLD}1. ¿Qué problema o requerimiento estás resolviendo?{NC}\n👉 ").strip()
-        if not p1_objetivo:
-            p1_objetivo = "Trabajo en curso / ajuste general"
+    # 1. TIPO DE TAREA
+    tipos_tarea = [
+        "Nueva Feature / Requerimiento de negocio",
+        "Refactorización / Clean Code (sin cambio de comportamiento)",
+        "Bugfix / Corrección de error en producción o test",
+        "Optimización de rendimiento / Reducción de latencia",
+        "Seguridad / Hardening / Auditoría de dependencias",
+        "Testing / Cobertura TDD / E2E"
+    ]
+    p_tipo = select_option("1. ¿Qué tipo de trabajo estás encarando?", tipos_tarea)
+    print(f"   {GREEN}✓ Seleccionado:{NC} {p_tipo}\n")
 
-        # Pregunta 2: Decisión técnica
-        print("")
-        p2_decision = input(f"{CYAN}{BOLD}2. ¿Por qué elegiste esta solución técnica o patrón?{NC}\n👉 ").strip()
-        if not p2_decision:
-            p2_decision = "Enfoque estándar"
+    # Detalle del objetivo
+    p_detalle = input(f"{BOLD}{CYAN}   Detalle en una frase del objetivo:{NC}\n   👉 ").strip()
+    if not p_detalle:
+        p_detalle = p_tipo
 
-        # Pregunta 3: Restricción para futuros agentes
-        print("")
-        p3_restriccion = input(f"{CYAN}{BOLD}3. ¿Qué regla, advertencia o límite NO deben romper futuros agentes?{NC}\n👉 ").strip()
-        if not p3_restriccion:
-            p3_restriccion = "Preservar arquitectura y pasar tests obligatoriamente"
+    print("")
 
-    except (KeyboardInterrupt, EOFError):
-        print(f"\n{YELLOW}Operación cancelada.{NC}")
-        sys.exit(0)
+    # 2. PATRÓN DE ARQUITECTURA / DISEÑO
+    patrones_arq = [
+        "Hexagonal / Ports & Adapters (Dominio desacoplado de infraestructura)",
+        "Clean Architecture / Onion (Casos de uso y entidades puras)",
+        "Container / Presentational Pattern (UI componentes tontos + contenedores)",
+        "Atomic Design (Átomos, Moléculas, Organismos, Plantillas)",
+        "Vertical Slice Architecture (Por feature completa)",
+        "Repository & Unit of Work Pattern",
+        "Event-Driven / Pub-Sub (Mensajería asíncrona)",
+        "Modular Monolith (Límites estrictos en monolito)"
+    ]
+    p_arquitectura = select_option("2. ¿Qué patrón o arquitectura guía esta solución?", patrones_arq)
+    print(f"   {GREEN}✓ Seleccionado:{NC} {p_arquitectura}\n")
 
-    # Guardar en Engram si está disponible
-    print(f"\n{BLUE}▶ Persistiendo memoria en Engram...{NC}")
+    # 3. LENGUAJE / STACK PRINCIPAL
+    lenguajes = [
+        "TypeScript / Node.js / React / Next.js",
+        "Python (FastAPI / PyTorch / Boto3 / Scripts)",
+        "Go (Microservicios / CLI / Concurrencia)",
+        "Rust (Alto rendimiento / Seguridad en memoria)",
+        "Bash / Shell Scripting (Automatización POSIX)",
+        "PHP / Laravel / Modern Backend"
+    ]
+    p_lenguaje = select_option("3. ¿Cuál es el stack / lenguaje central del cambio?", lenguajes)
+    print(f"   {GREEN}✓ Seleccionado:{NC} {p_lenguaje}\n")
+
+    # 4. RESTRICCIÓN Y ADVERTENCIA PARA EL AGENTE
+    restricciones = [
+        "Preservar cobertura de tests (TDD estricto; no romper suites existentes)",
+        "No agregar dependencias pesadas de terceros (usar estándar)",
+        "Mantener tipado estricto (prohibido 'any' o casteo inseguro)",
+        "Respetar límite de 10 archivos y commits convencionales limpios",
+        "No alterar contratos de API ni firmas públicas sin versionado"
+    ]
+    p_restriccion = select_option("4. ¿Qué regla o restricción crítica NO debe violar ningún agente?", restricciones)
+    print(f"   {GREEN}✓ Seleccionado:{NC} {p_restriccion}\n")
+
+    # Guardar en Engram
+    print(f"{BLUE}▶ Persistiendo memoria estructurada en Engram...{NC}")
     if shutil.which("engram"):
-        title = f"Decision: {p1_objetivo[:40]}"
+        title = f"Decision: {p_detalle[:40]}"
         msg = (
             f"Proyecto: {project}\n"
-            f"Objetivo: {p1_objetivo}\n"
-            f"Decision Tecnica: {p2_decision}\n"
-            f"Restriccion Critica: {p3_restriccion}"
+            f"Tipo Tarea: {p_tipo}\n"
+            f"Detalle: {p_detalle}\n"
+            f"Patrón Arquitectura: {p_arquitectura}\n"
+            f"Stack/Lenguaje: {p_lenguaje}\n"
+            f"Restricción Crítica: {p_restriccion}"
         )
         res = subprocess.run([
             "engram", "save", title, msg,
@@ -103,20 +161,17 @@ def cmd_interactive_session():
         ], capture_output=True, text=True)
 
         if res.returncode == 0:
-            print(f"{GREEN}✓ Memoria persistida con éxito en Engram para {project}.{NC}")
+            print(f"{GREEN}✓ Decisión registrada con éxito en Engram ({project}).{NC}")
         else:
             print(f"{YELLOW}⚠️  Aviso Engram: {res.stderr.strip() or res.stdout.strip()}{NC}")
     else:
         print(f"{YELLOW}ℹ️  Engram no encontrado en PATH. Saltando persistencia.{NC}")
 
-    # Chequeo de cambios en Git
     print("")
     audit_changes_rule()
-
-    print(f"\n{GREEN}{BOLD}🎉 Sesión de contexto lista.{NC} Los agentes pueden consultar esta decisión.")
+    print(f"\n{GREEN}{BOLD}🎉 Contexto cargado.{NC} Los agentes consultarán este marco de trabajo antes de actuar.")
 
 def cmd_gate():
-    """Puerta de calidad: Corre Linters, Tests, GGA y verifica la regla de 10 cambios."""
     banner()
     check_git_repo()
     print(f"{BLUE}Iniciando Quality Gate en:{NC} {Path.cwd()}\n")
@@ -159,19 +214,18 @@ def cmd_commit(message):
 def print_help():
     banner()
     print("USO:")
-    print("  chelo-harness                   Inicia el cuestionario interactivo y guarda en Engram")
+    print("  chelo-harness                   Inicia el cuestionario interactivo con menús de opciones")
     print("  chelo-harness gate              Ejecuta la puerta de calidad y audita regla de 10 cambios")
     print("  chelo-harness commit \"<msg>\"    Commitea con validaciones de gobernanza pre-commit")
     print("  chelo-harness status            Inspecciona el estado del workspace bajo las reglas de Chelo")
 
 def main():
     if len(sys.argv) == 1:
-        # Ejecución directa sin argumentos -> MODO INTERACTIVO
         cmd_interactive_session()
         sys.exit(0)
 
     cmd = sys.argv[1]
-    if cmd in ["ask", "learn", "start"]:
+    if cmd in ["ask", "learn", "start", "menu"]:
         cmd_interactive_session()
     elif cmd == "gate":
         cmd_gate()
