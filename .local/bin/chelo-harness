@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-chelo-harness — Coding-Agent Harness con Gobernanza, Levantamiento de Requerimientos (Juan López),
-                Spec-First / Docs-as-Code (Mermaid/OpenAPI/Hurl), Prism Mock/Proxy Engine,
-                Memoria en Engram y Orquestación de Agentes.
+chelo-harness — Coding-Agent Harness con Gobernanza, Sincronización Daily/Canales (Slack/GitHub),
+                Levantamiento de Requerimientos (Juan López), Spec-First / Docs-as-Code (Mermaid/OpenAPI/Hurl),
+                Prism Mock/Proxy Engine, Memoria en Engram y Orquestación.
 Autor: Juan Marcelo Rodríguez (jmrodev)
 """
 
@@ -11,7 +11,15 @@ import os
 import subprocess
 import shutil
 import time
+import json
 from pathlib import Path
+
+# Inyectar librería chelo
+LIB_PATH = str(Path.home() / ".local/lib/chelo")
+if LIB_PATH not in sys.path:
+    sys.path.insert(0, LIB_PATH)
+
+import chelo_channels
 
 CYAN = "\033[0;36m"
 GREEN = "\033[0;32m"
@@ -28,7 +36,7 @@ BACKEND_PORT = 8000
 
 def banner():
     print(f"{CYAN}{BOLD}╔═══════════════════════════════════════════════════════════════════╗{NC}")
-    print(f"{CYAN}{BOLD}║         🛡️  CHELO-HARNESS — SPEC-FIRST & CONTRACT RUNTIME         ║{NC}")
+    print(f"{CYAN}{BOLD}║         🛡️  CHELO-HARNESS — AGILE & CONTRACT RUNTIME               ║{NC}")
     print(f"{CYAN}{BOLD}╚═══════════════════════════════════════════════════════════════════╝{NC}\n")
 
 def check_git_repo():
@@ -86,20 +94,58 @@ def audit_changes_rule():
         return False
     return True
 
-def find_openapi_spec():
-    candidates = list(Path.cwd().glob("**/openapi.yaml")) + \
-                 list(Path.cwd().glob("**/openapi.yml")) + \
-                 list(Path.cwd().glob("**/api*.yaml"))
-    return candidates[0] if candidates else None
+def cmd_daily_sync():
+    banner()
+    print(f"{BLUE}☕ SINCRONIZACIÓN DAILY SCRUM & CANALES DEL EQUIPO{NC}\n")
+
+    # 1. Slack novedades
+    print(f"{CYAN}📡 Consultando canal #practicas de Slack...{NC}")
+    res = chelo_channels.get_slack_messages(limit=3)
+    if res.get("ok"):
+        for m in res.get("messages", []):
+            print(f"   💬 {YELLOW}{m.get('user')}{NC}: {m.get('text')[:120]}...")
+    else:
+        print(f"   {YELLOW}⚠️  Slack no disponible o sin token: {res.get('error')}{NC}")
+
+    # 2. GitHub Sprint & Milestones
+    print(f"\n{CYAN}📌 Consultando Sprint y Milestones de GitHub...{NC}")
+    if shutil.which("gh"):
+        sprint_info = chelo_channels.get_github_sprint_context()
+        m = sprint_info.get("milestone")
+        if m:
+            print(f"   🏆 {GREEN}Milestone Activo:{NC} {BOLD}{m.get('title')}{NC} (Vence: {m.get('due_on', 'N/A')})")
+            print(f"      Progreso: {m.get('closed_issues')} cerrados / {m.get('open_issues')} abiertos")
+        else:
+            print(f"   {YELLOW}No hay Milestones abiertos en este repositorio.{NC}")
+    print("")
+
+def cmd_board(action="open"):
+    banner()
+    if action == "init":
+        print(f"{BLUE}🚀 Instalando Daily Board en este repositorio...{NC}")
+        subprocess.run("curl -sL https://raw.githubusercontent.com/jmrodev/daily-board/main/install.sh | bash", shell=True)
+    else:
+        # Abrir Daily Board en el navegador
+        try:
+            repo_url = subprocess.run(["gh", "repo", "view", "--json", "url", "-q", ".url"], capture_output=True, text=True).stdout.strip()
+            if repo_url:
+                org_repo = repo_url.replace("https://github.com/", "")
+                org, repo = org_repo.split("/")
+                board_url = f"https://{org}.github.io/{repo}/"
+                print(f"{GREEN}✓ Abriendo Daily Board:{NC} {board_url}")
+                subprocess.run(["xdg-open", board_url], capture_output=True)
+            else:
+                subprocess.run(["xdg-open", "https://jmrodev.github.io/daily-board/"], capture_output=True)
+        except Exception:
+            print(f"{YELLOW}No se pudo detectar URL de GitHub Pages. Abriendo repo de Daily Board...{NC}")
+            subprocess.run(["xdg-open", "https://github.com/jmrodev/daily-board"], capture_output=True)
 
 def cmd_mock():
     banner()
     spec = find_openapi_spec()
     if not spec:
         print(f"{RED}❌ No se encontró archivo de especificación OpenAPI (*.yaml) en el repositorio.{NC}")
-        print(f"{YELLOW}Tip Juan López: Creá primero tu openapi.yaml para simular el servidor sin base de datos.{NC}")
         sys.exit(1)
-
     print(f"{BLUE}🚀 Levantando Prism Mock Server desde:{NC} {spec}")
     print(f"{GREEN}✓ Servidor simulado activo en:{NC} {BOLD}http://localhost:{PRISM_PORT}{NC}")
     print(f"{YELLOW}Presioná Ctrl+C para detener el mock.{NC}\n")
@@ -111,7 +157,6 @@ def cmd_proxy(backend_url=f"http://localhost:{BACKEND_PORT}"):
     if not spec:
         print(f"{RED}❌ No se encontró archivo OpenAPI (*.yaml) para validar el proxy.{NC}")
         sys.exit(1)
-
     print(f"{BLUE}🛡️ Levantando Prism Proxy de Validación:{NC}")
     print(f"   • Contrato: {spec}")
     print(f"   • Backend Real: {backend_url}")
@@ -145,6 +190,12 @@ def cmd_test():
         print(f"\n{RED}{BOLD}❌ {failed} prueba(s) fallaron contra el contrato OpenAPI.{NC}\n")
         return False
 
+def find_openapi_spec():
+    candidates = list(Path.cwd().glob("**/openapi.yaml")) + \
+                 list(Path.cwd().glob("**/openapi.yml")) + \
+                 list(Path.cwd().glob("**/api*.yaml"))
+    return candidates[0] if candidates else None
+
 def cmd_interactive_session():
     banner()
     check_git_repo()
@@ -152,11 +203,31 @@ def cmd_interactive_session():
 
     print(f"📂 Proyecto detectado: {BOLD}{GREEN}{project}{NC}\n")
 
+    # Sincronización previa opcional
+    cmd_daily_sync()
+
     # =========================================================================
     # FASE 0: INVESTIGACIÓN Y LEVANTAMIENTO DE REQUERIMIENTOS (JUAN LÓPEZ)
     # =========================================================================
-    print(f"{MAGENTA}{BOLD}📋 FASE 0: INVESTIGACIÓN & LEVANTAMIENTO DE REQUERIMIENTOS (ANÁLISIS DE NEGOCIO){NC}")
+    print(f"{MAGENTA}{BOLD}📋 FASE 0: INVESTIGACIÓN & LEVANTAMIENTO DE REQUERIMIENTOS{NC}")
     print(f"{YELLOW}Antes del código y la arquitectura técnica, definimos el problema de negocio.{NC}\n")
+
+    # Ofrecer seleccionar de GitHub Issues si hay disponibles
+    selected_issue_number = None
+    if shutil.which("gh"):
+        try:
+            sprint_info = chelo_channels.get_github_sprint_context()
+            open_issues = sprint_info.get("issues", [])
+            if open_issues:
+                issue_opts = [f"#{i['number']} {i['title']}" for i in open_issues[:5]]
+                usar_gh = select_option("¿Querés asociar esta sesión a un Issue abierto de GitHub?", ["Escribir requerimiento manual"] + issue_opts, allow_custom=False)
+                if usar_gh != "Escribir requerimiento manual":
+                    selected_issue_number = usar_gh.split()[0].replace("#", "")
+                    # Marcar issue in-progress
+                    subprocess.run(["gh", "issue", "edit", selected_issue_number, "--add-label", "status:in-progress", "--remove-label", "status:todo"], capture_output=True)
+                    print(f"   {GREEN}✓ Issue #{selected_issue_number} vinculado y marcado `status:in-progress` en GitHub.{NC}\n")
+        except Exception:
+            pass
 
     req_problema = prompt_text("1. ¿Qué problema o ineficiencia del proceso actual se quiere resolver?", "Gestión manual lenta y propensa a errores")
     print(f"   {GREEN}✓ Problema:{NC} {req_problema}\n")
@@ -232,9 +303,7 @@ def cmd_interactive_session():
     p_agente = select_option("¿Qué agente ejecutará este trabajo?", agentes, allow_custom=False)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_agente}\n")
 
-    # =========================================================================
-    # PERSISTENCIA EN ENGRAM
-    # =========================================================================
+    # Persistir en Engram
     topic = f"harness/{project}/{p_tipo.split('/')[0].strip().lower().replace(' ', '-')}"
     doc_content = (
         f"# Levantamiento de Requerimientos y Encuadre — {project}\n\n"
@@ -242,7 +311,8 @@ def cmd_interactive_session():
         f"- **Problema**: {req_problema}\n"
         f"- **Actores**: {req_actores}\n"
         f"- **Alcance**: {req_alcance}\n"
-        f"- **Criterio de Aceptación (BDD)**: {req_criterio}\n\n"
+        f"- **Criterio de Aceptación (BDD)**: {req_criterio}\n"
+        f"- **GitHub Issue**: {f'#{selected_issue_number}' if selected_issue_number else 'N/A'}\n\n"
         f"## 2. Encuadre Técnico (Fase 1)\n"
         f"- **Tipo de Tarea**: {p_tipo}\n"
         f"- **Patrón Arquitectónico**: {p_arquitectura}\n"
@@ -259,15 +329,13 @@ def cmd_interactive_session():
     except Exception:
         pass
 
-    # =========================================================================
-    # CONSTRUCCIÓN DEL PROMPT ENJAULADO (BOUNDED PROMPT)
-    # =========================================================================
     prompt_confinado = (
         f"ANÁLISIS DE NEGOCIO (REQUERIMIENTOS):\n"
         f"  • PROBLEMA: {req_problema}\n"
         f"  • ACTORES: {req_actores}\n"
         f"  • ALCANCE: {req_alcance}\n"
-        f"  • BDD / CRITERIO: {req_criterio}\n\n"
+        f"  • BDD / CRITERIO: {req_criterio}\n"
+        f"{f'  • TICKET GITHUB: Closes #{selected_issue_number}' if selected_issue_number else ''}\n\n"
         f"ARQUITECTURA: {p_arquitectura}\n"
         f"STACK: {p_lenguaje}\n\n"
         f"PROTOCOLO STRICT SPEC-FIRST (JUAN LÓPEZ):\n"
@@ -347,7 +415,9 @@ def cmd_commit(message):
 def print_help():
     banner()
     print("COMANDOS DISPONIBLES:")
-    print("  chelo-harness                   Inicia levantamiento de requerimientos (Fase 0) y orquesta agente")
+    print("  chelo-harness                   Inicia sesión ágil (Daily Sync -> Requerimientos -> Agente)")
+    print("  chelo-harness sync              Sincronización Daily Scrum (Slack #practicas + Milestones GitHub)")
+    print("  chelo-harness board [open|init] Abre el Daily Board o inyecta su GitHub Pages con one-liner")
     print("  chelo-harness mock              Levanta Prism Mock Server (:4010) leyendo el openapi.yaml")
     print("  chelo-harness proxy [url]       Levanta Prism Proxy validador contra backend real (:8000)")
     print("  chelo-harness test              Ejecuta la suite de pruebas Hurl (*.hurl) contra el contrato")
@@ -363,6 +433,11 @@ def main():
     cmd = sys.argv[1]
     if cmd in ["ask", "learn", "start", "run", "menu"]:
         cmd_interactive_session()
+    elif cmd in ["sync", "daily", "novedades"]:
+        cmd_daily_sync()
+    elif cmd == "board":
+        sub = sys.argv[2] if len(sys.argv) > 2 else "open"
+        cmd_board(sub)
     elif cmd == "mock":
         cmd_mock()
     elif cmd == "proxy":
