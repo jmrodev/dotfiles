@@ -44,7 +44,7 @@ Este repositorio se gestiona mediante un **Git Bare Repository** ubicado en `~/.
 | :--- | :--- |
 | `Super + Enter` | Terminal oficial (**Kitty + Herdr**) |
 | `Super + d` | Lanzador de aplicaciones |
-| `Super + e` | Explorador de archivos (Dolphin) |
+| `Super + e` | Explorador de archivos (**Yazi** en Kitty) |
 | `Super + v` | Historial de portapapeles (`cliphist`) |
 | `Super + Shift + Q` | Cerrar ventana activa |
 | `Super + f` | Pantalla completa (Fullscreen) |
