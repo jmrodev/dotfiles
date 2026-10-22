@@ -1,0 +1,102 @@
+#!/usr/bin/env python3
+import os
+import sys
+import json
+import urllib.request
+from pathlib import Path
+from datetime import datetime
+
+VAULT_DIR = Path.home() / "Documents" / "Brujula"
+CAPTURAS_DIR = VAULT_DIR / "Capturas"
+OUTPUT_FILE = VAULT_DIR / "Flujos IA" / "Informe Semanal - Gemini.md"
+
+def get_api_key():
+    key = os.environ.get("GEMINI_API_KEY")
+    if key:
+        return key
+    secrets_file = Path.home() / ".config" / "fish" / "conf.d" / "secrets.fish"
+    if secrets_file.exists():
+        with open(secrets_file) as f:
+            for line in f:
+                if "GEMINI_API_KEY" in line and '"' in line:
+                    return line.split('"')[1]
+    return None
+
+def read_capturas():
+    if not CAPTURAS_DIR.exists():
+        return ""
+    content = []
+    for f in sorted(CAPTURAS_DIR.glob("*.md")):
+        text = f.read_text(encoding="utf-8")
+        content.append(f"### Nota: {f.name}\n{text}\n")
+    return "\n".join(content)
+
+def call_gemini(prompt, api_key):
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
+    payload = {
+        "contents": [
+            {
+                "parts": [
+                    {"text": prompt}
+                ]
+            }
+        ],
+        "generationConfig": {
+            "temperature": 0.2,
+            "maxOutputTokens": 2048
+        }
+    }
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    try:
+        with urllib.request.urlopen(req) as resp:
+            res = json.loads(resp.read().decode("utf-8"))
+            return res["candidates"][0]["content"]["parts"][0]["text"]
+    except Exception as e:
+        sys.stderr.write(f"Error llamando a Gemini API: {e}\n")
+        sys.exit(1)
+
+def main():
+    api_key = get_api_key()
+    if not api_key:
+        print("Error: No se encontró GEMINI_API_KEY en el entorno ni en secrets.fish.")
+        sys.exit(1)
+
+    capturas = read_capturas()
+    if not capturas.strip():
+        print("No se encontraron notas en Capturas/.")
+        sys.exit(0)
+
+    prompt = f"""Eres un asistente de productividad y revisión para una bóveda de Obsidian basada en el sistema Brújula.
+A continuación tienes las notas actuales de la carpeta Capturas/. Cada nota contiene metadatos en su frontmatter (tipo: idea/tarea/nota/referencia, estado: bandeja/en-curso/hecho) y su contenido:
+
+{capturas}
+
+Genera un informe semanal claro, directo y accionable en castellano con el siguiente formato Markdown:
+
+# 📊 Revisión Semanal con Gemini
+*Generado automáticamente el {datetime.now().strftime('%Y-%m-%d %H:%M')}*
+
+## 1. Resumen por tipo
+Agrupa las notas capturadas (ideas, tareas, referencias) en una línea concisa por nota.
+
+## 2. Prioridades de la semana
+Las 3 cosas críticas para avanzar o cerrar esta semana, explicando brevemente el porqué.
+
+## 3. Alertas de estancamiento
+Identifica notas que hayan quedado en "bandeja" sin pasar a "en-curso" o que requieran decisión inmediata.
+
+## 4. Próxima acción concreta
+Para cada una de las 3 prioridades, define exactamente el primer micro-paso de acción sin ambigüedades.
+"""
+
+    print("Analizando notas de Brújula con Gemini 2.5 Flash...")
+    respuesta = call_gemini(prompt, api_key)
+
+    OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
+    OUTPUT_FILE.write_text(respuesta, encoding="utf-8")
+
+    print(f"✓ Informe guardado exitosamente en:\n  {OUTPUT_FILE}")
+
+if __name__ == "__main__":
+    main()
