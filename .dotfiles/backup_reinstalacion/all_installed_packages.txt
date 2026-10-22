@@ -139,8 +139,6 @@ dnsmasq 2.93-1
 docker 1:29.8.2-1
 docker-buildx 0.37.2-1
 docker-compose 5.6.0-1
-dolphin 26.08.1-1
-dolphin-plugins 26.08.1-1
 dosfstools 4.2-5
 double-conversion 3.4.0-1
 dtc 1:1.8.1-1
