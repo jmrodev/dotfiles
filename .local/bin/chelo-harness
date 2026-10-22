@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-chelo-harness — Coding-Agent Harness con Gobernanza, Menús Interactivos, TDD y Memoria en Engram
+chelo-harness — Coding-Agent Harness con Gobernanza, Menús Interactivos, TDD, Memoria en Engram y Orquestación de Agentes
 Autor: Juan Marcelo Rodríguez (jmrodev)
 """
 
@@ -84,7 +84,7 @@ def cmd_interactive_session():
     project = get_project_name()
 
     print(f"📂 Proyecto detectado: {BOLD}{GREEN}{project}{NC}\n")
-    print(f"{BOLD}🧠 CUESTIONARIO GUIADO DE GOBERNANZA & ARQUITECTURA{NC}\n")
+    print(f"{BOLD}🧠 1. ENCUADRE DE ARQUITECTURA & GOBERNANZA{NC}\n")
 
     # 1. TIPO DE TAREA
     tipos_tarea = [
@@ -95,11 +95,11 @@ def cmd_interactive_session():
         "Seguridad / Hardening / Auditoría de dependencias",
         "Testing / Cobertura TDD / E2E"
     ]
-    p_tipo = select_option("1. ¿Qué tipo de trabajo estás encarando?", tipos_tarea)
+    p_tipo = select_option("¿Qué tipo de trabajo estás encarando?", tipos_tarea)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_tipo}\n")
 
     # Detalle del objetivo
-    p_detalle = input(f"{BOLD}{CYAN}   Detalle en una frase del objetivo:{NC}\n   👉 ").strip()
+    p_detalle = input(f"{BOLD}{CYAN}¿Qué tarea o requerimiento específico debe ejecutar el agente?{NC}\n👉 ").strip()
     if not p_detalle:
         p_detalle = p_tipo
 
@@ -116,7 +116,7 @@ def cmd_interactive_session():
         "Event-Driven / Pub-Sub (Mensajería asíncrona)",
         "Modular Monolith (Límites estrictos en monolito)"
     ]
-    p_arquitectura = select_option("2. ¿Qué patrón o arquitectura guía esta solución?", patrones_arq)
+    p_arquitectura = select_option("¿Qué patrón o arquitectura guía esta solución?", patrones_arq)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_arquitectura}\n")
 
     # 3. LENGUAJE / STACK PRINCIPAL
@@ -128,28 +128,38 @@ def cmd_interactive_session():
         "Bash / Shell Scripting (Automatización POSIX)",
         "PHP / Laravel / Modern Backend"
     ]
-    p_lenguaje = select_option("3. ¿Cuál es el stack / lenguaje central del cambio?", lenguajes)
+    p_lenguaje = select_option("¿Cuál es el stack / lenguaje central del cambio?", lenguajes)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_lenguaje}\n")
 
     # 4. RESTRICCIÓN Y ADVERTENCIA PARA EL AGENTE
     restricciones = [
-        "Preservar cobertura de tests (TDD estricto; no romper suites existentes)",
+        "Preservar cobertura de tests (TDD estricto; escribir test antes de código)",
         "No agregar dependencias pesadas de terceros (usar estándar)",
         "Mantener tipado estricto (prohibido 'any' o casteo inseguro)",
         "Respetar límite de 10 archivos y commits convencionales limpios",
         "No alterar contratos de API ni firmas públicas sin versionado"
     ]
-    p_restriccion = select_option("4. ¿Qué regla o restricción crítica NO debe violar ningún agente?", restricciones)
+    p_restriccion = select_option("¿Qué regla crítica NO debe violar el agente?", restricciones)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_restriccion}\n")
 
+    # 5. ELECCIÓN DE AGENTE EXECUTOR
+    agentes = [
+        "OpenCode CLI (headless / run directo en terminal)",
+        "OpenCode TUI (interfaz interactiva)",
+        "Antigravity (AGY) / Sesión actual de Pair Programming",
+        "Solo guardar contexto en Engram (no disparar agente aún)"
+    ]
+    p_agente = select_option("¿Quién ejecuta la tarea?", agentes, allow_custom=False)
+    print(f"   {GREEN}✓ Seleccionado:{NC} {p_agente}\n")
+
     # Guardar en Engram
-    print(f"{BLUE}▶ Persistiendo memoria estructurada en Engram...{NC}")
+    print(f"{BLUE}▶ Persistiendo marco de trabajo en Engram...{NC}")
     if shutil.which("engram"):
-        title = f"Decision: {p_detalle[:40]}"
+        title = f"Task: {p_detalle[:40]}"
         msg = (
             f"Proyecto: {project}\n"
             f"Tipo Tarea: {p_tipo}\n"
-            f"Detalle: {p_detalle}\n"
+            f"Objetivo: {p_detalle}\n"
             f"Patrón Arquitectura: {p_arquitectura}\n"
             f"Stack/Lenguaje: {p_lenguaje}\n"
             f"Restricción Crítica: {p_restriccion}"
@@ -161,15 +171,54 @@ def cmd_interactive_session():
         ], capture_output=True, text=True)
 
         if res.returncode == 0:
-            print(f"{GREEN}✓ Decisión registrada con éxito en Engram ({project}).{NC}")
+            print(f"{GREEN}✓ Memoria registrada en Engram ({project}).{NC}")
         else:
             print(f"{YELLOW}⚠️  Aviso Engram: {res.stderr.strip() or res.stdout.strip()}{NC}")
-    else:
-        print(f"{YELLOW}ℹ️  Engram no encontrado en PATH. Saltando persistencia.{NC}")
 
-    print("")
-    audit_changes_rule()
-    print(f"\n{GREEN}{BOLD}🎉 Contexto cargado.{NC} Los agentes consultarán este marco de trabajo antes de actuar.")
+    # Construir el Prompt Enjaulado (Bounded Prompt)
+    prompt_confinado = (
+        f"OBJETIVO: {p_detalle}\n"
+        f"ARQUITECTURA OBLIGATORIA: {p_arquitectura}\n"
+        f"STACK: {p_lenguaje}\n"
+        f"REGLA CRÍTICA: {p_restriccion}\n"
+        f"LÍMITE ESTRICTO: No modificar más de 10 archivos bajo ninguna circunstancia. "
+        f"Si requiere más de 10 modificaciones, pausar y pedir confirmación."
+    )
+
+    # Disparar según el agente elegido
+    if "OpenCode CLI" in p_agente:
+        if shutil.which("opencode"):
+            print(f"\n{BLUE}🚀 Disparando OpenCode con el prompt gobernado por Chelo-Harness...{NC}\n")
+            subprocess.run(["opencode", "run", prompt_confinado])
+            # Al terminar la ejecución de OpenCode, auditar cambios
+            print(f"\n{BLUE}🔍 Chelo-Harness auditando resultados post-ejecución...{NC}")
+            audit_changes_rule()
+        else:
+            print(f"{RED}❌ opencode no está en PATH.{NC}")
+
+    elif "OpenCode TUI" in p_agente:
+        if shutil.which("opencode"):
+            print(f"\n{BLUE}🚀 Abriendo OpenCode TUI en el workspace...{NC}")
+            # Copiar el prompt al portapapeles para pegarlo en OpenCode
+            subprocess.run(f"printf '%s' \"{prompt_confinado}\" | wl-copy", shell=True)
+            print(f"{GREEN}✓ Prompt gobernado copiado al portapapeles.{NC} Pegalo en OpenCode con Ctrl+V.")
+            subprocess.run(["opencode"])
+            audit_changes_rule()
+        else:
+            print(f"{RED}❌ opencode no está en PATH.{NC}")
+
+    elif "Antigravity" in p_agente:
+        # Copiar prompt para la sesión activa de AGY
+        subprocess.run(f"printf '%s' \"{prompt_confinado}\" | wl-copy", shell=True)
+        print(f"\n{GREEN}{BOLD}✓ Prompt gobernado generado y copiado al portapapeles.{NC}")
+        print(f"{CYAN}Pegalo directamente en tu chat con Antigravity para que ejecute bajo este marco.{NC}\n")
+        print(f"{BOLD}Contenido del marco:{NC}")
+        print(f"--------------------------------------------------")
+        print(prompt_confinado)
+        print(f"--------------------------------------------------")
+
+    else:
+        print(f"\n{GREEN}✓ Contexto guardado en Engram. Listo para cuando quieras disparar un agente.{NC}")
 
 def cmd_gate():
     banner()
@@ -214,7 +263,7 @@ def cmd_commit(message):
 def print_help():
     banner()
     print("USO:")
-    print("  chelo-harness                   Inicia el cuestionario interactivo con menús de opciones")
+    print("  chelo-harness                   Inicia encuadre interactivo y orquesta agente (OpenCode/AGY)")
     print("  chelo-harness gate              Ejecuta la puerta de calidad y audita regla de 10 cambios")
     print("  chelo-harness commit \"<msg>\"    Commitea con validaciones de gobernanza pre-commit")
     print("  chelo-harness status            Inspecciona el estado del workspace bajo las reglas de Chelo")
@@ -225,7 +274,7 @@ def main():
         sys.exit(0)
 
     cmd = sys.argv[1]
-    if cmd in ["ask", "learn", "start", "menu"]:
+    if cmd in ["ask", "learn", "start", "run", "menu"]:
         cmd_interactive_session()
     elif cmd == "gate":
         cmd_gate()
