@@ -51,16 +51,17 @@ status_json() {
     fi
     save_state
 
-    local icon alt tooltip
+    local alt tooltip
     if [ "$STATUS" = "on" ]; then
         alt="on"
-        tooltip="Gammastep ON\nTemp: ${TEMP}K\nBrillo: ${BRIGHT}\nGamma: ${GAMMA}\n\nClic: On/Off\nScroll: Temp ±200K\nClic derecho: Menú"
+        tooltip="Gammastep ON - Temp: ${TEMP}K - Brillo: ${BRIGHT} - Gamma: ${GAMMA} (Clic: On/Off | Scroll: Temp | Clic derecho: Menú)"
     else
         alt="off"
-        tooltip="Gammastep OFF (Preset: ${TEMP}K | Brillo: ${BRIGHT})\n\nClic: Activar\nScroll: Temp ±200K\nClic derecho: Menú"
+        tooltip="Gammastep OFF (Preset: ${TEMP}K / ${BRIGHT}) (Clic: Activar | Scroll: Temp | Clic derecho: Menú)"
     fi
 
-    printf '{"alt":"%s","tooltip":"%b","class":"%s"}\n' "$alt" "$tooltip" "$alt"
+    jq -cn --arg alt "$alt" --arg tooltip "$tooltip" --arg class "$alt" \
+        '{"alt":$alt, "tooltip":$tooltip, "class":$class}'
 }
 
 toggle() {
