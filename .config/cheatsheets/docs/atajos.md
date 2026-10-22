@@ -12,13 +12,9 @@
 
 ---
 
-# ⌨️ TMUX (Prefix: Ctrl+a)
-- `C-a + v` / `s`: Dividir panel (vertical / horizontal)
-- `C-a + h/j/k/l`: Moverse entre paneles (o Ctrl+hjkl)
-- `C-a + H/J/K/L`: Redimensionar tamaño de panel
-- `C-a + z`: Zoom / Maximizar panel actual
-- `C-a + c` / `x`: Crear nueva ventana / Cerrar panel
-- `C-a + f`: Sessionizer (selector fzf de proyectos)
+# 🐑 HERDR (Multiplexer oficial - Prefix: Ctrl+b)
+- `Ctrl + b`: Prefijo base para gestión de ventanas y splits
+- `Ctrl + b` seguido de comandos: navegar y dividir paneles
 
 ---
 
@@ -26,3 +22,12 @@
 - `Super + o`: OpenCode CLI
 - `Super + g`: Antigravity (AGY)
 - `Super + c`: AGY Code
+
+---
+
+# 🛠️ UTILIDADES DEL SISTEMA
+- `shmooz`: Lupa / Magnifier interactivo en Wayland
+- `homestate diff`: Auditar cambios y nuevos candidatos a dotfiles
+- `homestate snapshot`: Actualizar foto base del sistema
+- `gemini-brujula`: Informe semanal automático con Gemini en Brújula
+- `gammastep-control`: Control manual / presets de temperatura y brillo
