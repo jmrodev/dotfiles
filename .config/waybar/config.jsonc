@@ -46,7 +46,6 @@
         "backlight",
         // system
         "custom/theme",
-        "custom/adaptive-light",
         "custom/sunset",
         "custom/pacman",
         "tray",
