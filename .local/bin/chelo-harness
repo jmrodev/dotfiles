@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-chelo-harness — Coding-Agent Harness con Gobernanza, Metodología Spec-First/TDD,
-                Docs-as-Code (Mermaid/OpenAPI/Hurl), Memoria en Engram y Orquestación de Agentes.
+chelo-harness — Coding-Agent Harness con Gobernanza, Metodología Spec-First (Juan López / Alan Buscaglia),
+                Docs-as-Code (Mermaid/OpenAPI/Hurl), Prism Mock/Proxy Engine, Memoria en Engram y Orquestación.
 Autor: Juan Marcelo Rodríguez (jmrodev)
 """
 
@@ -9,7 +9,8 @@ import sys
 import os
 import subprocess
 import shutil
-import readline
+import time
+import signal
 from pathlib import Path
 
 CYAN = "\033[0;36m"
@@ -22,10 +23,12 @@ BOLD = "\033[1m"
 NC = "\033[0m"
 
 MAX_ALLOWED_CHANGES = 10
+PRISM_PORT = 4010
+BACKEND_PORT = 8000
 
 def banner():
     print(f"{CYAN}{BOLD}╔═══════════════════════════════════════════════════════════════════╗{NC}")
-    print(f"{CYAN}{BOLD}║         🛡️  CHELO-HARNESS — SPEC-FIRST CODING AGENT RUNTIME       ║{NC}")
+    print(f"{CYAN}{BOLD}║         🛡️  CHELO-HARNESS — SPEC-FIRST & CONTRACT RUNTIME         ║{NC}")
     print(f"{CYAN}{BOLD}╚═══════════════════════════════════════════════════════════════════╝{NC}\n")
 
 def check_git_repo():
@@ -79,76 +82,128 @@ def audit_changes_rule():
         return False
     return True
 
+def find_openapi_spec():
+    candidates = list(Path.cwd().glob("**/openapi.yaml")) + \
+                 list(Path.cwd().glob("**/openapi.yml")) + \
+                 list(Path.cwd().glob("**/api*.yaml"))
+    return candidates[0] if candidates else None
+
+def cmd_mock():
+    banner()
+    spec = find_openapi_spec()
+    if not spec:
+        print(f"{RED}❌ No se encontró archivo de especificación OpenAPI (*.yaml) en el repositorio.{NC}")
+        print(f"{YELLOW}Tip Juan López: Creá primero tu openapi.yaml para simular el servidor sin base de datos.{NC}")
+        sys.exit(1)
+
+    print(f"{BLUE}🚀 Levantando Prism Mock Server desde:{NC} {spec}")
+    print(f"{GREEN}✓ Servidor simulado activo en:{NC} {BOLD}http://localhost:{PRISM_PORT}{NC}")
+    print(f"{YELLOW}Presioná Ctrl+C para detener el mock.{NC}\n")
+
+    subprocess.run(["prism", "mock", str(spec), "-p", str(PRISM_PORT), "-m"])
+
+def cmd_proxy(backend_url=f"http://localhost:{BACKEND_PORT}"):
+    banner()
+    spec = find_openapi_spec()
+    if not spec:
+        print(f"{RED}❌ No se encontró archivo OpenAPI (*.yaml) para validar el proxy.{NC}")
+        sys.exit(1)
+
+    print(f"{BLUE}🛡️ Levantando Prism Proxy de Validación:{NC}")
+    print(f"   • Contrato: {spec}")
+    print(f"   • Backend Real: {backend_url}")
+    print(f"   • Proxy Validador: {BOLD}http://localhost:{PRISM_PORT}{NC}\n")
+
+    subprocess.run(["prism", "proxy", str(spec), backend_url, "-p", str(PRISM_PORT), "--validate-request"])
+
+def cmd_test():
+    banner()
+    hurl_files = sorted(list(Path.cwd().glob("**/*.hurl")))
+    if not hurl_files:
+        print(f"{YELLOW}⚠️  No se encontraron archivos de test .hurl en el repositorio.{NC}")
+        return False
+
+    print(f"{BLUE}▶ Ejecutando {len(hurl_files)} pruebas Hurl de contrato...{NC}\n")
+    failed = 0
+    for hf in hurl_files:
+        print(f"   🧪 Testeando {hf.name}...", end=" ", flush=True)
+        res = subprocess.run(["hurl", "--test", str(hf)], capture_output=True, text=True)
+        if res.returncode == 0:
+            print(f"{GREEN}PASÓ ✓{NC}")
+        else:
+            print(f"{RED}FALLÓ ✗{NC}")
+            failed += 1
+            if res.stderr:
+                print(f"{YELLOW}{res.stderr.strip()[:300]}{NC}")
+
+    if failed == 0:
+        print(f"\n{GREEN}{BOLD}✓ TODAS LAS PRUEBAS HURL SUPERADAS SIN VIOLACIONES DE CONTRATO.{NC}\n")
+        return True
+    else:
+        print(f"\n{RED}{BOLD}❌ {failed} prueba(s) fallaron contra el contrato OpenAPI.{NC}\n")
+        return False
+
 def cmd_interactive_session():
     banner()
     check_git_repo()
     project = get_project_name()
 
     print(f"📂 Proyecto detectado: {BOLD}{GREEN}{project}{NC}\n")
-    print(f"{BOLD}🧠 1. ENCUADRE DE ARQUITECTURA & GOBERNANZA (SPEC-FIRST){NC}\n")
+    print(f"{BOLD}🧠 1. ENCUADRE DE ARQUITECTURA & GOBERNANZA (SPEC-FIRST / JUAN LÓPEZ){NC}\n")
 
-    # 1. TIPO DE TAREA
     tipos_tarea = [
-        "Nueva Feature / Requerimiento de negocio (Spec -> Test -> Code)",
-        "Refactorización / Clean Code (sin cambio de contrato)",
-        "Bugfix / Corrección de error (Primero reproducir con Test)",
-        "Optimización de rendimiento / Reducción de latencia",
-        "Seguridad / Hardening / Auditoría de dependencias",
-        "Testing / Cobertura TDD / E2E (Hurl / Vitest / Pest)"
+        "Nueva Feature / Requerimiento (OpenAPI Spec -> Hurl Test -> Mock -> Code)",
+        "Refactorización / Clean Code (Preservar contrato OpenAPI intacto)",
+        "Bugfix / Corrección (Reproducir primero con test .hurl fallido)",
+        "Infraestructura / Docker / Despliegue (Dockerfile, compose, networking)",
+        "Testing / Cobertura de Contrato (Batería Hurl y asserts sl-violations)"
     ]
     p_tipo = select_option("¿Qué tipo de trabajo estás encarando?", tipos_tarea)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_tipo}\n")
 
-    p_detalle = input(f"{BOLD}{CYAN}¿Qué requerimiento u objetivo de negocio debe implementar el agente?{NC}\n👉 ").strip()
+    p_detalle = input(f"{BOLD}{CYAN}¿Qué requerimiento u objetivo debe implementar el agente?{NC}\n👉 ").strip()
     if not p_detalle:
         p_detalle = p_tipo
     print("")
 
-    # 2. PATRÓN DE ARQUITECTURA / DISEÑO
     patrones_arq = [
+        "Spec-First / Contract-Driven (OpenAPI + Prism Mock + Hurl Tests sin BBDD inicial)",
         "Hexagonal / Ports & Adapters (Dominio desacoplado de infraestructura)",
         "Clean Architecture / Onion (Casos de uso y entidades puras)",
-        "Container / Presentational Pattern (UI componentes tontos + contenedores)",
-        "Atomic Design (Átomos, Moléculas, Organismos, Plantillas)",
-        "Vertical Slice Architecture (Por feature completa con BDD)",
-        "CLI-First / Unix Pipeline (Herramientas ligeras sin dependencias infladas)"
+        "Container / Presentational (UI tonta desacoplada de API)",
+        "Unix-First / CLI Pipeline (Herramientas nativas ligeras sin dependencias infladas)"
     ]
     p_arquitectura = select_option("¿Bajo qué patrón de arquitectura se debe desarrollar?", patrones_arq)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_arquitectura}\n")
 
-    # 3. PROTOCOLO SPEC-FIRST Y DOCS-AS-CODE (Inspirado en EDI Juan López)
     disciplinas_spec = [
-        "Completo: Mermaid (Contexto/DFD) + BDD Gherkin (.feature) + OpenAPI + Test Hurl (.hurl)",
-        "API-First: Contrato OpenAPI (.yaml) + Suite de Tests Hurl (.hurl) ANTES del código",
-        "TDD Unitario/Integración: Escribir el test que falla ANTES de tocar la implementación",
-        "Docs-as-Code: Diagramas Mermaid en Markdown + Arquitectura documentada"
+        "Ciclo Completo Juan López: Spec OpenAPI + Prism Mock (:4010) + Tests Hurl sin violaciones ('sl-violations')",
+        "BDD + Contrato: Escenarios Gherkin (.feature) + OpenAPI (.yaml)",
+        "TDD Backend: Endpoint en PHP/Node validado vía Prism Proxy antes de persistir",
+        "Docs-as-Code: Diagramas Mermaid (.mmd) integrados en Markdown"
     ]
-    p_spec = select_option("¿Qué protocolo Spec-First / TDD debe anteponerse al código?", disciplinas_spec)
+    p_spec = select_option("¿Qué protocolo de verificación debe anteponerse al código?", disciplinas_spec)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_spec}\n")
 
-    # 4. STACK / LENGUAJE
     lenguajes = [
-        "TypeScript / React (Front nativo o modular)",
-        "TypeScript / Node.js (NestJS / Express / Fastify)",
-        "PHP nativo modular / SQLite (Enrutamiento ligero, PDO, cero frameworks inflados)",
-        "Python (FastAPI / Typer / Async)",
-        "Bash / Shell Scripting (Unix-first, pipes, jq, sed, awk)"
+        "PHP nativo modular / SQLite (Router declarativo, PDO, cero frameworks inflados)",
+        "TypeScript / Node.js (Prism, Fastify, Express o React nativo)",
+        "Python (FastAPI / Typer)",
+        "Bash / Shell Scripting (Unix tools, curl, hurl, jq)"
     ]
     p_lenguaje = select_option("¿Cuál es el stack / runtime base?", lenguajes)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_lenguaje}\n")
 
-    # 5. RESTRICCIÓN DE GOBERNANZA
     restricciones = [
-        "REGLA DE ORO: Tests ANTES que código. Ningún endpoint sin su suite de validación",
-        "REGLA DE CONTRATO: No alterar el contrato OpenAPI ni romper compatibilidad hacia atrás",
-        "REGLA DE PUREZA: Cero librerías externas innecesarias si la solución cabe en estándar nativo",
-        "REGLA DE CONTENEDOR: El cambio debe ser verificable en Docker o script de bootstrap sin dependencias globales",
-        "REGLA DE CONFINAMIENTO: Modificar únicamente los archivos estrictamente asociados al ticket"
+        "REGLA DE CONTRATO (JUAN LÓPEZ): El test Hurl debe validar que no exista el header 'sl-violations'",
+        "REGLA DE TDD: Ningún endpoint en backend sin su test .hurl correspondiente",
+        "REGLA DE SIMPLICIDAD: Cero bases de datos pesadas en fase de diseño; resolver primero con mock/sqlite",
+        "REGLA DE CONTENEDOR: El proyecto debe levantarse de forma reproducible sin paquetes globales",
+        "REGLA DE CONFINAMIENTO: Modificar únicamente los archivos asociados al ticket (máx 10)"
     ]
     p_restriccion = select_option("¿Cuál es la restricción crítica que el agente NO puede violar?", restricciones)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_restriccion}\n")
 
-    # 6. SELECCIÓN DE AGENTE
     agentes = [
         "OpenCode CLI (Ejecución directa en segundo plano / terminal)",
         "OpenCode TUI (Sesión interactiva en multiplexer Herdr)",
@@ -158,18 +213,16 @@ def cmd_interactive_session():
     p_agente = select_option("¿Qué agente ejecutará este trabajo?", agentes, allow_custom=False)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_agente}\n")
 
-    # REGISTRO EN ENGRAM
-    print(f"💾 Guardando encuadre metodológico en memoria de Engram...")
+    # Persistir en Engram
     topic = f"harness/{project}/{p_tipo.split('/')[0].strip().lower().replace(' ', '-')}"
     doc_content = (
         f"# Encuadre de Arquitectura — {project}\n\n"
         f"- **Requerimiento**: {p_detalle}\n"
         f"- **Tipo**: {p_tipo}\n"
-        f"- **Patrón Arquitectónico**: {p_arquitectura}\n"
-        f"- **Protocolo Spec-First**: {p_spec}\n"
+        f"- **Patrón**: {p_arquitectura}\n"
+        f"- **Protocolo Contract-First**: {p_spec}\n"
         f"- **Stack**: {p_lenguaje}\n"
         f"- **Restricción Crítica**: {p_restriccion}\n"
-        f"- **Agente Asignado**: {p_agente}\n"
     )
 
     try:
@@ -177,32 +230,27 @@ def cmd_interactive_session():
             p = subprocess.Popen(["engram", "set", topic], stdin=subprocess.PIPE, text=True)
             p.communicate(input=doc_content)
             print(f"{GREEN}✓ Memoria persistida en Engram:{NC} `{topic}`\n")
-        else:
-            print(f"{YELLOW}⚠️  engram no detectado en PATH. Continuando sin persistencia.{NC}\n")
-    except Exception as e:
-        print(f"{YELLOW}⚠️  No se pudo guardar en Engram: {e}{NC}\n")
+    except Exception:
+        pass
 
-    # CONSTRUIR EL PROMPT ENJAULADO (Bounded Prompt con Spec-First)
     prompt_confinado = (
         f"OBJETIVO: {p_detalle}\n"
         f"ARQUITECTURA: {p_arquitectura}\n"
-        f"PROTOCOLO OBLIGATORIO: {p_spec}\n"
-        f"PASOS ESTRICTOS DE EJECUCIÓN:\n"
-        f"  1. ESPECIFICACIÓN: Definir contrato (OpenAPI / tipos / BDD) antes de tocar lógica.\n"
-        f"  2. TEST PRIMERO: Escribir la prueba (.hurl / test unitario) que valide el objetivo en rojo.\n"
-        f"  3. CÓDIGO MÍNIMO: Implementar únicamente lo necesario para que el test pase a verde.\n"
-        f"  4. REFACTOR & DOC: Documentar con diagramas Mermaid si amerita.\n"
+        f"PROTOCOLO SPEC-FIRST (JUAN LÓPEZ):\n"
+        f"  1. CONTRATO: Escribir/actualizar openapi.yaml con schemas y examples.\n"
+        f"  2. PRISM MOCK: El endpoint debe ser simulable en http://localhost:4010 con Prism.\n"
+        f"  3. TEST HURL: Escribir la suite .hurl con assert `header 'sl-violations' not exists`.\n"
+        f"  4. BACKEND: Implementar el código mínimo (PHP/Node/SQLite) solo tras validar el mock.\n"
+        f"  5. DIAGRAMAS: Documentar modelos en Mermaid (.mmd).\n"
         f"STACK: {p_lenguaje}\n"
         f"REGLA CRÍTICA: {p_restriccion}\n"
-        f"LÍMITE ESTRICTO: No modificar más de 10 archivos. Si supera 10 cambios, pausar y pedir confirmación."
+        f"LÍMITE ESTRICTO: No modificar más de 10 archivos bajo ninguna circunstancia."
     )
 
-    # DISPARAR SEGÚN AGENTE
     if "OpenCode CLI" in p_agente:
         if shutil.which("opencode"):
-            print(f"\n{BLUE}🚀 Disparando OpenCode con el prompt gobernado por Chelo-Harness...{NC}\n")
+            print(f"\n{BLUE}🚀 Disparando OpenCode con el prompt gobernado...{NC}\n")
             subprocess.run(["opencode", "run", prompt_confinado])
-            print(f"\n{BLUE}🔍 Chelo-Harness auditando resultados post-ejecución...{NC}")
             audit_changes_rule()
         else:
             print(f"{RED}❌ opencode no está en PATH.{NC}")
@@ -211,7 +259,7 @@ def cmd_interactive_session():
         if shutil.which("opencode"):
             print(f"\n{BLUE}🚀 Abriendo OpenCode TUI en el workspace...{NC}")
             subprocess.run(f"printf '%s' \"{prompt_confinado}\" | wl-copy", shell=True)
-            print(f"{GREEN}✓ Prompt gobernado copiado al portapapeles.{NC} Pegalo en OpenCode con Ctrl+V.")
+            print(f"{GREEN}✓ Prompt gobernado copiado al portapapeles.{NC} Pegalo con Ctrl+V.")
             subprocess.run(["opencode"])
             audit_changes_rule()
         else:
@@ -220,14 +268,11 @@ def cmd_interactive_session():
     elif "Antigravity" in p_agente:
         subprocess.run(f"printf '%s' \"{prompt_confinado}\" | wl-copy", shell=True)
         print(f"\n{GREEN}{BOLD}✓ Prompt gobernado generado y copiado al portapapeles.{NC}")
-        print(f"{CYAN}Pegalo directamente en tu chat con Antigravity para que ejecute bajo este marco.{NC}\n")
+        print(f"{CYAN}Pegalo directamente en tu chat con Antigravity.{NC}\n")
         print(f"{BOLD}Contenido del marco:{NC}")
         print(f"--------------------------------------------------")
         print(prompt_confinado)
         print(f"--------------------------------------------------")
-
-    else:
-        print(f"\n{GREEN}✓ Contexto guardado en Engram. Listo para cuando quieras disparar un agente.{NC}")
 
 def cmd_gate():
     banner()
@@ -237,20 +282,7 @@ def cmd_gate():
     if not audit_changes_rule():
         sys.exit(2)
 
-    status = subprocess.run(["git", "status", "--short"], capture_output=True, text=True).stdout.strip()
-    if not status:
-        print(f"{GREEN}✓ Workspace limpio sin cambios pendientes.{NC}")
-        return
-
-    # Verificación de suites de test Hurl si existen en el repo
-    hurl_files = list(Path.cwd().glob("**/*.hurl"))
-    if hurl_files and shutil.which("hurl"):
-        print(f"\n{BLUE}▶ Detectadas {len(hurl_files)} pruebas Hurl. Ejecutando suite de integración...{NC}")
-        res = subprocess.run(["hurl", "--test"] + [str(f) for f in hurl_files[:10]], capture_output=True, text=True)
-        if res.returncode == 0:
-            print(f"{GREEN}✓ Pruebas Hurl superadas exitosamente.{NC}")
-        else:
-            print(f"{YELLOW}⚠️  Aviso: Pruebas Hurl fallidas o servidor no levantado.{NC}")
+    cmd_test()
 
     if shutil.which("gga"):
         print(f"\n{BLUE}▶ Ejecutando auditoría de riesgos con GGA...{NC}")
@@ -281,9 +313,12 @@ def cmd_commit(message):
 
 def print_help():
     banner()
-    print("USO:")
-    print("  chelo-harness                   Inicia encuadre interactivo Spec-First/TDD y orquesta agente")
-    print("  chelo-harness gate              Ejecuta Quality Gate (regla de 10 cambios, Hurl, GGA)")
+    print("COMANDOS DISPONIBLES:")
+    print("  chelo-harness                   Inicia encuadre interactivo Spec-First / TDD y orquesta agente")
+    print("  chelo-harness mock              Levanta Prism Mock Server (:4010) leyendo el openapi.yaml")
+    print("  chelo-harness proxy [url]       Levanta Prism Proxy validador contra backend real (:8000)")
+    print("  chelo-harness test              Ejecuta la suite de pruebas Hurl (*.hurl) contra el contrato")
+    print("  chelo-harness gate              Ejecuta Quality Gate completo (10 cambios, Hurl, GGA)")
     print("  chelo-harness commit \"<msg>\"    Commitea con validaciones de gobernanza pre-commit")
     print("  chelo-harness status            Inspecciona el estado del workspace bajo las reglas de Chelo")
 
@@ -295,6 +330,13 @@ def main():
     cmd = sys.argv[1]
     if cmd in ["ask", "learn", "start", "run", "menu"]:
         cmd_interactive_session()
+    elif cmd == "mock":
+        cmd_mock()
+    elif cmd == "proxy":
+        backend = sys.argv[2] if len(sys.argv) > 2 else f"http://localhost:{BACKEND_PORT}"
+        cmd_proxy(backend)
+    elif cmd == "test":
+        cmd_test()
     elif cmd == "gate":
         cmd_gate()
     elif cmd == "commit":
