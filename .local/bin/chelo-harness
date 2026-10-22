@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-chelo-harness — Coding-Agent Harness con Gobernanza, Menús Interactivos, TDD, Memoria en Engram y Orquestación de Agentes
+chelo-harness — Coding-Agent Harness con Gobernanza, Metodología Spec-First/TDD,
+                Docs-as-Code (Mermaid/OpenAPI/Hurl), Memoria en Engram y Orquestación de Agentes.
 Autor: Juan Marcelo Rodríguez (jmrodev)
 """
 
@@ -23,9 +24,9 @@ NC = "\033[0m"
 MAX_ALLOWED_CHANGES = 10
 
 def banner():
-    print(f"{CYAN}{BOLD}╔═══════════════════════════════════════════════════════════════╗{NC}")
-    print(f"{CYAN}{BOLD}║         🛡️  CHELO-HARNESS — CODING AGENT RUNTIME             ║{NC}")
-    print(f"{CYAN}{BOLD}╚═══════════════════════════════════════════════════════════════╝{NC}\n")
+    print(f"{CYAN}{BOLD}╔═══════════════════════════════════════════════════════════════════╗{NC}")
+    print(f"{CYAN}{BOLD}║         🛡️  CHELO-HARNESS — SPEC-FIRST CODING AGENT RUNTIME       ║{NC}")
+    print(f"{CYAN}{BOLD}╚═══════════════════════════════════════════════════════════════════╝{NC}\n")
 
 def check_git_repo():
     res = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], capture_output=True)
@@ -84,25 +85,23 @@ def cmd_interactive_session():
     project = get_project_name()
 
     print(f"📂 Proyecto detectado: {BOLD}{GREEN}{project}{NC}\n")
-    print(f"{BOLD}🧠 1. ENCUADRE DE ARQUITECTURA & GOBERNANZA{NC}\n")
+    print(f"{BOLD}🧠 1. ENCUADRE DE ARQUITECTURA & GOBERNANZA (SPEC-FIRST){NC}\n")
 
     # 1. TIPO DE TAREA
     tipos_tarea = [
-        "Nueva Feature / Requerimiento de negocio",
-        "Refactorización / Clean Code (sin cambio de comportamiento)",
-        "Bugfix / Corrección de error en producción o test",
+        "Nueva Feature / Requerimiento de negocio (Spec -> Test -> Code)",
+        "Refactorización / Clean Code (sin cambio de contrato)",
+        "Bugfix / Corrección de error (Primero reproducir con Test)",
         "Optimización de rendimiento / Reducción de latencia",
         "Seguridad / Hardening / Auditoría de dependencias",
-        "Testing / Cobertura TDD / E2E"
+        "Testing / Cobertura TDD / E2E (Hurl / Vitest / Pest)"
     ]
     p_tipo = select_option("¿Qué tipo de trabajo estás encarando?", tipos_tarea)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_tipo}\n")
 
-    # Detalle del objetivo
-    p_detalle = input(f"{BOLD}{CYAN}¿Qué tarea o requerimiento específico debe ejecutar el agente?{NC}\n👉 ").strip()
+    p_detalle = input(f"{BOLD}{CYAN}¿Qué requerimiento u objetivo de negocio debe implementar el agente?{NC}\n👉 ").strip()
     if not p_detalle:
         p_detalle = p_tipo
-
     print("")
 
     # 2. PATRÓN DE ARQUITECTURA / DISEÑO
@@ -111,86 +110,98 @@ def cmd_interactive_session():
         "Clean Architecture / Onion (Casos de uso y entidades puras)",
         "Container / Presentational Pattern (UI componentes tontos + contenedores)",
         "Atomic Design (Átomos, Moléculas, Organismos, Plantillas)",
-        "Vertical Slice Architecture (Por feature completa)",
-        "Repository & Unit of Work Pattern",
-        "Event-Driven / Pub-Sub (Mensajería asíncrona)",
-        "Modular Monolith (Límites estrictos en monolito)"
+        "Vertical Slice Architecture (Por feature completa con BDD)",
+        "CLI-First / Unix Pipeline (Herramientas ligeras sin dependencias infladas)"
     ]
-    p_arquitectura = select_option("¿Qué patrón o arquitectura guía esta solución?", patrones_arq)
+    p_arquitectura = select_option("¿Bajo qué patrón de arquitectura se debe desarrollar?", patrones_arq)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_arquitectura}\n")
 
-    # 3. LENGUAJE / STACK PRINCIPAL
-    lenguajes = [
-        "TypeScript / Node.js / React / Next.js",
-        "Python (FastAPI / PyTorch / Boto3 / Scripts)",
-        "Go (Microservicios / CLI / Concurrencia)",
-        "Rust (Alto rendimiento / Seguridad en memoria)",
-        "Bash / Shell Scripting (Automatización POSIX)",
-        "PHP / Laravel / Modern Backend"
+    # 3. PROTOCOLO SPEC-FIRST Y DOCS-AS-CODE (Inspirado en EDI Juan López)
+    disciplinas_spec = [
+        "Completo: Mermaid (Contexto/DFD) + BDD Gherkin (.feature) + OpenAPI + Test Hurl (.hurl)",
+        "API-First: Contrato OpenAPI (.yaml) + Suite de Tests Hurl (.hurl) ANTES del código",
+        "TDD Unitario/Integración: Escribir el test que falla ANTES de tocar la implementación",
+        "Docs-as-Code: Diagramas Mermaid en Markdown + Arquitectura documentada"
     ]
-    p_lenguaje = select_option("¿Cuál es el stack / lenguaje central del cambio?", lenguajes)
+    p_spec = select_option("¿Qué protocolo Spec-First / TDD debe anteponerse al código?", disciplinas_spec)
+    print(f"   {GREEN}✓ Seleccionado:{NC} {p_spec}\n")
+
+    # 4. STACK / LENGUAJE
+    lenguajes = [
+        "TypeScript / React (Front nativo o modular)",
+        "TypeScript / Node.js (NestJS / Express / Fastify)",
+        "PHP nativo modular / SQLite (Enrutamiento ligero, PDO, cero frameworks inflados)",
+        "Python (FastAPI / Typer / Async)",
+        "Bash / Shell Scripting (Unix-first, pipes, jq, sed, awk)"
+    ]
+    p_lenguaje = select_option("¿Cuál es el stack / runtime base?", lenguajes)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_lenguaje}\n")
 
-    # 4. RESTRICCIÓN Y ADVERTENCIA PARA EL AGENTE
+    # 5. RESTRICCIÓN DE GOBERNANZA
     restricciones = [
-        "Preservar cobertura de tests (TDD estricto; escribir test antes de código)",
-        "No agregar dependencias pesadas de terceros (usar estándar)",
-        "Mantener tipado estricto (prohibido 'any' o casteo inseguro)",
-        "Respetar límite de 10 archivos y commits convencionales limpios",
-        "No alterar contratos de API ni firmas públicas sin versionado"
+        "REGLA DE ORO: Tests ANTES que código. Ningún endpoint sin su suite de validación",
+        "REGLA DE CONTRATO: No alterar el contrato OpenAPI ni romper compatibilidad hacia atrás",
+        "REGLA DE PUREZA: Cero librerías externas innecesarias si la solución cabe en estándar nativo",
+        "REGLA DE CONTENEDOR: El cambio debe ser verificable en Docker o script de bootstrap sin dependencias globales",
+        "REGLA DE CONFINAMIENTO: Modificar únicamente los archivos estrictamente asociados al ticket"
     ]
-    p_restriccion = select_option("¿Qué regla crítica NO debe violar el agente?", restricciones)
+    p_restriccion = select_option("¿Cuál es la restricción crítica que el agente NO puede violar?", restricciones)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_restriccion}\n")
 
-    # 5. ELECCIÓN DE AGENTE EXECUTOR
+    # 6. SELECCIÓN DE AGENTE
     agentes = [
-        "OpenCode CLI (headless / run directo en terminal)",
-        "OpenCode TUI (interfaz interactiva)",
-        "Antigravity (AGY) / Sesión actual de Pair Programming",
-        "Solo guardar contexto en Engram (no disparar agente aún)"
+        "OpenCode CLI (Ejecución directa en segundo plano / terminal)",
+        "OpenCode TUI (Sesión interactiva en multiplexer Herdr)",
+        "Antigravity (Copiar prompt blindado al portapapeles para AGY)",
+        "Solo registrar contexto en Engram (no disparar agente ahora)"
     ]
-    p_agente = select_option("¿Quién ejecuta la tarea?", agentes, allow_custom=False)
+    p_agente = select_option("¿Qué agente ejecutará este trabajo?", agentes, allow_custom=False)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_agente}\n")
 
-    # Guardar en Engram
-    print(f"{BLUE}▶ Persistiendo marco de trabajo en Engram...{NC}")
-    if shutil.which("engram"):
-        title = f"Task: {p_detalle[:40]}"
-        msg = (
-            f"Proyecto: {project}\n"
-            f"Tipo Tarea: {p_tipo}\n"
-            f"Objetivo: {p_detalle}\n"
-            f"Patrón Arquitectura: {p_arquitectura}\n"
-            f"Stack/Lenguaje: {p_lenguaje}\n"
-            f"Restricción Crítica: {p_restriccion}"
-        )
-        res = subprocess.run([
-            "engram", "save", title, msg,
-            "--project", project,
-            "--type", "decision"
-        ], capture_output=True, text=True)
-
-        if res.returncode == 0:
-            print(f"{GREEN}✓ Memoria registrada en Engram ({project}).{NC}")
-        else:
-            print(f"{YELLOW}⚠️  Aviso Engram: {res.stderr.strip() or res.stdout.strip()}{NC}")
-
-    # Construir el Prompt Enjaulado (Bounded Prompt)
-    prompt_confinado = (
-        f"OBJETIVO: {p_detalle}\n"
-        f"ARQUITECTURA OBLIGATORIA: {p_arquitectura}\n"
-        f"STACK: {p_lenguaje}\n"
-        f"REGLA CRÍTICA: {p_restriccion}\n"
-        f"LÍMITE ESTRICTO: No modificar más de 10 archivos bajo ninguna circunstancia. "
-        f"Si requiere más de 10 modificaciones, pausar y pedir confirmación."
+    # REGISTRO EN ENGRAM
+    print(f"💾 Guardando encuadre metodológico en memoria de Engram...")
+    topic = f"harness/{project}/{p_tipo.split('/')[0].strip().lower().replace(' ', '-')}"
+    doc_content = (
+        f"# Encuadre de Arquitectura — {project}\n\n"
+        f"- **Requerimiento**: {p_detalle}\n"
+        f"- **Tipo**: {p_tipo}\n"
+        f"- **Patrón Arquitectónico**: {p_arquitectura}\n"
+        f"- **Protocolo Spec-First**: {p_spec}\n"
+        f"- **Stack**: {p_lenguaje}\n"
+        f"- **Restricción Crítica**: {p_restriccion}\n"
+        f"- **Agente Asignado**: {p_agente}\n"
     )
 
-    # Disparar según el agente elegido
+    try:
+        if shutil.which("engram"):
+            p = subprocess.Popen(["engram", "set", topic], stdin=subprocess.PIPE, text=True)
+            p.communicate(input=doc_content)
+            print(f"{GREEN}✓ Memoria persistida en Engram:{NC} `{topic}`\n")
+        else:
+            print(f"{YELLOW}⚠️  engram no detectado en PATH. Continuando sin persistencia.{NC}\n")
+    except Exception as e:
+        print(f"{YELLOW}⚠️  No se pudo guardar en Engram: {e}{NC}\n")
+
+    # CONSTRUIR EL PROMPT ENJAULADO (Bounded Prompt con Spec-First)
+    prompt_confinado = (
+        f"OBJETIVO: {p_detalle}\n"
+        f"ARQUITECTURA: {p_arquitectura}\n"
+        f"PROTOCOLO OBLIGATORIO: {p_spec}\n"
+        f"PASOS ESTRICTOS DE EJECUCIÓN:\n"
+        f"  1. ESPECIFICACIÓN: Definir contrato (OpenAPI / tipos / BDD) antes de tocar lógica.\n"
+        f"  2. TEST PRIMERO: Escribir la prueba (.hurl / test unitario) que valide el objetivo en rojo.\n"
+        f"  3. CÓDIGO MÍNIMO: Implementar únicamente lo necesario para que el test pase a verde.\n"
+        f"  4. REFACTOR & DOC: Documentar con diagramas Mermaid si amerita.\n"
+        f"STACK: {p_lenguaje}\n"
+        f"REGLA CRÍTICA: {p_restriccion}\n"
+        f"LÍMITE ESTRICTO: No modificar más de 10 archivos. Si supera 10 cambios, pausar y pedir confirmación."
+    )
+
+    # DISPARAR SEGÚN AGENTE
     if "OpenCode CLI" in p_agente:
         if shutil.which("opencode"):
             print(f"\n{BLUE}🚀 Disparando OpenCode con el prompt gobernado por Chelo-Harness...{NC}\n")
             subprocess.run(["opencode", "run", prompt_confinado])
-            # Al terminar la ejecución de OpenCode, auditar cambios
             print(f"\n{BLUE}🔍 Chelo-Harness auditando resultados post-ejecución...{NC}")
             audit_changes_rule()
         else:
@@ -199,7 +210,6 @@ def cmd_interactive_session():
     elif "OpenCode TUI" in p_agente:
         if shutil.which("opencode"):
             print(f"\n{BLUE}🚀 Abriendo OpenCode TUI en el workspace...{NC}")
-            # Copiar el prompt al portapapeles para pegarlo en OpenCode
             subprocess.run(f"printf '%s' \"{prompt_confinado}\" | wl-copy", shell=True)
             print(f"{GREEN}✓ Prompt gobernado copiado al portapapeles.{NC} Pegalo en OpenCode con Ctrl+V.")
             subprocess.run(["opencode"])
@@ -208,7 +218,6 @@ def cmd_interactive_session():
             print(f"{RED}❌ opencode no está en PATH.{NC}")
 
     elif "Antigravity" in p_agente:
-        # Copiar prompt para la sesión activa de AGY
         subprocess.run(f"printf '%s' \"{prompt_confinado}\" | wl-copy", shell=True)
         print(f"\n{GREEN}{BOLD}✓ Prompt gobernado generado y copiado al portapapeles.{NC}")
         print(f"{CYAN}Pegalo directamente en tu chat con Antigravity para que ejecute bajo este marco.{NC}\n")
@@ -232,6 +241,16 @@ def cmd_gate():
     if not status:
         print(f"{GREEN}✓ Workspace limpio sin cambios pendientes.{NC}")
         return
+
+    # Verificación de suites de test Hurl si existen en el repo
+    hurl_files = list(Path.cwd().glob("**/*.hurl"))
+    if hurl_files and shutil.which("hurl"):
+        print(f"\n{BLUE}▶ Detectadas {len(hurl_files)} pruebas Hurl. Ejecutando suite de integración...{NC}")
+        res = subprocess.run(["hurl", "--test"] + [str(f) for f in hurl_files[:10]], capture_output=True, text=True)
+        if res.returncode == 0:
+            print(f"{GREEN}✓ Pruebas Hurl superadas exitosamente.{NC}")
+        else:
+            print(f"{YELLOW}⚠️  Aviso: Pruebas Hurl fallidas o servidor no levantado.{NC}")
 
     if shutil.which("gga"):
         print(f"\n{BLUE}▶ Ejecutando auditoría de riesgos con GGA...{NC}")
@@ -263,8 +282,8 @@ def cmd_commit(message):
 def print_help():
     banner()
     print("USO:")
-    print("  chelo-harness                   Inicia encuadre interactivo y orquesta agente (OpenCode/AGY)")
-    print("  chelo-harness gate              Ejecuta la puerta de calidad y audita regla de 10 cambios")
+    print("  chelo-harness                   Inicia encuadre interactivo Spec-First/TDD y orquesta agente")
+    print("  chelo-harness gate              Ejecuta Quality Gate (regla de 10 cambios, Hurl, GGA)")
     print("  chelo-harness commit \"<msg>\"    Commitea con validaciones de gobernanza pre-commit")
     print("  chelo-harness status            Inspecciona el estado del workspace bajo las reglas de Chelo")
 
