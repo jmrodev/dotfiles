@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-chelo-harness — Coding-Agent Harness con Gobernanza, Metodología Spec-First (Juan López / Alan Buscaglia),
-                Docs-as-Code (Mermaid/OpenAPI/Hurl), Prism Mock/Proxy Engine, Memoria en Engram y Orquestación.
+chelo-harness — Coding-Agent Harness con Gobernanza, Levantamiento de Requerimientos (Juan López),
+                Spec-First / Docs-as-Code (Mermaid/OpenAPI/Hurl), Prism Mock/Proxy Engine,
+                Memoria en Engram y Orquestación de Agentes.
 Autor: Juan Marcelo Rodríguez (jmrodev)
 """
 
@@ -10,7 +11,6 @@ import os
 import subprocess
 import shutil
 import time
-import signal
 from pathlib import Path
 
 CYAN = "\033[0;36m"
@@ -68,6 +68,10 @@ def select_option(title, options, allow_custom=True):
             print(f"\n{YELLOW}Operación cancelada.{NC}")
             sys.exit(0)
 
+def prompt_text(label, default=""):
+    val = input(f"{BOLD}{CYAN}{label}{NC}\n👉 ").strip()
+    return val if val else default
+
 def audit_changes_rule():
     res = subprocess.run(["git", "status", "--porcelain"], capture_output=True, text=True)
     lines = [l for l in res.stdout.splitlines() if l.strip()]
@@ -99,7 +103,6 @@ def cmd_mock():
     print(f"{BLUE}🚀 Levantando Prism Mock Server desde:{NC} {spec}")
     print(f"{GREEN}✓ Servidor simulado activo en:{NC} {BOLD}http://localhost:{PRISM_PORT}{NC}")
     print(f"{YELLOW}Presioná Ctrl+C para detener el mock.{NC}\n")
-
     subprocess.run(["prism", "mock", str(spec), "-p", str(PRISM_PORT), "-m"])
 
 def cmd_proxy(backend_url=f"http://localhost:{BACKEND_PORT}"):
@@ -113,7 +116,6 @@ def cmd_proxy(backend_url=f"http://localhost:{BACKEND_PORT}"):
     print(f"   • Contrato: {spec}")
     print(f"   • Backend Real: {backend_url}")
     print(f"   • Proxy Validador: {BOLD}http://localhost:{PRISM_PORT}{NC}\n")
-
     subprocess.run(["prism", "proxy", str(spec), backend_url, "-p", str(PRISM_PORT), "--validate-request"])
 
 def cmd_test():
@@ -149,7 +151,29 @@ def cmd_interactive_session():
     project = get_project_name()
 
     print(f"📂 Proyecto detectado: {BOLD}{GREEN}{project}{NC}\n")
-    print(f"{BOLD}🧠 1. ENCUADRE DE ARQUITECTURA & GOBERNANZA (SPEC-FIRST / JUAN LÓPEZ){NC}\n")
+
+    # =========================================================================
+    # FASE 0: INVESTIGACIÓN Y LEVANTAMIENTO DE REQUERIMIENTOS (JUAN LÓPEZ)
+    # =========================================================================
+    print(f"{MAGENTA}{BOLD}📋 FASE 0: INVESTIGACIÓN & LEVANTAMIENTO DE REQUERIMIENTOS (ANÁLISIS DE NEGOCIO){NC}")
+    print(f"{YELLOW}Antes del código y la arquitectura técnica, definimos el problema de negocio.{NC}\n")
+
+    req_problema = prompt_text("1. ¿Qué problema o ineficiencia del proceso actual se quiere resolver?", "Gestión manual lenta y propensa a errores")
+    print(f"   {GREEN}✓ Problema:{NC} {req_problema}\n")
+
+    req_actores = prompt_text("2. ¿Quiénes son los actores que interactúan con el sistema? (ej: Administrador, Cliente, API)", "Administrador, Sistema API")
+    print(f"   {GREEN}✓ Actores:{NC} {req_actores}\n")
+
+    req_alcance = prompt_text("3. ¿Cuál es el alcance funcional concreto (Qué debe hacer y qué NO debe hacer)?", "CRUD de la entidad principal sin dependencias complejas")
+    print(f"   {GREEN}✓ Alcance:{NC} {req_alcance}\n")
+
+    req_criterio = prompt_text("4. ¿Cuál es el criterio de aceptación / escenario BDD clave? (Given / When / Then)", "Dado un payload válido, cuando se envíe un POST, responde 201 y el recurso creado")
+    print(f"   {GREEN}✓ Criterio de Aceptación:{NC} {req_criterio}\n")
+
+    # =========================================================================
+    # FASE 1: ENCUADRE TÉCNICO & ARQUITECTURA
+    # =========================================================================
+    print(f"{BLUE}{BOLD}🧠 FASE 1: ENCUADRE DE ARQUITECTURA & GOBERNANZA TÉCNICA{NC}\n")
 
     tipos_tarea = [
         "Nueva Feature / Requerimiento (OpenAPI Spec -> Hurl Test -> Mock -> Code)",
@@ -158,13 +182,8 @@ def cmd_interactive_session():
         "Infraestructura / Docker / Despliegue (Dockerfile, compose, networking)",
         "Testing / Cobertura de Contrato (Batería Hurl y asserts sl-violations)"
     ]
-    p_tipo = select_option("¿Qué tipo de trabajo estás encarando?", tipos_tarea)
+    p_tipo = select_option("¿Qué tipo de trabajo técnico estás encarando?", tipos_tarea)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_tipo}\n")
-
-    p_detalle = input(f"{BOLD}{CYAN}¿Qué requerimiento u objetivo debe implementar el agente?{NC}\n👉 ").strip()
-    if not p_detalle:
-        p_detalle = p_tipo
-    print("")
 
     patrones_arq = [
         "Spec-First / Contract-Driven (OpenAPI + Prism Mock + Hurl Tests sin BBDD inicial)",
@@ -177,8 +196,8 @@ def cmd_interactive_session():
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_arquitectura}\n")
 
     disciplinas_spec = [
-        "Ciclo Completo Juan López: Spec OpenAPI + Prism Mock (:4010) + Tests Hurl sin violaciones ('sl-violations')",
-        "BDD + Contrato: Escenarios Gherkin (.feature) + OpenAPI (.yaml)",
+        "Ciclo Completo Juan López: Documentación (Actores/Alcance/Gherkin) + OpenAPI + Prism Mock (:4010) + Hurl Tests",
+        "API-First Estricto: Contrato OpenAPI (.yaml) + Prism Mock + Tests Hurl sin violaciones ('sl-violations')",
         "TDD Backend: Endpoint en PHP/Node validado vía Prism Proxy antes de persistir",
         "Docs-as-Code: Diagramas Mermaid (.mmd) integrados en Markdown"
     ]
@@ -213,13 +232,20 @@ def cmd_interactive_session():
     p_agente = select_option("¿Qué agente ejecutará este trabajo?", agentes, allow_custom=False)
     print(f"   {GREEN}✓ Seleccionado:{NC} {p_agente}\n")
 
-    # Persistir en Engram
+    # =========================================================================
+    # PERSISTENCIA EN ENGRAM
+    # =========================================================================
     topic = f"harness/{project}/{p_tipo.split('/')[0].strip().lower().replace(' ', '-')}"
     doc_content = (
-        f"# Encuadre de Arquitectura — {project}\n\n"
-        f"- **Requerimiento**: {p_detalle}\n"
-        f"- **Tipo**: {p_tipo}\n"
-        f"- **Patrón**: {p_arquitectura}\n"
+        f"# Levantamiento de Requerimientos y Encuadre — {project}\n\n"
+        f"## 1. Análisis de Negocio (Fase 0)\n"
+        f"- **Problema**: {req_problema}\n"
+        f"- **Actores**: {req_actores}\n"
+        f"- **Alcance**: {req_alcance}\n"
+        f"- **Criterio de Aceptación (BDD)**: {req_criterio}\n\n"
+        f"## 2. Encuadre Técnico (Fase 1)\n"
+        f"- **Tipo de Tarea**: {p_tipo}\n"
+        f"- **Patrón Arquitectónico**: {p_arquitectura}\n"
         f"- **Protocolo Contract-First**: {p_spec}\n"
         f"- **Stack**: {p_lenguaje}\n"
         f"- **Restricción Crítica**: {p_restriccion}\n"
@@ -233,16 +259,23 @@ def cmd_interactive_session():
     except Exception:
         pass
 
+    # =========================================================================
+    # CONSTRUCCIÓN DEL PROMPT ENJAULADO (BOUNDED PROMPT)
+    # =========================================================================
     prompt_confinado = (
-        f"OBJETIVO: {p_detalle}\n"
+        f"ANÁLISIS DE NEGOCIO (REQUERIMIENTOS):\n"
+        f"  • PROBLEMA: {req_problema}\n"
+        f"  • ACTORES: {req_actores}\n"
+        f"  • ALCANCE: {req_alcance}\n"
+        f"  • BDD / CRITERIO: {req_criterio}\n\n"
         f"ARQUITECTURA: {p_arquitectura}\n"
-        f"PROTOCOLO SPEC-FIRST (JUAN LÓPEZ):\n"
-        f"  1. CONTRATO: Escribir/actualizar openapi.yaml con schemas y examples.\n"
-        f"  2. PRISM MOCK: El endpoint debe ser simulable en http://localhost:4010 con Prism.\n"
-        f"  3. TEST HURL: Escribir la suite .hurl con assert `header 'sl-violations' not exists`.\n"
-        f"  4. BACKEND: Implementar el código mínimo (PHP/Node/SQLite) solo tras validar el mock.\n"
-        f"  5. DIAGRAMAS: Documentar modelos en Mermaid (.mmd).\n"
-        f"STACK: {p_lenguaje}\n"
+        f"STACK: {p_lenguaje}\n\n"
+        f"PROTOCOLO STRICT SPEC-FIRST (JUAN LÓPEZ):\n"
+        f"  1. DOCUMENTACIÓN & MODELADO: Definir casos de negocio en markdown y diagramas Mermaid (.mmd).\n"
+        f"  2. CONTRATO SAGRADO: Escribir/actualizar openapi.yaml con schemas, rutas y examples.\n"
+        f"  3. PRISM MOCK: El endpoint debe responder en http://localhost:4010 simulado por Prism sin BBDD.\n"
+        f"  4. TEST HURL: Escribir test (.hurl) con assert `header 'sl-violations' not exists`.\n"
+        f"  5. BACKEND TARDÍO: Implementar la ruta mínima en PHP/Node y SQLite solo cuando el mock pase.\n\n"
         f"REGLA CRÍTICA: {p_restriccion}\n"
         f"LÍMITE ESTRICTO: No modificar más de 10 archivos bajo ninguna circunstancia."
     )
@@ -314,7 +347,7 @@ def cmd_commit(message):
 def print_help():
     banner()
     print("COMANDOS DISPONIBLES:")
-    print("  chelo-harness                   Inicia encuadre interactivo Spec-First / TDD y orquesta agente")
+    print("  chelo-harness                   Inicia levantamiento de requerimientos (Fase 0) y orquesta agente")
     print("  chelo-harness mock              Levanta Prism Mock Server (:4010) leyendo el openapi.yaml")
     print("  chelo-harness proxy [url]       Levanta Prism Proxy validador contra backend real (:8000)")
     print("  chelo-harness test              Ejecuta la suite de pruebas Hurl (*.hurl) contra el contrato")
