@@ -3,4 +3,6 @@ Description=Mount/Unmount ServerDebian via Tailscale when reachable
 
 [Service]
 Type=oneshot
+KillMode=process
 ExecStart=/home/jmro/.local/bin/mount-media-watcher.sh
+

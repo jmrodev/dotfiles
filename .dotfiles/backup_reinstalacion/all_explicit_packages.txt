@@ -57,6 +57,7 @@ exfatprogs
 eza
 f2fs-tools
 fd
+feishin
 ffmpeg
 ffmpegthumbnailer
 ffmpegthumbs
@@ -173,7 +174,7 @@ networkmanager
 nfs-utils
 nmap
 nodejs
-noisetorch
+noto-fonts
 npm
 nss-mdns
 nsxiv
@@ -189,6 +190,7 @@ pamac-gtk
 pandoc-cli
 perl
 perl-image-exiftool
+picocom
 playerctl
 pnpm
 polkit-gnome

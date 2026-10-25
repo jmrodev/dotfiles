@@ -15,6 +15,8 @@ google-cloud-cli
 hplip-plugin
 jdownloader2
 jetbrains-toolbox
+llm-checker
+noisetorch
 open-cad-studio
 packettracer
 pcsx2-latest-bin

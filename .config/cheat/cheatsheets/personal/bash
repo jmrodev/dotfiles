@@ -1,0 +1,182 @@
+---
+syntax: bash
+tags: [ bash, shell, scripting, personal ]
+---
+# ==========================================
+# BASH CHEATSHEET: BASIC TO ADVANCED/EXPERT
+# ==========================================
+
+# --- 1. BASIC: STREAMS & REDIRECTIONS ---
+
+# Redirect stdout to file (overwrite / append):
+command > file.txt
+command >> file.txt
+
+# Redirect stderr to file:
+command 2> error.log
+
+# Redirect stdout AND stderr to same destination:
+command &> output.log
+command > output.log 2>&1
+
+# Discard all output:
+command &> /dev/null
+
+# Here-Document (multiline input):
+cat << 'EOF' > script.sh
+#!/usr/bin/env bash
+echo "Hello $USER"
+EOF
+
+# Here-String:
+grep "pattern" <<< "$variable"
+
+
+# --- 2. BASIC: CONDITIONALS & TESTS ---
+
+# Modern bash test [[ ]] (avoids word-splitting and pathname expansion):
+[[ "$str" == "value" ]]
+[[ "$num" -eq 100 ]]          # -ne, -lt, -le, -gt, -ge
+[[ -z "$str" ]]               # true if empty
+[[ -n "$str" ]]               # true if not empty
+[[ -f "$path" ]]              # exists and is regular file
+[[ -d "$path" ]]              # exists and is directory
+[[ -e "$path" ]]              # exists
+[[ -s "$path" ]]              # exists and not empty (> 0 bytes)
+[[ -x "$path" ]]              # executable
+
+# Regex matching within [[ ]]:
+if [[ "$email" =~ ^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$ ]]; then
+    echo "Valid email"
+fi
+
+
+# --- 3. INTERMEDIATE: LOOPS & ITERATION ---
+
+# Iterate files safely (handles spaces/newlines):
+for f in *.txt; do
+    [[ -e "$f" ]] || continue
+    echo "Processing $f"
+done
+
+# Read file line by line safely (preserves tabs/spaces):
+while IFS= read -r line || [[ -n "$line" ]]; do
+    echo "Line: $line"
+done < file.txt
+
+# C-style loop:
+for ((i = 0; i < 10; i++)); do
+    echo "Index: $i"
+done
+
+
+# --- 4. ADVANCED: PARAMETER EXPANSION (NO SUBPROCESSES) ---
+
+# Default values:
+val="${var:-default}"         # Use default if unset or empty
+val="${var:=default}"         # Assign default if unset or empty
+val="${var:?Error: unset}"    # Exit with error if unset or empty
+val="${var:+alternate}"       # Use alternate if set and non-empty
+
+# String length:
+${#var}
+
+# Substring extraction: ${var:offset:length}:
+str="abcdefgh"
+echo "${str:2:3}"             # "cde"
+echo "${str: -3}"             # "fgh" (space before minus is mandatory)
+
+# Pattern removal (Strip prefix/suffix):
+path="/var/log/nginx/access.log"
+echo "${path##*/}"            # Basename: "access.log" (longest match from front)
+echo "${path%/*}"             # Dirname: "/var/log/nginx" (shortest match from back)
+echo "${path%.*}"             # Strip extension: "/var/log/nginx/access"
+echo "${path##*.}"            # Extension only: "log"
+
+# Search and replace:
+echo "${var/find/replace}"    # Replace first occurrence
+echo "${var//find/replace}"   # Replace all occurrences
+
+# Case modification:
+echo "${var^^}"               # Uppercase
+echo "${var,,}"               # Lowercase
+
+
+# --- 5. ADVANCED: ARRAYS & ASSOCIATIVE ARRAYS ---
+
+# Indexed arrays:
+arr=("one" "two" "three with spaces")
+arr+=("four")
+echo "${arr[0]}"              # First element
+echo "${arr[@]}"              # All elements
+echo "${#arr[@]}"             # Array length
+echo "${!arr[@]}"             # Array indices
+
+# Loop over array preserving elements with spaces:
+for item in "${arr[@]}"; do
+    echo "Item: $item"
+done
+
+# Associative arrays (hash maps / dictionaries):
+declare -A user_ages=( ["alice"]=30 ["bob"]=25 )
+user_ages["charlie"]=28
+echo "Alice is: ${user_ages["alice"]}"
+for key in "${!user_ages[@]}"; do
+    echo "$key -> ${user_ages[$key]}"
+done
+
+
+# --- 6. EXPERT: ROBUST SCRIPT TEMPLATE & ERROR HANDLING ---
+
+# Safe unofficial bash strict mode:
+set -euo pipefail
+IFS=$'\n\t'
+# -e: exit immediately on non-zero exit status
+# -u: treat unset variables as error
+# -o pipefail: pipeline exit code is that of last failed command
+
+# Clean trap exit handler:
+cleanup() {
+    local exit_code=$?
+    trap - EXIT INT TERM
+    rm -f "${tmpfile:-}"
+    exit "$exit_code"
+}
+trap cleanup EXIT INT TERM
+
+# Temporary file creation:
+tmpfile="$(mktemp -t script.XXXXXX)"
+
+
+# --- 7. EXPERT: SUBPROCESSES, PROCESS SUBSTITUTION & IPC ---
+
+# Process substitution (treat command output as a file without tempfiles):
+diff -u <(sort file1.txt) <(sort file2.txt)
+
+# Read command output line-by-line without creating a subshell pipe:
+while IFS= read -r file; do
+    echo "Found: $file"
+done < <(find . -type f -name "*.log")
+
+# Inspect PIPESTATUS array (exit codes of every command in pipeline):
+cmd1 | cmd2 | cmd3
+echo "Pipes: ${PIPESTATUS[0]} ${PIPESTATUS[1]} ${PIPESTATUS[2]}"
+
+# Exclusive script lockfile using file descriptors and flock:
+exec 200>/var/lock/myscript.lock
+if ! flock -n 200; then
+    echo "Another instance is already running." >&2
+    exit 1
+fi
+
+# Directory of current running script regardless of where called:
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)"
+
+
+# --- 8. EXPERT: DEBUGGING & PROFILING ---
+
+# Trace execution with line numbers and source file:
+export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+set -x  # Turn ON trace
+# ... code ...
+set +x  # Turn OFF trace

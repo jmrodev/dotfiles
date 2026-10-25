@@ -1,0 +1,54 @@
+---
+syntax: bash
+tags: [ herdr, terminal, multiplexer, agents, cli ]
+---
+# Launch or attach to the default persistent session:
+herdr
+
+# Prefix key (default):
+ctrl+b
+
+# Help and Navigation:
+ctrl+b ?        # Show help overlay and full keybindings list
+ctrl+b s        # Open settings
+ctrl+b q        # Detach from session (server stays running in background)
+ctrl+b b        # Toggle sidebar
+ctrl+b r        # Enter pane resize mode (arrows to resize, enter/esc to finish)
+
+# Panes (Splits):
+ctrl+b v        # Split pane vertically
+ctrl+b -        # Split pane horizontally
+ctrl+b x        # Close current pane
+ctrl+b z        # Toggle zoom/fullscreen on active pane
+ctrl+b h/j/k/l  # Navigate pane focus (left, down, up, right)
+ctrl+b Tab      # Cycle focus to next pane
+
+# Tabs:
+ctrl+b c        # Create new tab
+ctrl+b p        # Switch to previous tab
+ctrl+b n        # Switch to next tab
+ctrl+b 1..9     # Switch directly to tab by number
+ctrl+b Shift+x  # Close current tab
+
+# Workspaces & Agent Orchestration:
+ctrl+b w        # Open interactive workspace picker
+ctrl+b Shift+n  # Create a new workspace
+ctrl+b Shift+g  # Create a new git worktree workspace
+ctrl+b Shift+w  # Rename current workspace
+ctrl+b Shift+d  # Close current workspace
+
+# CLI & Server Lifecycle:
+# Show status of local client and background server:
+herdr status
+
+# Stop background server completely:
+herdr server stop
+
+# Inspect agent statuses across workspaces:
+herdr agent list
+
+# Manage git worktrees:
+herdr worktree list
+
+# Reload server configuration:
+herdr server reload-config

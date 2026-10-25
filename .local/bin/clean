@@ -5,19 +5,33 @@
 
 set -eo pipefail
 
-before_kb=$(df -k / | awk 'NR==2 {print $3}')
+before_kb=$(df -k / /home | awk 'NR>1 {sum += $3} END {print sum}')
 
 echo "=> 🧹 Starting deep system cleanup..."
 
-# 1. Arch pacman orphan packages
-echo "=> 📦 Searching for Arch orphan packages..."
+# 1. Arch pacman & AUR cleanup
+echo "=> 📦 Checking Arch packages & package cache..."
 if command -v pacman >/dev/null 2>&1; then
     orphans=$(pacman -Qdtq 2>/dev/null || true)
     if [[ -n "$orphans" ]]; then
+        echo "   Removing orphan packages..."
         sudo pacman -Rns $orphans --noconfirm
     else
         echo "   No orphan packages found."
     fi
+
+    if command -v paccache >/dev/null 2>&1; then
+        echo "   Pruning pacman package cache (keeping 0 versions)..."
+        sudo paccache -r -k 0 -q 2>/dev/null || true
+    else
+        sudo pacman -Sc --noconfirm 2>/dev/null || true
+    fi
+fi
+
+if command -v yay >/dev/null 2>&1; then
+    echo "=> 📦 Cleaning Yay / AUR build cache..."
+    yay -Sc --noconfirm >/dev/null 2>&1 || true
+    rm -rf "$HOME/.cache/yay"/* 2>/dev/null || true
 fi
 
 # 2. Journald logs
@@ -29,39 +43,51 @@ fi
 # 3. Flatpak
 if command -v flatpak >/dev/null 2>&1; then
     echo "=> 📦 Cleaning unused Flatpaks..."
-    flatpak uninstall --unused -y
+    flatpak uninstall --unused -y 2>/dev/null || true
 fi
 
 # 4. Docker
 if command -v docker >/dev/null 2>&1; then
-    echo "=> 🐳 Cleaning Docker build cache..."
-    docker builder prune -a -f
+    echo "=> 🐳 Cleaning Docker build cache & dangling images..."
+    docker builder prune -a -f >/dev/null 2>&1 || true
+    docker image prune -f >/dev/null 2>&1 || true
 fi
 
-# 5. Node / NPM / PNPM
+# 5. Dev Runtimes & Package Managers (Node, Python, Go)
+echo "=> ⚙️ Cleaning development runtimes & caches..."
 if command -v npm >/dev/null 2>&1; then
-    echo "=> 📦 Cleaning NPM cache..."
     npm cache clean --force >/dev/null 2>&1 || true
 fi
 if command -v pnpm >/dev/null 2>&1; then
-    echo "=> 📦 Cleaning PNPM cache..."
     pnpm store prune >/dev/null 2>&1 || true
 fi
+if command -v uv >/dev/null 2>&1; then
+    uv cache clean -q 2>/dev/null || true
+fi
+if command -v pip >/dev/null 2>&1; then
+    pip cache purge >/dev/null 2>&1 || true
+fi
+if command -v go >/dev/null 2>&1; then
+    go clean -cache 2>/dev/null || true
+fi
 
-# 6. Browsers and Slack cache
-echo "=> 🗑️ Clearing browser (Chrome/Brave) and Slack caches..."
+# 6. Browsers and App caches
+echo "=> 🗑️ Clearing browser, messaging, and app caches..."
 rm -rf "$HOME/.cache/google-chrome/Default/Cache" 2>/dev/null || true
 rm -rf "$HOME/.cache/BraveSoftware/Brave-Browser/Default/Cache" 2>/dev/null || true
+rm -rf "$HOME/.cache/mozilla/firefox/"*"/cache2" 2>/dev/null || true
 rm -rf "$HOME/.config/Slack/Cache" 2>/dev/null || true
 rm -rf "$HOME/.config/Slack/Service Worker/CacheStorage" 2>/dev/null || true
 rm -rf "$HOME/.config/Slack/Code Cache" 2>/dev/null || true
+rm -rf "$HOME/.cache/ZapZap/Cache"* 2>/dev/null || true
+rm -rf "$HOME/.cache/ZapZap/Code Cache"* 2>/dev/null || true
 
-# 7. Stremio cache
-echo "=> 🎬 Clearing Stremio cache..."
+# 7. Media & Stremio cache
+echo "=> 🎬 Clearing media caches..."
 rm -rf "$HOME/.var/app/com.stremio.Stremio/.stremio-server/stremio-cache/"* 2>/dev/null || true
 
 # 8. Summary & space reclaimed
-after_kb=$(df -k / | awk 'NR==2 {print $3}')
+after_kb=$(df -k / /home | awk 'NR>1 {sum += $3} END {print sum}')
 saved_kb=$(( before_kb - after_kb ))
 
 if (( saved_kb < 0 )); then
@@ -82,10 +108,9 @@ else
     echo "=> 📉 Total space reclaimed: 0 MB (system was already spotless!)"
 fi
 
-final_free_kb=$(df -k / | awk 'NR==2 {print $4}')
-final_used_gb=$(awk "BEGIN {printf \"%.2f\", $after_kb / 1024 / 1024}")
-final_free_gb=$(awk "BEGIN {printf \"%.2f\", $final_free_kb / 1024 / 1024}")
+root_free_gb=$(awk "BEGIN {printf \"%.2f\", $(df -k / | awk 'NR==2 {print $4}') / 1024 / 1024}")
+home_free_gb=$(awk "BEGIN {printf \"%.2f\", $(df -k /home | awk 'NR==2 {print $4}') / 1024 / 1024}")
 
 echo "----------------------------------------"
-echo "=> 💾 Disk Used : ${final_used_gb} GB"
-echo "=> 💿 Disk Free : ${final_free_gb} GB"
+echo "=> 💾 Free Root (/): ${root_free_gb} GB"
+echo "=> 🏠 Free Home (/home): ${home_free_gb} GB"

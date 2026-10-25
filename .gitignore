@@ -1,5 +1,9 @@
 # Local Pi runtime state
 .atl/
 .config/fish/conf.d/secrets.fish
+.config/environment.d/secrets.conf
+.config/ggshield/auth_config.yaml
+.config/opencode/service.json
+.config/opencode/backup/
 .config/zsh/.zcompdump*
 .config/nvim/

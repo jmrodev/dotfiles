@@ -1,0 +1,17 @@
+{
+  "$schema": "https://opencode.ai/v2/cli.json",
+  "plugins": [
+    "opencode-subagent-statusline",
+    "/home/jmro/.config/opencode/tui-plugins/gentle-logo.tsx"
+  ],
+  "session": {
+    "permissions": "autoaccept"
+  },
+  "tabs": {
+    "mode": "auto"
+  },
+  "attention": {
+    "notifications": false,
+    "sound": false
+  }
+}

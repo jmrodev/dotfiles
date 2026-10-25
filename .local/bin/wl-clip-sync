@@ -27,6 +27,20 @@ def set_last_hash(h):
     except Exception:
         pass
 
+def sanitize(data: bytes) -> bytes:
+    try:
+        text = data.decode("utf-8")
+    except UnicodeDecodeError:
+        return data
+
+    # Strip Fish internal annotation delimiters (U+FFF9, U+FFFA, U+FFFB),
+    # Windows carriage returns (\r), and invisible zero-width characters.
+    unwanted = ('\ufff9', '\ufffa', '\ufffb', '\r', '\u200b', '\u200c', '\u200d', '\ufeff')
+    for ch in unwanted:
+        if ch in text:
+            text = text.replace(ch, '')
+    return text.encode("utf-8")
+
 def main():
     if len(sys.argv) < 2:
         sys.exit(0)
@@ -37,6 +51,10 @@ def main():
     except Exception:
         sys.exit(0)
 
+    if not data:
+        sys.exit(0)
+
+    data = sanitize(data)
     if not data:
         sys.exit(0)
 

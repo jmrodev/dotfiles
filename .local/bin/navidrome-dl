@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -z "$1" ]; then
+    echo "Usage: navidrome-dl <youtube_url_or_playlist> [Folder/Genre]"
+    echo "Example: navidrome-dl 'https://www.youtube.com/watch?v=...' '80s Rock'"
+    exit 1
+fi
+
+URL="$1"
+GENRE_DIR="${2:-80s Rock}"
+MUSIC_DIR="/home/jmro/Music/${GENRE_DIR}"
+
+mkdir -p "$MUSIC_DIR"
+
+yt-dlp -x --audio-format mp3 --audio-quality 0 \
+  --embed-thumbnail --add-metadata \
+  --parse-metadata "%(album,title)s:%(album)s" \
+  -o "$MUSIC_DIR/%(artist,uploader)s/%(title)s.%(ext)s" \
+  "$URL"
+
+echo "✅ Download finished! Navidrome will auto-scan new tracks in $MUSIC_DIR"
