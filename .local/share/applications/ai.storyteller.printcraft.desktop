@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=PrintCraft
+GenericName=PDF Editor
+Comment=Read, organize, combine, split and secure PDFs
+Exec=env PRINTCRAFT_MODELS=/home/jmro/.local/share/printcraft/models PDFCRAFT_MODELS=/home/jmro/.local/share/printcraft/models printcraft %F
+TryExec=printcraft
+Icon=ai.storyteller.printcraft
+Terminal=false
+StartupNotify=true
+StartupWMClass=printcraft
+Categories=Office;Viewer;Graphics;
+Keywords=pdf;viewer;editor;annotate;sign;forms;merge;split;
+MimeType=application/pdf;

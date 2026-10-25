@@ -1,0 +1,45 @@
+{
+  "projects_dir": "/home/jmro/CreativeCraft Projects",
+  "cloud": {
+    "kind": "off"
+  },
+  "device_name": "this computer",
+  "auto_sync_minutes": 10,
+  "sync_on_change": true,
+  "custom_mcp": [],
+  "agent": {
+    "backend": "claude_code",
+    "binary": null,
+    "model": null,
+    "auto_approve": false,
+    "custom_command": ""
+  },
+  "appearance": "system",
+  "app_sources": {},
+  "plugins": {},
+  "generation": {
+    "providers": [
+      {
+        "id": "google",
+        "name": "Google Gemini",
+        "kind": "google",
+        "base_url": "https://generativelanguage.googleapis.com/v1beta",
+        "image_model": "gemini-3.1-flash-image",
+        "video_model": "veo-3.1-generate-preview",
+        "workflow": "",
+        "extra": ""
+      }
+    ],
+    "image_provider": "",
+    "video_provider": "",
+    "agents_can_generate": true
+  },
+  "terminal": {
+    "font_size": 13,
+    "scrollback": 5000,
+    "mouse_reporting": true
+  },
+  "check_updates_on_start": true,
+  "intro_animation": true,
+  "show_app_windows": true
+}
