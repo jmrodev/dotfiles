@@ -80,7 +80,37 @@ navidrome-dl --batch ~/tools/musica/youtube/80s_rock_albums.json
 
 ---
 
-## 🐧 7. Revisor de Código Linus Torvalds (`linus-review`)
+## 🎤 8. Letras Sincronizadas (.lrc con LRCLIB) (`music-lyrics`)
+Descarga letras sincronizadas (.lrc) o planas en tiempo real desde la API abierta de LRCLIB para que Feishin y Navidrome las muestren sincronizadas pista a pista:
+```bash
+# Descargar todas las letras de un álbum completo en tu PC:
+music-lyrics --album "/home/jmro/Music/Soda Stereo/(1986) Signos"
+
+# Descargar letra para un archivo individual:
+music-lyrics --file "/home/jmro/Music/Soda Stereo/(1986) Signos/01 - Sin Sobresaltos (HQ).mp3"
+
+# Ver la letra en terminal:
+music-lyrics "Soda Stereo" "Persiana Americana"
+```
+* Integrado automáticamente en `navidrome-dl`: cada descarga de álbum baja sus `.lrc` sin intervención manual.
+
+---
+
+## 🛠️ 9. Herramientas CLI Directas (`navidrome-tool` & `youtube-tool`)
+```bash
+# Inspeccionar o buscar en la base de datos de Navidrome (modo solo lectura, <1ms):
+navidrome-tool tracks "Signos"
+navidrome-tool albums "Soda Stereo"
+navidrome-tool genre "Rock"
+navidrome-tool stats
+
+# Búsqueda rápida en YouTube para asistentes o scripts:
+youtube-tool search "Soda Stereo Signos full album" --limit 3
+```
+
+---
+
+## 🐧 10. Revisor de Código Linus Torvalds (`linus-review`)
 ```bash
 # Revisar un script o diff con las reglas y skill de Linus Torvalds:
 linus-review script.py
