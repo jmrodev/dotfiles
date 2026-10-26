@@ -96,13 +96,19 @@ music-lyrics "Soda Stereo" "Persiana Americana"
 
 ---
 
-## 🛠️ 9. Herramientas CLI Directas (`navidrome-tool` & `youtube-tool`)
+## 🛠️ 9. Herramientas CLI Directas (`navidrome-tool`, `lastfm-tool` & `youtube-tool`)
 ```bash
 # Inspeccionar o buscar en la base de datos de Navidrome (modo solo lectura, <1ms):
 navidrome-tool tracks "Signos"
 navidrome-tool albums "Soda Stereo"
 navidrome-tool genre "Rock"
 navidrome-tool stats
+
+# Consultar inteligencia y recomendaciones comunitarias con Last.fm:
+lastfm-tool similar "Soda Stereo" --limit 5
+lastfm-tool top-albums "Charly García" --limit 5
+lastfm-tool top-tracks "Pink Floyd"
+lastfm-tool bio "Luis Alberto Spinetta"
 
 # Búsqueda rápida en YouTube para asistentes o scripts:
 youtube-tool search "Soda Stereo Signos full album" --limit 3
