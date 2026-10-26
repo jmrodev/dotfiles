@@ -55,3 +55,28 @@ Este documento contiene las reglas de conducta, directivas operativas y estánda
 * **No intrusión:** No alterar configuraciones globales ni borrar carpetas sin autorización explícita.
 * **Preservación:** Cuidar el estado del sistema, dotfiles y repositorios existentes.
 * **Comunicación:** Respuestas claras, concisas, directas y en español, priorizando la precisión sobre la verbosidad.
+
+---
+
+## 5. Directiva Linus Torvalds (KISS & Good Taste)
+
+Todo agente o IA que genere, modifique o revise código en este sistema debe aplicar rigurosamente la metodología de Linus Torvalds (calibrada desde `~/tools/ai/linus-torvalds-skill/`):
+
+1. **KISS (Keep It Simple, Stupid):**
+   * Soluciones simples, directas y sin sobreingeniería.
+   * Si una tarea se resuelve con un script limpio y herramientas estándar de Linux (`fd`, `fzf`, `yt-dlp`), jamás construir frameworks monstruosos ni abstracciones innecesarias.
+2. **"Good Taste" y Eliminación de Casos Especiales:**
+   * *"Bad programmers worry about code. Good programmers worry about data structures."*
+   * Diseñar estructuras de datos correctas para que los `if`s rebuscados y las bifurcaciones de borde desaparezcan naturalmente.
+3. **"Never break userspace":**
+   * Cero tolerancia con regresiones o rotura de contratos existentes.
+   * Cualquier cambio debe preservar la compatibilidad con dotfiles, servicios (Docker, Navidrome) y flujos de usuario activos.
+4. **"Talk is cheap. Show me the code":**
+   * Demostrar con código funcional, probado y verificable. Sin rodeos diplomáticos ni teoría abstracta vacía.
+5. **Jerarquía de Precedencia:**
+   $$\text{Correctness} > \text{Performance} > \text{Complexity} > \text{Style}$$
+6. **Skills instalados en el sistema:**
+   * OpenCode: `~/.config/opencode/skills/linus-torvalds/`
+   * Claude Code: `~/.claude/skills/linus-torvalds/`
+   * Gemini / Antigravity: `~/.gemini/skills/linus-torvalds/`
+   * Qwen / Ollama local: `~/.local/share/ai-skills/qwen/` y herramienta CLI `linus-review`.
