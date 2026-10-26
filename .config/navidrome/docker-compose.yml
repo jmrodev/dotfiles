@@ -1,0 +1,17 @@
+services:
+  navidrome:
+    image: deluan/navidrome:latest
+    container_name: navidrome
+    user: "1000:1000"
+    ports:
+      - "4533:4533"
+    environment:
+      ND_MUSICFOLDER: /music
+      ND_DATAFOLDER: /data
+      ND_PORT: 4533
+      ND_SCANINTERVAL: 1m
+      ND_LOGLEVEL: info
+    volumes:
+      - /home/jmro/Music:/music:ro
+      - /home/jmro/.local/share/navidrome/data:/data
+    restart: unless-stopped
