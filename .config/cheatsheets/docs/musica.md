@@ -4,7 +4,18 @@ Herramientas locales para descargar álbumes en MP3 320 kbps con carátula y met
 
 ---
 
-## 🔎 1. Buscador Rápido Letra por Letra en tu PC (`fd` + `fzf`)
+## 🎧 1. Asistente Conversacional Flotante (`feishin-ai`)
+* **Atajo en Sway:** Pulsa **`$mod + m`** mientras escuchas música en Feishin para abrir el asistente flotante.
+* **100% Conversacional:** Sin formularios ni preguntas burocráticas de teclado (no te pide escribir año ni género).
+  * Ejemplo: *"Recomiéndame un disco de los 80 de rock argentino que no tenga"*.
+  * La IA local (`qwen2.5-coder:3b`) consulta lo que tienes en tu PC con `fd`.
+  * Busca las opciones oficiales en YouTube con `searcher.py`.
+  * Te responde de forma natural: *"Encontré Canción Animal (1990) de Soda Stereo, ¿querés que lo baje?"*.
+  * Le respondes *"dale"* o *"sí"* y lo descarga en MP3 320kbps con carátula y tags ID3.
+
+---
+
+## 🔎 2. Buscador Rápido Letra por Letra en tu PC (`fd` + `fzf`)
 ```bash
 # Abrir buscador interactivo en tiempo real con previsualización de carátulas y canciones:
 music-find
@@ -18,7 +29,7 @@ music-find "Brave New World"
 
 ---
 
-## 🔍 2. Buscar Álbumes o Playlists en YouTube
+## 🔍 3. Buscar Álbumes o Playlists en YouTube
 ```bash
 yt-album-search "Queen A Kind of Magic full album"
 yt-album-search "Charly García Clics Modernos"
@@ -27,7 +38,7 @@ Muestra los enlaces oficiales de las playlists completas (`- Topic`, Vevo) con i
 
 ---
 
-## ⬇️ 3. Asistente Interactivo de Descargas (`navidrome-dl`)
+## ⬇️ 4. Asistente Interactivo de Descargas (`navidrome-dl`)
 ```bash
 # Modo interactivo paso a paso:
 navidrome-dl
@@ -48,7 +59,7 @@ navidrome-dl --artist "Queen" --album "A Kind of Magic" --year 1986 --url "https
 
 ---
 
-## 📑 4. Crear o Actualizar Playlists (.m3u)
+## 📑 5. Crear o Actualizar Playlists (.m3u)
 ```bash
 # Crear playlist de todos los temas de los 80:
 m3u-maker --name "80s Rock" --decade 80s
@@ -62,7 +73,16 @@ m3u-maker --name "Rock Clásico 70s" --years 1970-1979
 
 ---
 
-## 📦 5. Descarga Masiva por Lotes (Batch)
+## 📦 6. Descarga Masiva por Lotes (Batch)
 ```bash
 navidrome-dl --batch ~/tools/musica/youtube/80s_rock_albums.json
+```
+
+---
+
+## 🐧 7. Revisor de Código Linus Torvalds (`linus-review`)
+```bash
+# Revisar un script o diff con las reglas y skill de Linus Torvalds:
+linus-review script.py
+linus-review -d
 ```
