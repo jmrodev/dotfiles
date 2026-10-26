@@ -105,13 +105,15 @@ navidrome-tool genre "Rock"
 navidrome-tool stats
 
 # Consultar inteligencia y recomendaciones comunitarias con Last.fm:
+lastfm-tool corroborate "lado oscuro de la luna"
 lastfm-tool similar "Soda Stereo" --limit 5
 lastfm-tool top-albums "Charly García" --limit 5
 lastfm-tool top-tracks "Pink Floyd"
 lastfm-tool bio "Luis Alberto Spinetta"
 
 # Búsqueda rápida en YouTube para asistentes o scripts:
-youtube-tool search "Soda Stereo Signos full album" --limit 3
+youtube-tool "Soda Stereo Signos" -n 3
+youtube-tool -t "Persiana Americana" -n 3
 ```
 
 ---
