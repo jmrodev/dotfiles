@@ -10,3 +10,47 @@
     color: @theme_bg_color;
     background-color: @theme_selected_bg_color;
 }
+
+#custom-lid {
+    padding-left: 10px;
+    padding-right: 10px;
+    margin: 0 2px;
+}
+
+#custom-lid.on {
+    color: @theme_selected_bg_color;
+}
+
+#custom-pomodoro {
+    padding-left: 8px;
+    padding-right: 8px;
+    margin: 0 2px;
+}
+
+#custom-pomodoro.work {
+    color: #e06c75;
+}
+
+#custom-pomodoro.break {
+    color: @theme_selected_bg_color;
+}
+
+#custom-pomodoro.long_break {
+    color: #61afef;
+}
+
+#custom-pomodoro.paused {
+    color: @warning_color;
+}
+
+#custom-sunset {
+    padding-left: 8px;
+    padding-right: 8px;
+    margin: 0 2px;
+}
+
+#custom-sunset.on {
+    color: #e5c07b;
+}
+
+

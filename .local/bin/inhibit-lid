@@ -7,6 +7,12 @@ set -euo pipefail
 UNIT="lid-inhibit"
 APP_NAME="Inhibidor de Tapa"
 
+SIGNAL_NUM=18
+
+send_signal() {
+    pkill -RTMIN+${SIGNAL_NUM} waybar 2>/dev/null || true
+}
+
 notify() {
     local urgency="$1"
     local icon="$2"
@@ -24,6 +30,7 @@ is_active() {
 start_inhibit() {
     if is_active; then
         echo "El inhibidor ya está activo."
+        send_signal
         return 0
     fi
 
@@ -35,17 +42,20 @@ start_inhibit() {
 
     echo "Inhibidor activado: podés cerrar la tapa sin suspensión, bloqueo ni interrupción."
     notify "normal" "dialog-information" "💻 Tapa desactivada" "Podés cerrar la tapa sin suspensión ni bloqueo."
+    send_signal
 }
 
 stop_inhibit() {
     if ! is_active; then
         echo "El inhibidor no está activo."
+        send_signal
         return 0
     fi
 
     systemctl --user stop "$UNIT" 2>/dev/null || true
     echo "Inhibidor desactivado: restaurado comportamiento normal."
     notify "normal" "dialog-warning" "💻 Tapa restaurada" "Comportamiento normal de suspensión restaurado."
+    send_signal
 }
 
 status_inhibit() {
@@ -75,6 +85,13 @@ case "${1:-toggle}" in
         ;;
     status)
         status_inhibit
+        ;;
+    waybar)
+        if is_active; then
+            printf '{"alt":"on","class":"on","tooltip":"Tapa: Modo Música ACTIVO (No suspende al cerrar)\\nClic para restaurar modo normal"}\n'
+        else
+            printf '{"alt":"off","class":"off","tooltip":"Tapa: Modo Normal (Suspende al cerrar)\\nClic para activar Modo Música"}\n'
+        fi
         ;;
     toggle)
         toggle_inhibit

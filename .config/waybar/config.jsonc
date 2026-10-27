@@ -36,6 +36,7 @@
         "custom/valent",
         // media
         "custom/playerctl",
+        "custom/lid",
         "custom/dnd",
         "pulseaudio",
         "backlight",
@@ -43,6 +44,7 @@
         "custom/theme",
         "custom/sunset",
         "custom/pacman",
+        "custom/pomodoro",
         "tray",
         "clock"
     ],
@@ -219,11 +221,11 @@
             "on": "󰌵",
             "off": "󰌶"
         },
-        "exec": "$HOME/.local/bin/gammastep-control status",
-        "on-click": "$HOME/.local/bin/gammastep-control toggle",
-        "on-click-right": "$HOME/.local/bin/gammastep-control menu",
-        "on-scroll-up": "$HOME/.local/bin/gammastep-control up",
-        "on-scroll-down": "$HOME/.local/bin/gammastep-control down",
+        "exec": "/home/jmro/.local/bin/gammastep-control status",
+        "on-click": "/home/jmro/.local/bin/gammastep-control toggle",
+        "on-click-right": "/home/jmro/.local/bin/gammastep-control menu",
+        "on-scroll-up": "/home/jmro/.local/bin/gammastep-control up",
+        "on-scroll-down": "/home/jmro/.local/bin/gammastep-control down",
         "signal": 6
     },
     "custom/theme": {
@@ -371,5 +373,28 @@
         "on-click": "inhibit-idle off; inhibit-idle interactive",
         "on-click-middle": "inhibit-idle off",
         "signal": 15
+    },
+    "custom/lid": {
+        "interval": "once",
+        "return-type": "json",
+        "format": "{icon}",
+        "format-icons": {
+            "on": " 󰎈",
+            "off": ""
+        },
+        "exec": "inhibit-lid waybar",
+        "on-click": "inhibit-lid toggle",
+        "signal": 18,
+        "tooltip": true
+    },
+    "custom/pomodoro": {
+        "interval": 1,
+        "return-type": "json",
+        "exec": "pomodoro waybar",
+        "on-click": "pomodoro toggle",
+        "on-click-right": "pomodoro skip",
+        "on-click-middle": "pomodoro reset",
+        "signal": 19,
+        "tooltip": true
     }
 }

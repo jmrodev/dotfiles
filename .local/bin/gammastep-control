@@ -31,10 +31,9 @@ EOF
 
 apply_gammastep() {
     pkill -x gammastep 2>/dev/null
+    sleep 0.1
     if [ "$STATUS" = "on" ]; then
-        gammastep -O "$TEMP" -b "$BRIGHT" -g "$GAMMA" >/dev/null 2>&1 &
-    else
-        gammastep -x >/dev/null 2>&1
+        gammastep -m wayland -O "$TEMP" -b "$BRIGHT" -g "$GAMMA" >/dev/null 2>&1 &
     fi
 }
 
@@ -60,8 +59,8 @@ status_json() {
         tooltip="Gammastep OFF (Preset: ${TEMP}K / ${BRIGHT}) (Clic: Activar | Scroll: Temp | Clic derecho: Menú)"
     fi
 
-    jq -cn --arg alt "$alt" --arg tooltip "$tooltip" --arg class "$alt" \
-        '{"alt":$alt, "tooltip":$tooltip, "class":$class}'
+    jq -cn --arg text "$alt" --arg alt "$alt" --arg tooltip "$tooltip" --arg class "$alt" \
+        '{"text":$text, "alt":$alt, "tooltip":$tooltip, "class":$class}'
 }
 
 toggle() {
@@ -122,30 +121,70 @@ EOF
             toggle
             ;;
         "🌡 Cambiar Temperatura"*)
-            local new_temp
-            new_temp=$(rofi -dmenu -p "Temperatura Kelvin (1000-10000)" -filter "$TEMP" -theme-str 'window {width: 320px;}')
-            if [[ "$new_temp" =~ ^[0-9]+$ ]] && [ "$new_temp" -ge 1000 ] && [ "$new_temp" -le 10000 ]; then
-                TEMP="$new_temp"
+            local temp_options
+            temp_options=$(cat <<EOF
+1500K - Cálido Extremo (Noche intensa)
+2000K - Luz de Vela (Muy cálido)
+2700K - Bombilla Incandescente
+3500K - Cálido Nocturno
+4000K - Intermedio Suave
+5000K - Luz Día / Lectura
+6500K - Neutro / Sin Filtro
+EOF
+)
+            local choice
+            choice=$(echo "$temp_options" | rofi -dmenu -i -p "Seleccionar Temperatura" -theme-str 'window {width: 420px;}')
+            local val
+            val=$(echo "$choice" | grep -oE '^[0-9]+')
+            if [ -n "$val" ]; then
+                TEMP="$val"
+                STATUS="on"
                 save_state
                 apply_gammastep
                 notify_waybar
             fi
             ;;
         "🔆 Cambiar Brillo"*)
-            local new_bright
-            new_bright=$(rofi -dmenu -p "Brillo software (0.1 - 1.0)" -filter "$BRIGHT" -theme-str 'window {width: 320px;}')
-            if [[ "$new_bright" =~ ^0\.[0-9]+$|^1\.0$|^1$ ]]; then
-                BRIGHT="$new_bright"
+            local bright_options
+            bright_options=$(cat <<EOF
+1.0 - Brillo Máximo (100%)
+0.9 - Brillo 90%
+0.8 - Brillo 80%
+0.7 - Brillo 70%
+0.6 - Brillo 60%
+0.5 - Brillo 50%
+0.4 - Brillo 40%
+0.3 - Brillo 30%
+EOF
+)
+            local choice
+            choice=$(echo "$bright_options" | rofi -dmenu -i -p "Seleccionar Brillo" -theme-str 'window {width: 350px;}')
+            local val
+            val=$(echo "$choice" | grep -oE '^[0-9.]+')
+            if [ -n "$val" ]; then
+                BRIGHT="$val"
+                STATUS="on"
                 save_state
                 apply_gammastep
                 notify_waybar
             fi
             ;;
         "🎨 Cambiar Gamma RGB"*)
-            local new_gamma
-            new_gamma=$(rofi -dmenu -p "Gamma R:G:B" -filter "$GAMMA" -theme-str 'window {width: 320px;}')
-            if [[ "$new_gamma" =~ ^[0-9.]+:[0-9.]+:[0-9.]+$ ]]; then
-                GAMMA="$new_gamma"
+            local gamma_options
+            gamma_options=$(cat <<EOF
+1.0:1.0:1.0 - Normal / Balanceado
+1.0:0.9:0.8 - Reducción Suave de Luz Azul
+1.0:0.8:0.6 - Reducción Media de Luz Azul
+1.0:0.7:0.5 - Reducción Fuerte de Luz Azul
+EOF
+)
+            local choice
+            choice=$(echo "$gamma_options" | rofi -dmenu -i -p "Seleccionar Gamma" -theme-str 'window {width: 420px;}')
+            local val
+            val=$(echo "$choice" | grep -oE '^[0-9.]+:[0-9.]+:[0-9.]+')
+            if [ -n "$val" ]; then
+                GAMMA="$val"
+                STATUS="on"
                 save_state
                 apply_gammastep
                 notify_waybar
