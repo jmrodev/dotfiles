@@ -76,7 +76,6 @@ Todo agente o IA que genere, modifique o revise código en este sistema debe apl
 5. **Jerarquía de Precedencia:**
    $$\text{Correctness} > \text{Performance} > \text{Complexity} > \text{Style}$$
 6. **Skills instalados en el sistema:**
-   * OpenCode: `~/.config/opencode/skills/linus-torvalds/`
-   * Claude Code: `~/.claude/skills/linus-torvalds/`
-   * Gemini / Antigravity: `~/.gemini/skills/linus-torvalds/`
-   * Qwen / Ollama local: `~/.local/share/ai-skills/qwen/` y herramienta CLI `linus-review`.
+   * **Linus Torvalds:** calibrado en `~/tools/ai/linus-torvalds-skill/` y enlazado en OpenCode (`~/.config/opencode/skills/linus-torvalds/`), Claude Code (`~/.claude/skills/linus-torvalds/`), Gemini / Antigravity (`~/.gemini/skills/linus-torvalds/`) y Qwen local (`~/.local/share/ai-skills/qwen/`).
+   * **Session Retrospective:** calibrado en `~/tools/ai/session-retrospective/` y enlazado en OpenCode (`~/.config/opencode/skills/session-retrospective/`), Claude Code (`~/.claude/skills/session-retrospective/`) y Gemini / Antigravity (`~/.gemini/skills/session-retrospective/`). Permite auditar la sesión, capturar correcciones del usuario y proponer guardas y reglas para `AGENTS.md`.
+
