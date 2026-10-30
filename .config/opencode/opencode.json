@@ -171,6 +171,7 @@
   ],
   "mcp": {
     "aws-mcp": {
+      "enabled": false,
       "command": [
         "uvx",
         "mcp-proxy-for-aws@latest",
@@ -219,17 +220,15 @@
       ],
       "type": "local"
     },
-    "servers": {
-      "codegraph": {
-        "type": "local",
-        "command": [
-          "codegraph",
-          "serve",
-          "--mcp"
-        ],
-        "disabled": false,
-        "codemode": false
-      }
+    "codegraph": {
+      "type": "local",
+      "enabled": true,
+      "command": [
+        "codegraph",
+        "serve",
+        "--mcp"
+      ],
+      "codemode": false
     }
   },
   "model": "opencode/deepseek-v4.1-flash-free",

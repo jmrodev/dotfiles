@@ -47,4 +47,7 @@ $bindsym $mod+v exec cliphist list | rofi -dmenu -p "Clipboard" | cliphist decod
 # KDE Connect indicator
 exec_always --no-startup-id kdeconnect-indicator
 
+# Automontaje de medios extraíbles (USB, SD) con icono de bandeja
+exec --no-startup-id udiskie --automount --tray
+
 
