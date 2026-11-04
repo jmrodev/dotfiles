@@ -59,3 +59,27 @@ function fish_greeting
     # Inicio limpio sin banners
 end
 
+
+# kimi-code
+fish_add_path -g "/home/jmro/.kimi-code/bin"
+
+# Qwen Code PATH block begin
+set -gx PATH '/home/jmro/.local/bin' $PATH
+# Qwen Code PATH block end
+
+# Cargar variables de usuario desde environment.d (agnóstico)
+if test -f "$HOME/.config/environment.d/secrets.conf"
+    while read -l line
+        set line (string trim -- $line)
+        if test -n "$line"
+            if not string match -q "#*" -- $line
+                set -l kv (string split -m 1 '=' -- $line)
+                if test (count $kv) -eq 2
+                    set -l k (string trim -- $kv[1])
+                    set -l v (string trim -c '"\'' -- $kv[2])
+                    set -gx $k $v
+                end
+            end
+        end
+    end < "$HOME/.config/environment.d/secrets.conf"
+end
