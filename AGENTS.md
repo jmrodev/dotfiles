@@ -60,7 +60,7 @@ Este documento contiene las reglas de conducta, directivas operativas y estánda
 
 ## 5. Directiva Linus Torvalds (KISS & Good Taste)
 
-Todo agente o IA que genere, modifique o revise código en este sistema debe aplicar rigurosamente la metodología de Linus Torvalds (calibrada desde `~/tools/ai/linus-torvalds-skill/`):
+Todo agente o IA que genere, modifique o revise código en este sistema debe aplicar rigurosamente la metodología de Linus Torvalds (calibrada desde `~/Documents/Development/linus-torvalds-skill/`):
 
 1. **KISS (Keep It Simple, Stupid):**
    * Soluciones simples, directas y sin sobreingeniería.
@@ -76,6 +76,6 @@ Todo agente o IA que genere, modifique o revise código en este sistema debe apl
 5. **Jerarquía de Precedencia:**
    $$\text{Correctness} > \text{Performance} > \text{Complexity} > \text{Style}$$
 6. **Skills instalados en el sistema:**
-   * **Linus Torvalds:** calibrado en `~/tools/ai/linus-torvalds-skill/` y enlazado en OpenCode (`~/.config/opencode/skills/linus-torvalds/`), Claude Code (`~/.claude/skills/linus-torvalds/`), Gemini / Antigravity (`~/.gemini/skills/linus-torvalds/`) y Qwen local (`~/.local/share/ai-skills/qwen/`).
-   * **Session Retrospective:** calibrado en `~/tools/ai/session-retrospective/` y enlazado en OpenCode (`~/.config/opencode/skills/session-retrospective/`), Claude Code (`~/.claude/skills/session-retrospective/`) y Gemini / Antigravity (`~/.gemini/skills/session-retrospective/`). Permite auditar la sesión, capturar correcciones del usuario y proponer guardas y reglas para `AGENTS.md`.
+   * **Linus Torvalds:** calibrado en `~/Documents/Development/linus-torvalds-skill/` e instalado en OpenCode (`~/.config/opencode/skills/linus-torvalds/`), Claude Code (`~/.claude/skills/linus-torvalds/`), Gemini / Antigravity (`~/.gemini/skills/linus-torvalds/`) y Qwen local (`~/.local/share/ai-skills/qwen/`).
+   * **Session Retrospective:** calibrado en `~/Documents/Development/session-retrospective/` e instalado en OpenCode (`~/.config/opencode/skills/session-retrospective/`), Claude Code (`~/.claude/skills/session-retrospective/`) y Gemini / Antigravity (`~/.gemini/skills/session-retrospective/`). Permite auditar la sesión, capturar correcciones del usuario y proponer guardas y reglas para `AGENTS.md`.
 
