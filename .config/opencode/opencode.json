@@ -692,5 +692,18 @@
     }
   },
   "share": "disabled",
-  "small_model": "opencode/deepseek-v4.1-flash-free"
+  "small_model": "opencode/deepseek-v4.1-flash-free",
+  "mcpServers": {
+    "sentry": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sentry/mcp-server"
+      ]
+    },
+    "chelo": {
+      "command": "chelo-mcp",
+      "args": []
+    }
+  }
 }
