@@ -79,3 +79,21 @@ Todo agente o IA que genere, modifique o revise código en este sistema debe apl
    * **Linus Torvalds:** calibrado en `~/Documents/Development/linus-torvalds-skill/` e instalado en OpenCode (`~/.config/opencode/skills/linus-torvalds/`), Claude Code (`~/.claude/skills/linus-torvalds/`), Gemini / Antigravity (`~/.gemini/skills/linus-torvalds/`) y Qwen local (`~/.local/share/ai-skills/qwen/`).
    * **Session Retrospective:** calibrado en `~/Documents/Development/session-retrospective/` e instalado en OpenCode (`~/.config/opencode/skills/session-retrospective/`), Claude Code (`~/.claude/skills/session-retrospective/`) y Gemini / Antigravity (`~/.gemini/skills/session-retrospective/`). Permite auditar la sesión, capturar correcciones del usuario y proponer guardas y reglas para `AGENTS.md`.
 
+
+---
+
+## 6. Pipeline de Software Factory (Línea de Montaje)
+
+Cuando se ejecute una tarea de refactor, corrección de bug o nueva funcionalidad en cualquier proyecto, los agentes deben seguir el flujo de roles:
+
+1. **Spec Writer:** Contrato OpenAPI y especificación con `chelo-harness` antes de codificar.
+2. **Builder:** Implementación en rama/worktree aislado con tests verdes.
+3. **Triple Auditoría en Paralelo:**
+   - **Código:** Criterio Linus Torvalds (KISS, Good Taste, cero sobreingeniería).
+   - **UX/UI:** Skill `impeccable` (accesibilidad, diseño y consistencia visual).
+   - **Seguridad:** Escaneo de secretos, dependencias y permisos.
+4. **Approver:**
+   - Si falla algún auditor ➔ Retorna al Builder para corrección.
+   - Si aprueban los 3 ➔ Evalúa sensibilidad de negocio:
+     - *Cambio menor/cosmético/test:* Habilitado para Pull Request.
+     - *Cambio crítico (Auth, DB Prisma, Pagos, APIs):* **Requiere confirmación humana obligatoria antes del PR**.
