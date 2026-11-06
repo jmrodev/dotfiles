@@ -1,0 +1,108 @@
+#!/usr/bin/env python3
+"""
+sentry-auto-fix — Pipeline asíncrono estilo Software Factory para resolución de errores Sentry.
+Uso: sentry-auto-fix [slug-proyecto] [--dry-run]
+"""
+
+import sys
+import os
+import json
+import urllib.request
+import subprocess
+from pathlib import Path
+
+# Cargar variables si no están en entorno
+if not os.environ.get("SENTRY_AUTH_TOKEN"):
+    secrets_file = Path.home() / ".config/environment.d/secrets.conf"
+    if secrets_file.exists():
+        with open(secrets_file) as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("SENTRY_AUTH_TOKEN="):
+                    os.environ["SENTRY_AUTH_TOKEN"] = line.split("=", 1)[1].strip('\"\'')
+                elif line.startswith("SENTRY_ORG="):
+                    os.environ["SENTRY_ORG"] = line.split("=", 1)[1].strip('\"\'')
+
+AUTH_TOKEN = os.environ.get("SENTRY_AUTH_TOKEN")
+ORG_SLUG = os.environ.get("SENTRY_ORG", "unicen")
+
+# Directorios de proyectos conocidos
+PROJECT_MAP = {
+    "sababook-frontend": Path("/home/jmro/Documents/Academy/TECDA/TERCERO/Practicas_profesionalizantes/InstituteProjects2026/repos/sababook-front-cont"),
+    "sababook-backend": Path("/home/jmro/Documents/Academy/TECDA/TERCERO/Practicas_profesionalizantes/InstituteProjects2026/repos/sababook-back-cont"),
+    "edutrack-frontend": Path("/home/jmro/Documents/Academy/TECDA/TERCERO/Practicas_profesionalizantes/InstituteProjects2026/repos/edu-track-front"),
+    "edutrack-backend": Path("/home/jmro/Documents/Academy/TECDA/TERCERO/Practicas_profesionalizantes/InstituteProjects2026/repos/edu-track-back"),
+    "secretary-app": Path("/home/jmro/Documents/Development/secretary-app"),
+    "jardin-zarini": Path("/home/jmro/Documents/Development/jardin-zarini")
+}
+
+def api_get(endpoint):
+    url = f"https://sentry.io/api/0/{endpoint}"
+    req = urllib.request.Request(url, headers={
+        "Authorization": f"Bearer {AUTH_TOKEN}",
+        "Content-Type": "application/json"
+    })
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return json.loads(resp.read().decode("utf-8"))
+    except Exception as e:
+        print(f"❌ Error en API Sentry: {e}", file=sys.stderr)
+        return None
+
+def get_unresolved_issues(project_slug=None):
+    ep = f"organizations/{ORG_SLUG}/issues/?query=is:unresolved"
+    if project_slug:
+        ep += f" project:{project_slug}"
+    return api_get(ep)
+
+def main():
+    if not AUTH_TOKEN:
+        print("❌ SENTRY_AUTH_TOKEN no está definido.", file=sys.stderr)
+        sys.exit(1)
+
+    args = sys.argv[1:]
+    target_project = None
+    dry_run = "--dry-run" in args
+
+    for a in args:
+        if not a.startswith("--"):
+            target_project = a
+            break
+
+    print(f"🏭 Consultando Software Factory en Sentry ({ORG_SLUG})...")
+    issues = get_unresolved_issues(target_project)
+
+    if not issues:
+        print("✨ No hay errores pendientes en Sentry. Todo el sistema está limpio.")
+        return
+
+    print(f"⚠️  Se encontraron {len(issues)} issue(s) sin resolver:")
+    for i, issue in enumerate(issues, 1):
+        print(f"  {i}. [{issue['project']['slug']}] #{issue['shortId']} - {issue['title']} (Eventos: {issue['count']})")
+
+    first = issues[0]
+    p_slug = first["project"]["slug"]
+    repo_path = PROJECT_MAP.get(p_slug)
+
+    print(f"\n🎯 Seleccionado para triage: #{first['shortId']} en '{p_slug}'")
+    print(f"   Título: {first['title']}")
+    print(f"   Culprit: {first.get('culprit', 'N/A')}")
+    print(f"   URL: {first['permalink']}")
+
+    if not repo_path or not repo_path.exists():
+        print(f"⚠️  Ruta local no configurada para '{p_slug}'.")
+        return
+
+    branch_name = f"fix/sentry-{first['shortId'].lower()}"
+    print(f"🌿 Rama sugerida: {branch_name} en {repo_path}")
+
+    if dry_run:
+        print("🔍 Modo dry-run completado.")
+        return
+
+    print("\n💡 Para que tu agente comience a resolverlo, ejecuta:")
+    print(f"   cd {repo_path} && git checkout -b {branch_name}")
+    print(f"   agy \"Investiga y soluciona la issue #{first['shortId']} de Sentry: {first['title']}\"")
+
+if __name__ == "__main__":
+    main()
